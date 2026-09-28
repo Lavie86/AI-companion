@@ -4,8 +4,8 @@ This repository is a fork of [morettt/my-neuro](https://github.com/morettt/my-ne
 my-neuro is a Neuro-sama style desktop companion: a Live2D (or VRM) pet on your screen that listens,
 talks back with a cloned voice, remembers you, and can use tools on your PC.
 
-The fork starts from upstream commit `1cc55ab` (2026-09-27) and keeps the full upstream history,
-so you can merge new upstream versions later (see [Updating](#updating)).
+The fork starts from upstream commit `1cc55ab` (2026-09-27), has upstream's changes up to `025a85e` merged in,
+and keeps the full upstream history, so you can merge new upstream versions later (see [Updating](#updating)).
 
 The upstream docs are mostly in Chinese. This file covers what you need in English.
 
@@ -22,6 +22,8 @@ The upstream docs are mostly in Chinese. This file covers what you need in Engli
 | The installer and updater keep your changes | Upstream's installer and `一键更新live-2d.bat` delete `live-2d` and unpack the release zip. In a git checkout they now skip that. | `full-hub/Batch_Download.py`, `update.py` |
 | The UI is in English | The WebUI, the pet window and its dialogs, the Electron control panel, the installer and the log messages were Chinese. | `live-2d/`, `installer.py`, `full-hub/Batch_Download.py` |
 | Upstream updates keep the English | A git merge driver applies our translation to upstream's changes before merging, and lists new Chinese text. | `tools/english-ui/`, `update-from-upstream.bat` |
+| The app talks to her in English | Besides your messages and her persona, the app and its plugins put their own text into the conversation: tool descriptions and results, the time line before every message, memory notes, live chat markers, and the prompts for the diary, AI journal, context compression and mood chat. That text was Chinese, which made her answer in Chinese now and then. | `live-2d/js/`, `live-2d/plugins/` |
+| Time awareness uses your time zone | The Dawn and Dusk plugin (on by default) told her the time in China (`Asia/Shanghai`). It now uses your computer's time zone unless you set one. | `live-2d/plugins/community/dawn-dusk-line/` |
 
 Each change is its own commit, and each commit message explains the details.
 
@@ -203,7 +205,7 @@ The fork's changes have tests. The JavaScript tests use Node's built-in test run
 
 ```bat
 cd live-2d
-node --test js/ai/tool-approval.test.js js/ai/tool-executor.test.js js/services/tool-approval-dialog.test.js js/ai/mcp-result.test.js js/ai/mcp-stdio-transport.test.js plugins/built-in/code-executor/tests/code-executor.test.js plugins/built-in/pc-control/tests/pc-control.test.js
+node --test js/ai/tool-approval.test.js js/ai/tool-executor.test.js js/services/tool-approval-dialog.test.js js/ai/mcp-result.test.js js/ai/mcp-stdio-transport.test.js js/ai/reasoning-request.test.js js/live/bilibili-live.test.js plugins/built-in/code-executor/tests/code-executor.test.js plugins/built-in/memos/tests/backend-embedding-sync.test.js plugins/built-in/pc-control/tests/pc-control.test.js
 ```
 
 The merge driver's tests run real git merges in temporary folders. Run them from the repository folder:
@@ -229,16 +231,24 @@ The changes were built and tested on Linux, not on a Windows PC.
 - **Tested for the English UI:** the WebUI's tabs and the Electron control panel were rendered in Chromium and checked for
   leftover Chinese. The pet window's text was checked in the code, not on screen. The merge driver was tried on upstream's first commit after the fork (`025a85e`, a control
   panel update): a plain merge stops with 6 conflicts, the driver merges it cleanly and lists 9 new Chinese lines.
+- **Tested for the English prompts:** all 57 JavaScript tests pass, a scan finds no Chinese left in the text the app and
+  plugins send to the LLM (only data such as file names and the emotion tags), and the main plugins were run with a fake
+  app context. A long conversation with a real LLM was not tested.
 - **Not tested:** the full Electron app on Windows, the native approval dialog on screen, Windows-MCP itself (it needs Windows),
   and the real SenseVoice model weights (the build sandbox could not download them).
   If something breaks on the first run, check `live-2d/runtime.log` and the logs on the **Launch** tab.
 
 ## Known limits
 
-- Some text is still Chinese: the prompts that the app sends to the LLM (for example for the diary, mood chat and
-  context compression), messages that plugins log themselves, the ASR and TTS service consoles, the WebUI's older
-  **Classic layout** page (it has upstream's partial English, use its language switch), the Electron installer
-  (`electron-installer/`) and the upstream docs. The Chinese prompts can make her answer in Chinese now and then.
+- Some text is still Chinese: the ASR and TTS service consoles, the WebUI's older **Classic layout** page (it has
+  upstream's partial English, use its language switch), the Electron installer (`electron-installer/`), the upstream docs,
+  and debug output that only shows in the developer console.
+- Some Chinese is data that the app reads, so it stays: the emotion tags (see [Her personality and voice](#her-personality-and-voice)),
+  the file and folder names in `AI记录室` (her memory files), and the format of the chat log `AI记录室/记忆库.txt`,
+  which the diary, mood chat and AI journal read. When she writes a motion in brackets, like `（挥手）`, the app spots it
+  by its Chinese words (and "wink"), so most English ones like `(waves)` do nothing.
+- The Dawn and Dusk plugin knows Chinese public holidays and make-up workdays if you run `npm install` in its folder.
+  Outside China, set its **Holiday region code** to something other than `CN`, so it only tells weekends from workdays.
 - The Live2D model folders are called `肥牛` and `老肥牛`. Those are folder names, so the WebUI shows them as they are.
 - The BERT "smart screenshot" classifier (`3.bert.bat`, off by default) comes from the Chinese upstream (its labels are Chinese) and probably works poorly on English. Leave it off.
 - The local ASR and BERT servers listen on all network interfaces (`0.0.0.0`), as they do upstream.
