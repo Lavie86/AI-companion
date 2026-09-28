@@ -92,7 +92,7 @@ class TTSRequestHandler {
                 })
             });
 
-            if (!response.ok) throw new Error(`翻译API错误: ${response.status}`);
+            if (!response.ok) throw new Error(`Translation API error: ${response.status}`);
 
             const data = await response.json();
             return data.choices[0].message.content.trim();
@@ -155,7 +155,7 @@ class TTSRequestHandler {
                 });
 
                 if (!response.ok) {
-                    await this.handleTTSError(response, '云端TTS');
+                    await this.handleTTSError(response, 'Cloud TTS');
                 }
                 return await response.blob();
             } else {
@@ -178,7 +178,7 @@ class TTSRequestHandler {
                 });
 
                 if (!response.ok) {
-                    await this.handleTTSError(response, this.useGateway ? '云端肥牛网关TTS' : '本地TTS');
+                    await this.handleTTSError(response, this.useGateway ? 'Feiniu cloud gateway TTS' : 'Local TTS');
                 }
                 return await response.blob();
             }
@@ -301,7 +301,7 @@ class TTSRequestHandler {
         try {
             await this._ensureVolcConnection();
         } catch (err) {
-            logToTerminal('error', `字节TTS连接失败: ${err.message}`);
+            logToTerminal('error', `ByteDance TTS connection failed: ${err.message}`);
             return null;
         }
 
@@ -362,7 +362,7 @@ class TTSRequestHandler {
 
         } catch (err) {
             if (!abortSignal?.aborted) {
-                logToTerminal('error', `字节TTS合成失败: ${err.message}`);
+                logToTerminal('error', `ByteDance TTS synthesis failed: ${err.message}`);
             }
             // 连接可能已损坏，清除让下次重连
             this._closeVolcConnection();
@@ -449,7 +449,7 @@ class TTSRequestHandler {
                     settled = true;
                     cleanup();
                     ws.close();
-                    const errMsg = `阿里云TTS失败: ${JSON.stringify(msg)}`;
+                    const errMsg = `Alibaba Cloud TTS failed: ${JSON.stringify(msg)}`;
                     logToTerminal('error', errMsg);
                     reject(new Error(errMsg));
                 }
@@ -459,7 +459,7 @@ class TTSRequestHandler {
                 if (!settled) {
                     settled = true;
                     cleanup();
-                    logToTerminal('error', `阿里云TTS WebSocket错误: ${err.message}`);
+                    logToTerminal('error', `Alibaba Cloud TTS WebSocket error: ${err.message}`);
                     reject(err);
                 }
             });
@@ -496,31 +496,31 @@ class TTSRequestHandler {
                 errorDetail = errorBody;
             }
         } catch (e) {
-            errorDetail = "无法读取错误详情";
+            errorDetail = "Could not read the error details";
         }
 
         let errorMessage = "";
         switch (response.status) {
             case 401:
-                errorMessage = `【${serviceName}】API密钥验证失败，请检查你的API密钥是否正确`;
+                errorMessage = `[${serviceName}] API key rejected. Check that your API key is correct`;
                 break;
             case 403:
-                errorMessage = `【${serviceName}】API访问被禁止，你的账号可能被限制或额度已用完`;
+                errorMessage = `[${serviceName}] API access denied. Your account may be restricted or out of credit`;
                 break;
             case 429:
-                errorMessage = `【${serviceName}】请求过于频繁，超出API限制或额度已用完`;
+                errorMessage = `[${serviceName}] Too many requests. You hit the API rate limit or ran out of credit`;
                 break;
             case 500:
             case 502:
             case 503:
             case 504:
-                errorMessage = `【${serviceName}】服务器错误，AI服务当前不可用`;
+                errorMessage = `[${serviceName}] Server error. The AI service is unavailable right now`;
                 break;
             default:
-                errorMessage = `【${serviceName}】API错误: ${response.status} ${response.statusText}`;
+                errorMessage = `[${serviceName}] API error: ${response.status} ${response.statusText}`;
         }
 
-        const fullError = `${errorMessage}\n详细信息: ${errorDetail}`;
+        const fullError = `${errorMessage}\nDetails: ${errorDetail}`;
         logToTerminal('error', fullError);
         throw new Error(errorMessage);
     }

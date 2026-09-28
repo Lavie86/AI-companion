@@ -191,7 +191,7 @@ class EmotionEngine {
             // sidecar 可能落后于模型目录（之后新增/删除过文件），同样按目录补齐，保证控制面板发来的 表情N/动作N 都能找到
             this.motionConfig = mergeActionConfig(this.currentCharacter, this.motionConfig).config;
             this.expressionConfig = mergeExpressionConfig(this.currentCharacter, this.expressionConfig).config;
-            logToTerminal('info', `[EmotionEngine] 使用 per-model 配置: ${this._sidecarPath}`);
+            logToTerminal('info', `[EmotionEngine] Using the per-model config: ${this._sidecarPath}`);
             return;
         }
 
@@ -208,7 +208,7 @@ class EmotionEngine {
 
         const motionCount = Object.values(this.motionConfig).flat().length;
         const exprCount = Object.values(this.expressionConfig).flat().length;
-        logToTerminal('info', `[EmotionEngine] 角色 "${this.currentCharacter}" 配置加载完成（legacy），动作文件 ${motionCount} 个 / 表情文件 ${exprCount} 个`);
+        logToTerminal('info', `[EmotionEngine] Character "${this.currentCharacter}" config loaded (legacy): ${motionCount} motion files / ${exprCount} expression files`);
     }
 
     async reloadConfig() {
@@ -242,7 +242,7 @@ class EmotionEngine {
         try {
             return global.auDriver?.setEmotionEngine?.(this) === true;
         } catch (error) {
-            logToTerminal('warn', `[EmotionEngine] 配置 AU 表情驱动失败: ${error?.stack || error?.message || error}`);
+            logToTerminal('warn', `[EmotionEngine] Failed to set up the AU expression driver: ${error?.stack || error?.message || error}`);
             return false;
         }
     }

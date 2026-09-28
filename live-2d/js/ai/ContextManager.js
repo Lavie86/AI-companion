@@ -24,7 +24,7 @@ class ContextManager {
 
     // 设置最大上下文消息数
     setMaxContextMessages(count) {
-        if (count < 1) throw new Error('最大消息数不能小于1');
+        if (count < 1) throw new Error('Max message count cannot be less than 1');
         this.maxContextMessages = count;
         this.voiceChat.maxContextMessages = count;
         if (this.enableContextLimit) {

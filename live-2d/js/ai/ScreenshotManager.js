@@ -39,7 +39,7 @@ class ScreenshotManager {
             const result = await this.callBertClassifier(text);
             if (result) {
                 const needVision = result["Vision"] === "是";
-                if (needVision) logToTerminal('info', '需要截图');
+                if (needVision) logToTerminal('info', 'Screenshot needed');
                 return needVision;
             }
             return false;
@@ -78,7 +78,7 @@ class ScreenshotManager {
             const data = await response.json();
             return data;
         } catch (error) {
-            logToTerminal('error', `BERT分类错误: ${error.message}`);
+            logToTerminal('error', `BERT classification error: ${error.message}`);
             console.error('BERT分类错误:', error);
             return null;
         }
@@ -123,32 +123,32 @@ class ScreenshotManager {
                 errorDetail = errorBody;
             }
         } catch (e) {
-            errorDetail = "无法读取错误详情";
+            errorDetail = "Could not read the error details";
         }
 
-        const serviceName = this.bertApiKey ? '云端肥牛网关BERT' : '本地BERT';
+        const serviceName = this.bertApiKey ? 'Feiniu cloud gateway BERT' : 'Local BERT';
         let errorMessage = "";
         switch (response.status) {
             case 401:
-                errorMessage = `【${serviceName}】API密钥验证失败，请检查你的API密钥是否正确`;
+                errorMessage = `[${serviceName}] API key rejected. Check that your API key is correct`;
                 break;
             case 403:
-                errorMessage = `【${serviceName}】API访问被禁止，你的账号可能被限制或额度已用完`;
+                errorMessage = `[${serviceName}] API access denied. Your account may be restricted or out of credit`;
                 break;
             case 429:
-                errorMessage = `【${serviceName}】请求过于频繁，超出API限制或额度已用完`;
+                errorMessage = `[${serviceName}] Too many requests. You hit the API rate limit or ran out of credit`;
                 break;
             case 500:
             case 502:
             case 503:
             case 504:
-                errorMessage = `【${serviceName}】服务器错误，AI服务当前不可用`;
+                errorMessage = `[${serviceName}] Server error. The AI service is unavailable right now`;
                 break;
             default:
-                errorMessage = `【${serviceName}】API错误: ${response.status} ${response.statusText}`;
+                errorMessage = `[${serviceName}] API error: ${response.status} ${response.statusText}`;
         }
 
-        const fullError = `${errorMessage}\n详细信息: ${errorDetail}`;
+        const fullError = `${errorMessage}\nDetails: ${errorDetail}`;
         logToTerminal('error', fullError);
         console.error(errorMessage);
     }

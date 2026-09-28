@@ -47,7 +47,7 @@ class AppInitializer {
         const baiduASREnabled = config.cloud?.baidu_asr?.enabled === true;
         const siliconflowASREnabled = config.cloud?.siliconflow_asr?.enabled === true;
         this.asrEnabled = localASREnabled || baiduASREnabled || siliconflowASREnabled;
-        this.INTRO_TEXT = config.ui.intro_text || "你好，我叫fake neuro。";
+        this.INTRO_TEXT = config.ui.intro_text || "Hi, I'm Fake Neuro.";
     }
 
     // 主初始化流程
@@ -105,9 +105,9 @@ class AppInitializer {
             };
         } catch (error) {
             console.error("应用初始化错误:", error);
-            logToTerminal('error', `应用初始化错误: ${error.message}`);
+            logToTerminal('error', `App startup error: ${error.message}`);
             if (error.stack) {
-                logToTerminal('error', `错误堆栈: ${error.stack}`);
+                logToTerminal('error', `Stack trace: ${error.stack}`);
             }
             throw error;
         }
@@ -120,7 +120,7 @@ class AppInitializer {
             global.pluginManager = this.pluginManager;
             await this.pluginManager.loadAll();
         } catch (error) {
-            logToTerminal('error', `❌ 插件系统初始化失败: ${error.message}`);
+            logToTerminal('error', `❌ Plugin system failed to start: ${error.message}`);
             this.pluginManager = null;
         }
     }
@@ -135,7 +135,7 @@ class AppInitializer {
             global.mcpManager = this.mcpManager;
             // logToTerminal('info', `✅ MCPManager创建成功，启用状态: ${this.mcpManager.isEnabled}`);
         } catch (error) {
-            logToTerminal('error', `❌ MCPManager创建失败: ${error.message}`);
+            logToTerminal('error', `❌ MCPManager could not be created: ${error.message}`);
             console.error('MCPManager创建失败:', error);
             this.mcpManager = null;
         }
@@ -155,13 +155,13 @@ class AppInitializer {
                 const mcpEndTime = Date.now();
 
                 console.log(`✅ MCP系统初始化完成，耗时: ${mcpEndTime - mcpStartTime}ms`);
-                logToTerminal('info', `✅ MCP系统初始化完成，耗时: ${mcpEndTime - mcpStartTime}ms`);
+                logToTerminal('info', `✅ MCP system ready, took: ${mcpEndTime - mcpStartTime}ms`);
 
                 const mcpStats = this.mcpManager.getStats();
                 console.log(`🔧 MCP状态: ${mcpStats.servers}个服务器, ${mcpStats.tools}个工具`);
-                logToTerminal('info', `🔧 MCP状态: ${mcpStats.servers}个服务器, ${mcpStats.tools}个工具`);
+                logToTerminal('info', `🔧 MCP status: ${mcpStats.servers} servers, ${mcpStats.tools} tools`);
             } catch (error) {
-                logToTerminal('error', `❌ MCP初始化失败: ${error.message}`);
+                logToTerminal('error', `❌ MCP failed to start: ${error.message}`);
                 console.error('MCP初始化失败:', error);
             }
         }
@@ -229,7 +229,7 @@ class AppInitializer {
         // 如果ASR被禁用，跳过ASR相关的初始化
         if (!this.asrEnabled) {
             console.log('ASR已禁用，跳过语音识别初始化');
-            logToTerminal('info', 'ASR已禁用，跳过语音识别初始化');
+            logToTerminal('info', 'ASR is off, skipping speech recognition setup');
 
             // VoiceChatFacade已经在内部处理ASR禁用的情况，无需额外修改
         }
@@ -278,7 +278,7 @@ class AppInitializer {
             }
         } catch (error) {
             console.error('工具管理器初始化失败:', error);
-            logToTerminal('error', `工具管理器初始化失败: ${error.message}`);
+            logToTerminal('error', `Tool manager failed to start: ${error.message}`);
         }
     }
 
@@ -330,7 +330,7 @@ class AppInitializer {
         setTimeout(() => {
             if (this.pluginManager) {
                 this.pluginManager.startAll().catch(err => {
-                    logToTerminal('error', `❌ 插件 startAll 失败: ${err.message}`);
+                    logToTerminal('error', `❌ Plugin startAll failed: ${err.message}`);
                 });
 
                 // 启动热加载文件监听

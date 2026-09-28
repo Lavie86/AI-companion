@@ -31,7 +31,7 @@ class ContextCompressor {
 
         if (this.enabled) {
             console.log('✅ 上下文压缩已启用');
-            logToTerminal('info', `✅ 上下文压缩已启用 - 触发阈值: ${this.triggerThreshold}条消息, 压缩至: ${this.compressTo}条`);
+            logToTerminal('info', `✅ Context compression on - trigger at: ${this.triggerThreshold} messages, compress to: ${this.compressTo} messages`);
         }
     }
 
@@ -61,12 +61,12 @@ class ContextCompressor {
         }
 
         console.log(`🔔 触发上下文压缩 - 当前消息数: ${messageCount}, 阈值: ${this.triggerThreshold}`);
-        logToTerminal('info', `🔔 触发上下文压缩 - 当前 ${messageCount} 条消息`);
+        logToTerminal('info', `🔔 Compressing context - currently ${messageCount} messages`);
 
         // 异步执行压缩，使用 .catch() 防止未捕获异常
         this.performCompressionAsync().catch(error => {
             console.error('❌ 异步上下文压缩失败:', error);
-            logToTerminal('error', `❌ 异步上下文压缩失败: ${error.message}`);
+            logToTerminal('error', `❌ Background context compression failed: ${error.message}`);
         });
     }
 
@@ -149,11 +149,11 @@ class ContextCompressor {
 
             console.log(`✅ 上下文压缩完成 - 用时: ${duration}ms`);
             console.log(`📊 压缩前: ${totalMessages}条 → 压缩后: ${this.voiceChat.messages.length}条`);
-            logToTerminal('info', `✅ 上下文压缩完成 - ${totalMessages}条 → ${this.voiceChat.messages.length}条 (${duration}ms)`);
+            logToTerminal('info', `✅ Context compression done - ${totalMessages} messages → ${this.voiceChat.messages.length} messages (${duration}ms)`);
 
         } catch (error) {
             console.error('❌ 压缩执行失败:', error);
-            logToTerminal('error', `❌ 压缩执行失败: ${error.message}`);
+            logToTerminal('error', `❌ Compression failed: ${error.message}`);
             throw error;
         } finally {
             this.isCompressing = false;
@@ -221,7 +221,7 @@ ${conversationText}
             });
 
             if (!response.ok) {
-                throw new Error(`LLM API请求失败: ${response.status}`);
+                throw new Error(`LLM API request failed: ${response.status}`);
             }
 
             const data = await response.json();
@@ -260,7 +260,7 @@ ${conversationText}
      */
     async manualCompress() {
         console.log('🔧 手动触发上下文压缩');
-        logToTerminal('info', '🔧 手动触发上下文压缩');
+        logToTerminal('info', '🔧 Manual context compression');
 
         await this.performCompressionAsync();
     }

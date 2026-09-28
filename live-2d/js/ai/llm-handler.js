@@ -62,7 +62,7 @@ class LLMHandler {
             ? LLMClient.fromProviderConfig(resolvedLlmProvider, retryCfg)
             : new LLMClient(config);
         if (resolvedLlmProvider) {
-            logToTerminal('info', `✅ 对话模型: ${resolvedLlmProvider.model}（提供商: ${resolvedLlmProvider.name || resolvedLlmProvider.id}）`);
+            logToTerminal('info', `✅ Chat model: ${resolvedLlmProvider.model} (provider: ${resolvedLlmProvider.name || resolvedLlmProvider.id})`);
         }
 
         // 保底模型：主模型失败/空回复时再试一次；与主模型相同则跳过
@@ -79,9 +79,9 @@ class LLMHandler {
                 resolvedFallbackProvider.model === resolvedLlmProvider.model;
             if (resolvedFallbackProvider && !sameAsPrimary) {
                 fallbackClient = LLMClient.fromProviderConfig(resolvedFallbackProvider, retryCfg);
-                logToTerminal('info', `✅ 保底模型: ${resolvedFallbackProvider.model}（提供商: ${resolvedFallbackProvider.name || resolvedFallbackProvider.id}）`);
+                logToTerminal('info', `✅ Fallback model: ${resolvedFallbackProvider.model} (provider: ${resolvedFallbackProvider.name || resolvedFallbackProvider.id})`);
             } else if (sameAsPrimary) {
-                logToTerminal('warn', '⚠️ 保底模型与主模型相同，已跳过保底模型配置');
+                logToTerminal('warn', '⚠️ The fallback model is the same as the main model, so it was skipped');
             }
         }
         // 暴露给返回的闭包使用（主模型完全失败时的最后一道兜底）
@@ -97,7 +97,7 @@ class LLMHandler {
             if (resolvedVisionProvider) {
                 visionClient = LLMClient.fromProviderConfig(resolvedVisionProvider, retryCfg);
                 console.log('✅ 视觉模型已启用:', resolvedVisionProvider.model);
-                logToTerminal('info', `✅ 视觉模型已启用: ${resolvedVisionProvider.model}（提供商: ${resolvedVisionProvider.name || resolvedVisionProvider.id}）`);
+                logToTerminal('info', `✅ Vision model on: ${resolvedVisionProvider.model} (provider: ${resolvedVisionProvider.name || resolvedVisionProvider.id})`);
             } else if (config.vision.vision_model) {
                 // 回退：旧式 vision.vision_model 三格
                 const visionConfig = {
@@ -109,7 +109,7 @@ class LLMHandler {
                 };
                 visionClient = new LLMClient(visionConfig);
                 console.log('✅ 视觉模型已启用:', config.vision.vision_model.model);
-                logToTerminal('info', `✅ 视觉模型已启用: ${config.vision.vision_model.model}`);
+                logToTerminal('info', `✅ Vision model on: ${config.vision.vision_model.model}`);
             }
         }
 
@@ -167,7 +167,7 @@ class LLMHandler {
                 // 检查是否正在播放TTS，如果是则先中断（仅第一次）
                 if (isFirstAttempt && appState.isPlayingTTS()) {
                     console.log('检测到TTS正在播放，执行打断操作');
-                    logToTerminal('info', '检测到TTS正在播放，执行打断操作');
+                    logToTerminal('info', 'TTS is playing, interrupting it');
 
                     // 发送中断信号
                     if (ttsProcessor) {
@@ -206,7 +206,7 @@ class LLMHandler {
                     if (needScreenshot) {
                         try {
                             console.log("需要截图");
-                            logToTerminal('info', "需要截图");
+                            logToTerminal('info', "Screenshot needed");
                             screenshotBase64 = await voiceChat.takeScreenshotBase64();
                             const lastUserMessage = [...voiceChat.messages].reverse().find(message => message.role === 'user');
                             if (lastUserMessage) {
@@ -218,8 +218,8 @@ class LLMHandler {
                             }
                         } catch (error) {
                             console.error("截图处理失败:", error);
-                            logToTerminal('error', `截图处理失败: ${error.message}`);
-                            throw new Error("截图功能出错，无法处理视觉内容");
+                            logToTerminal('error', `Screenshot processing failed: ${error.message}`);
+                            throw new Error("Screenshot failed, so the image could not be processed");
                         }
                     }
                 }
@@ -239,7 +239,7 @@ class LLMHandler {
                         return !screenshotKeywords.some(kw => name.includes(kw));
                     });
                     if (allTools.length < before) {
-                        logToTerminal('info', `📷 当前模型不支持图片，已从工具列表中移除截图工具`);
+                        logToTerminal('info', `📷 The current model does not support images, so the screenshot tools were removed from the tool list`);
                     }
                 }
 
@@ -260,14 +260,14 @@ class LLMHandler {
 
                 if (useVisionModelForFirstRound) {
                     console.log('📸 检测到用户截图且启用了独立视觉模型');
-                    logToTerminal('info', '📸 使用独立视觉模型处理用户截图');
+                    logToTerminal('info', '📸 Using the separate vision model for the user screenshot');
                 }
 
                 while (iteration < maxIterations) {
                     // 🔥 关键检查：在每轮循环开始时检查是否被打断
                     if (appState.isInterrupted()) {
                         console.log('⏸️ 检测到用户打断，立即停止工具调用链');
-                        logToolAction('warn', '⏸️ 工具调用链被用户打断');
+                        logToolAction('warn', '⏸️ The user interrupted the tool call chain');
 
                         // 清除中断标志，为下次对话做准备
                         appState.clearInterrupted();
@@ -323,7 +323,7 @@ class LLMHandler {
                     let result;
                     if (iteration === 0 && useVisionModelForFirstRound) {
                         console.log('🎨 使用视觉模型进行图像理解...');
-                        logToTerminal('info', '🎨 调用视觉模型API进行图像分析');
+                        logToTerminal('info', '🎨 Calling the vision model API to analyze the image');
                         // 视觉模型不传工具列表，纯粹用于图像理解，走流式降低延迟
                         _streamBuf = '';
                         ttsProcessor.reset();
@@ -379,7 +379,7 @@ class LLMHandler {
                                 } catch (e) {
                                     args = call.function.arguments;
                                 }
-                                return `AI调用了：${toolName} 工具 输入参数：${args}`;
+                                return `AI called ${toolName} with input: ${args}`;
                             }).join('\n');
                         };
 
@@ -390,7 +390,7 @@ class LLMHandler {
                         const filteredIntermediateContent = filterThinkingContent(result.content);
                         if (filteredIntermediateContent && filteredIntermediateContent.trim()) {
                             console.log(`💬 AI中间过程: ${filteredIntermediateContent}`);
-                            logToTerminal('info', `💬 AI中间过程: ${filteredIntermediateContent}`);
+                            logToTerminal('info', `💬 AI interim reply: ${filteredIntermediateContent}`);
 
                             // 🔥 中间过程播放TTS（工具调用的中间内容）
                             if (iteration === 0) {
@@ -421,7 +421,7 @@ class LLMHandler {
                         // 🔥 在执行工具前检查是否已被打断
                         if (appState.isInterrupted()) {
                             console.log('⏸️ 检测到打断，跳过工具执行');
-                            logToolAction('warn', '⏸️ 工具调用被打断，停止执行');
+                            logToolAction('warn', '⏸️ Tool call interrupted, stopping');
 
                             // 🔥 关键修复：不添加带有 tool_calls 的 assistant 消息到历史
                             // 因为工具不会执行，添加了会导致下次 API 调用时缺少 tool 响应
@@ -444,7 +444,7 @@ class LLMHandler {
                         // 🔥 工具执行后再次检查是否被打断
                         if (appState.isInterrupted()) {
                             console.log('⏸️ 工具执行完成后检测到打断，停止后续处理');
-                            logToolAction('warn', '⏸️ 停止后续工具调用');
+                            logToolAction('warn', '⏸️ Stopping the remaining tool calls');
 
                             // 🔥 关键修复：移除刚才添加的 assistant 消息，因为对话被打断了
                             // 保持消息历史的完整性，避免下次 API 调用时出错
@@ -465,7 +465,7 @@ class LLMHandler {
                             // 🔥 特殊处理：检测是否是截图工具返回
                             if (typeof toolResult === 'object' && toolResult._hasScreenshot) {
                                 console.log('🎯 检测到截图工具，开始特殊处理流程');
-                                logToolAction('info', '📸 AI调用了截图工具，准备图像分析');
+                                logToolAction('info', '📸 AI called the screenshot tool, preparing image analysis');
 
                                 const { screenshotData, results } = toolResult;
 
@@ -522,7 +522,7 @@ class LLMHandler {
                                 });
 
                                 console.log('📸 截图已添加到消息，立即调用AI分析图片');
-                                logToolAction('info', '📸 立即调用AI分析截图内容');
+                                logToolAction('info', '📸 Asking the AI to analyze the screenshot now');
 
                                 // 🔥 关键：立即再次调用LLM API分析图片
                                 // 🔍 AI调用截图工具时，判断是否使用独立视觉模型
@@ -530,7 +530,7 @@ class LLMHandler {
                                 if (visionClient) {
                                     // 如果配置了独立视觉模型，用它来分析AI截的图
                                     console.log('🎨 AI调用截图工具：使用独立视觉模型分析');
-                                    logToTerminal('info', '🎨 使用独立视觉模型分析AI截图');
+                                    logToTerminal('info', '🎨 Using the separate vision model to analyze the AI screenshot');
                                     // 🔥 使用视觉模型，仍然传递工具列表！
                                     // 这样AI分析完图片后还能继续调用工具
                                     visionResult = await visionClient.chatCompletion(voiceChat.messages, allTools);
@@ -542,7 +542,7 @@ class LLMHandler {
                                 }
 
                                 console.log('✅ AI图片分析完成:', visionResult.content);
-                                logToolAction('info', `✅ AI图片分析结果: ${visionResult.content}`);
+                                logToolAction('info', `✅ AI image analysis result: ${visionResult.content}`);
 
                                 // 🔥 检查AI是否还想继续调用工具
                                 if (visionResult.tool_calls && visionResult.tool_calls.length > 0) {
@@ -555,7 +555,7 @@ class LLMHandler {
                                     const filteredVisionContent = filterThinkingContent(visionResult.content);
                                     if (filteredVisionContent && filteredVisionContent.trim()) {
                                         console.log(`💬 AI图片分析后的中间过程: ${filteredVisionContent}`);
-                                        logToTerminal('info', `💬 AI图片分析后的中间过程: ${filteredVisionContent}`);
+                                        logToTerminal('info', `💬 AI interim reply after image analysis: ${filteredVisionContent}`);
 
                                         // 播放TTS并等待真正的播放完成(监听TTS_END事件)
                                         ttsProcessor.reset();
@@ -583,7 +583,7 @@ class LLMHandler {
                                     // 🔥 在执行工具前检查是否已被打断
                                     if (appState.isInterrupted()) {
                                         console.log('⏸️ 检测到打断，跳过工具执行');
-                                        logToolAction('warn', '⏸️ 工具调用被打断，停止执行');
+                                        logToolAction('warn', '⏸️ Tool call interrupted, stopping');
                                         appState.clearInterrupted();
                                         throw new Error('USER_INTERRUPTED');
                                     }
@@ -599,7 +599,7 @@ class LLMHandler {
                                             } catch (e) {
                                                 args = call.function.arguments;
                                             }
-                                            return `AI调用了：${toolName} 工具 输入参数：${args}`;
+                                            return `AI called ${toolName} with input: ${args}`;
                                         }).join('\n');
                                     };
                                     logToolAction('info', formatToolCalls(visionResult.tool_calls));
@@ -706,7 +706,7 @@ class LLMHandler {
                             }
 
                             // 普通工具调用结果处理
-                            logToolAction('info', `✅ 工具调用结果: ${JSON.stringify(toolResult)}`);
+                            logToolAction('info', `✅ Tool call result: ${JSON.stringify(toolResult)}`);
 
                             // 处理多工具调用结果
                             if (Array.isArray(toolResult)) {
@@ -737,8 +737,8 @@ class LLMHandler {
 
                         } else {
                             console.error("工具调用失败");
-                            logToolAction('error', "❌ 工具调用失败");
-                            throw new Error("工具调用失败，无法完成功能扩展");
+                            logToolAction('error', "❌ Tool call failed");
+                            throw new Error("Tool call failed, so the action could not be completed");
                         }
                     }
 
@@ -757,25 +757,25 @@ class LLMHandler {
 
                     // 既没有工具调用也没有内容，部分模型在工具调用后会返回空响应
                     consecutiveEmptyResponses++;
-                    logToTerminal('warn', `⚠️ LLM返回了空响应 (连续第 ${consecutiveEmptyResponses} 次)`);
+                    logToTerminal('warn', `⚠️ LLM returned an empty response (${consecutiveEmptyResponses} in a row)`);
 
                     // 🔥 检查是否因为图片导致的空响应
                     if (screenshotBase64 || useVisionModelForFirstRound) {
-                        logToTerminal('warn', '⚠️ 检测到有截图但返回空响应，可能是模型不支持视觉');
-                        throw new Error('模型不支持图片：LLM返回了空响应，可能是因为模型不支持 image_url 参数');
+                        logToTerminal('warn', '⚠️ Got an empty response to a screenshot. The model may not support vision');
+                        throw new Error('The model does not support images: the LLM returned an empty response, maybe because it does not accept the image_url parameter');
                     }
 
                     // 第一次空响应就催模型回复（只催一次，避免堆积催促消息）
                     if (consecutiveEmptyResponses === 1) {
-                        logToTerminal('warn', '⚠️ 空响应，添加提示消息催促模型回复');
+                        logToTerminal('warn', '⚠️ Empty response, adding a message that asks the model to reply');
                         voiceChat.messages.push({
                             role: 'user',
                             content: '请根据工具执行结果，回复用户。'
                         });
                     } else {
                         // 连续多次空响应，模型无法恢复，直接退出
-                        logToTerminal('error', `❌ 连续 ${consecutiveEmptyResponses} 次空响应，放弃等待`);
-                        finalResponseContent = '抱歉，我好像卡住了，请重新问我吧~';
+                        logToTerminal('error', `❌ Got ${consecutiveEmptyResponses} empty responses in a row, giving up`);
+                        finalResponseContent = 'Sorry, I think I got stuck. Please ask me again~';
                         break;
                     }
 
@@ -785,14 +785,14 @@ class LLMHandler {
 
                 // 检查是否达到最大轮数限制
                 if (iteration >= maxIterations) {
-                    logToTerminal('warn', `⚠️ 已达到最大工具调用次数限制 (${maxIterations} 轮)`);
+                    logToTerminal('warn', `⚠️ Reached the tool call limit (${maxIterations} rounds)`);
                     // 🔥 尝试获取最终回复 - 使用非流式
                     const lastResult = await llmClient.chatCompletion(voiceChat.messages, [], false);
 
                     if (lastResult.content) {
                         finalResponseContent = lastResult.content;
                     } else {
-                        finalResponseContent = "抱歉,任务太复杂了,我已经尽力了~";
+                        finalResponseContent = "Sorry, that task was too complex. I did my best~";
                     }
                     // 🔥 不在这里播放TTS，统一在最后播放
                 }
@@ -808,7 +808,7 @@ class LLMHandler {
 
                     // ===== 保存对话历史 =====
                     voiceChat.saveConversationHistory();
-                    logToTerminal('info', 'AI 已回复');
+                    logToTerminal('info', 'AI replied');
                     // MemOS 保存由 memos 插件的 onLLMResponse 钩子处理
 
                     // 🎙️ 播放最终回复的TTS（统一在这里播放，参考旧版本的设计）
@@ -844,7 +844,7 @@ class LLMHandler {
                             );
                             logToTerminal(
                                 'info',
-                                `[MotionDirector] director 模式等待首帧，最多 ${waitMs}ms`
+                                `[MotionDirector] director mode is waiting for the first frame, up to ${waitMs}ms`
                             );
                             await Promise.race([
                                 choreographyWork.firstFrameLoaded,
@@ -854,13 +854,13 @@ class LLMHandler {
                         choreographyWork.catch((error) => {
                             logToTerminal(
                                 'warn',
-                                `[MotionDirector] 编舞失败，继续播放 TTS: ${String(error && error.message || error).slice(0, 240)}`
+                                `[MotionDirector] Choreography failed, still playing TTS: ${String(error && error.message || error).slice(0, 240)}`
                             );
                         });
                     } else if (responseObj.text && responseObj.text.trim()) {
                         const skipReason = describeChoreographySkip(config);
                         if (skipReason) {
-                            logToTerminal('info', `[MotionDirector] 本轮跳过编舞: ${skipReason}`);
+                            logToTerminal('info', `[MotionDirector] Skipping choreography this turn: ${skipReason}`);
                         }
                     }
 
@@ -877,15 +877,15 @@ class LLMHandler {
                         ttsProcessor.processTextToSpeech(responseObj.text);
                     }
                 } else {
-                    logToTerminal('error', '❌ 未获取到有效的AI回复');
+                    logToTerminal('error', '❌ Got no valid AI reply');
 
                     // 🔥 检查是否因为图片导致的空回复
                     if (screenshotBase64 || useVisionModelForFirstRound) {
-                        logToTerminal('warn', '⚠️ 检测到有截图但未获取到回复，可能是模型不支持视觉');
-                        throw new Error('模型不支持图片：未获取到有效的AI回复，可能是因为模型不支持 image_url 参数');
+                        logToTerminal('warn', '⚠️ Got no reply to a screenshot. The model may not support vision');
+                        throw new Error('The model does not support images: got no valid AI reply, maybe because the model does not accept the image_url parameter');
                     }
 
-                    throw new Error("未获取到有效的AI回复");
+                    throw new Error("Got no valid AI reply");
                 }
 
                 if (voiceChat.enableContextLimit) {
@@ -895,7 +895,7 @@ class LLMHandler {
                     // 🔥 特殊处理：用户打断不是错误，静默退出
                     if (error.message === 'USER_INTERRUPTED') {
                         console.log('用户打断处理完成，静默退出');
-                        logToTerminal('info', '✅ 已响应用户打断');
+                        logToTerminal('info', '✅ Handled the user interruption');
                         motionDirector.cancel('user-interrupted');
                         try {
                             global.paramDirector?.cancel?.();
@@ -912,6 +912,7 @@ class LLMHandler {
                     const errorMsg = error.message.toLowerCase();
                     const isImageUnsupportedError = !hasRetriedWithoutImage && (
                         errorMsg.includes("do not support image") ||
+                        errorMsg.includes("does not support image") ||
                         errorMsg.includes("不支持图片") ||
                         errorMsg.includes("模型不支持图片") ||
                         errorMsg.includes("image param") ||
@@ -926,7 +927,7 @@ class LLMHandler {
                     if (isImageUnsupportedError) {
 
                         console.log('⚠️ 检测到模型不支持视觉，自动移除图片并重试');
-                        logToTerminal('info', '📷 截图已触发，但当前模型不支持图片，已自动过滤图片内容，以纯文本模式重试');
+                        logToTerminal('info', '📷 A screenshot was taken, but the current model does not support images. Removed the images and retrying as text only');
 
                         // 标记已经重试过，避免无限循环
                         hasRetriedWithoutImage = true;
@@ -942,16 +943,16 @@ class LLMHandler {
                         continue;
                     }
 
-                    logToTerminal('error', `LLM处理错误: ${error.message}`);
+                    logToTerminal('error', `LLM processing error: ${error.message}`);
                     if (error.stack) {
-                        logToTerminal('error', `错误堆栈: ${error.stack}`);
+                        logToTerminal('error', `Stack trace: ${error.stack}`);
                     }
 
                     // 保底模型最后兜底：主模型彻底失败且配置了不同的保底模型时，用保底再试一次
                     const fbClient = typeof getFallbackClient === 'function' ? getFallbackClient() : null;
                     if (fbClient) {
                         try {
-                            logToTerminal('info', '⚠️ 主模型失败，尝试保底模型');
+                            logToTerminal('info', '⚠️ The main model failed, trying the fallback model');
                             const fbResult = await fbClient.chatCompletion(voiceChat.messages, [], false);
                             const fbText = fbResult && fbResult.content;
                             if (fbText) {
@@ -961,44 +962,44 @@ class LLMHandler {
                                 break;
                             }
                         } catch (fbError) {
-                            logToTerminal('error', `保底模型也失败: ${fbError.message}`);
+                            logToTerminal('error', `The fallback model failed too: ${fbError.message}`);
                         }
                     }
 
-                    let errorMessage = "抱歉，出现了一个错误";
+                    let errorMessage = "Sorry, something went wrong";
 
-                    if (error.message.includes("API拒绝生成内容") || error.message.includes("安全过滤器") || error.message.includes("内容政策")) {
-                        errorMessage = "⚠️ API触发了安全过滤器，可能最近的对话包含敏感内容。建议重新开始对话或换个话题。";
-                    } else if (error.message.includes("API内容过滤")) {
-                        errorMessage = "⚠️ 内容被过滤，请避免敏感话题";
-                    } else if (error.message.includes("API密钥验证失败")) {
-                        errorMessage = "API密钥错误，请检查配置";
-                    } else if (error.message.includes("API访问被禁止")) {
-                        errorMessage = "API访问受限，请联系支持";
-                    } else if (error.message.includes("API接口未找到")) {
-                        errorMessage = "无效的API地址，请检查配置";
-                    } else if (error.message.includes("请求过于频繁")) {
-                        errorMessage = "请求频率超限，请稍后再试";
-                    } else if (error.message.includes("服务器错误")) {
-                        errorMessage = "AI服务不可用，请稍后再试";
-                    } else if (error.message.includes("截图功能出错")) {
-                        errorMessage = "截图失败，无法处理视觉内容";
-                    } else if (error.message.includes("工具调用失败")) {
-                        errorMessage = "功能扩展调用失败，请重试";
-                    } else if (error.message.includes("do not support image") || error.message.includes("不支持图片") || error.message.includes("image param")) {
-                        errorMessage = "⚠️ 你使用的是不支持视觉的LLM模型，刚刚触发了调用视觉功能，所以报错了！建议换成支持视觉的LLM模型或在config.json中配置独立的视觉模型！";
-                        logToTerminal('warn', '💡 提示：请在config.json中设置 vision.use_vision_model: true 并配置支持视觉的模型（如gemini-2.0-flash）');
+                    if (error.message.includes("API refused to generate content") || error.message.includes("安全过滤器") || error.message.includes("内容政策")) {
+                        errorMessage = "⚠️ API safety filter triggered. The recent conversation may contain sensitive content. Start a new conversation or change the topic.";
+                    } else if (error.message.includes("API content filter")) {
+                        errorMessage = "⚠️ The content was filtered. Please avoid sensitive topics";
+                    } else if (error.message.includes("API key rejected")) {
+                        errorMessage = "API key is wrong. Check your settings";
+                    } else if (error.message.includes("API access denied")) {
+                        errorMessage = "API access is restricted. Contact your API provider";
+                    } else if (error.message.includes("API endpoint not found")) {
+                        errorMessage = "Invalid API URL. Check your settings";
+                    } else if (error.message.includes("Too many requests")) {
+                        errorMessage = "Rate limit reached. Try again later";
+                    } else if (error.message.includes("Server error")) {
+                        errorMessage = "AI service unavailable. Try again later";
+                    } else if (error.message.includes("Screenshot failed")) {
+                        errorMessage = "Screenshot failed, so the image could not be processed";
+                    } else if (error.message.includes("Tool call failed")) {
+                        errorMessage = "A tool call failed. Please try again";
+                    } else if (error.message.includes("do not support image") || error.message.includes("does not support image") || error.message.includes("不支持图片") || error.message.includes("image param")) {
+                        errorMessage = "⚠️ Your LLM does not support vision, and something just needed vision, so it failed! Switch to an LLM that supports vision, or set up a separate vision model in config.json!";
+                        logToTerminal('warn', '💡 Tip: set vision.use_vision_model: true in config.json and add a model that supports vision (for example gemini-2.0-flash)');
                     } else if (error.name === "TypeError" && error.message.includes("fetch")) {
-                        errorMessage = "网络连接失败，请检查网络和API地址";
+                        errorMessage = "Network connection failed. Check your network and the API URL";
                     } else if (error.name === "SyntaxError") {
-                        errorMessage = "解析API响应出错，请重试";
+                        errorMessage = "Could not read the API response. Please try again";
                     } else {
                         const shortErrorMsg = error.message.substring(0, 100) +
                             (error.message.length > 100 ? "..." : "");
-                        errorMessage = `未知错误: ${shortErrorMsg}`;
+                        errorMessage = `Unknown error: ${shortErrorMsg}`;
                     }
 
-                    logToTerminal('error', `用户显示错误: ${errorMessage}`);
+                    logToTerminal('error', `Error shown to the user: ${errorMessage}`);
 
                     voiceChat.showSubtitle(errorMessage, 3000);
                     if (voiceChat.asrProcessor && asrEnabled) {

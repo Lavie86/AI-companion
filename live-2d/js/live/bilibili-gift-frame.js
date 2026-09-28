@@ -8,7 +8,7 @@ function giftFrameData(data, warn = () => {}) {
     const gift = pb.sub(top, 10);
     const giftName = pb.text(gift, 2);
     if (!gift || !giftName) {
-        if (data.pb !== undefined) warn('SEND_GIFT_V2 无法解析礼物信息');
+        if (data.pb !== undefined) warn('SEND_GIFT_V2 could not read the gift info');
         return data;
     }
     const sender = pb.sub(top, 15);

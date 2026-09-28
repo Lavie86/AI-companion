@@ -4,7 +4,7 @@
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <title>Live2D桌宠与语音聊天</title>
+    <title>Live2D desktop pet and voice chat</title>
 </head>
 <!DOCTYPE html>
 <html>
@@ -12,7 +12,7 @@
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <title>Live2D桌宠与语音聊天</title>
+    <title>Live2D desktop pet and voice chat</title>
 </head>
 
 <body>
@@ -26,32 +26,32 @@
         <div class="avatar-transition-spinner"></div>
     </div>
     <div id="subtitle-container">
-        <div id="subtitle-confirm-btn">确定</div>
+        <div id="subtitle-confirm-btn">OK</div>
         <p id="subtitle-text"></p>
     </div>
 
     <!-- VRM模型控制面板（展开式） -->
     <div id="model-controls">
         <div id="panel-buttons">
-            <div id="btn-toggle-gaze" class="ctrl-btn" title="视线追踪鼠标">👀</div>
-            <div id="btn-toggle-render" class="ctrl-btn" title="关闭VRM渲染（需VMC启用）">👁</div>
-            <div id="btn-toggle-vmc" class="ctrl-btn" title="VMC数据发送开关">📡</div>
-            <div id="btn-reset-position" class="ctrl-btn" title="重置相机视角">↺</div>
-            <div id="btn-click-through" class="ctrl-btn" title="鼠标穿透（模型不拦截鼠标）">🖱</div>
+            <div id="btn-toggle-gaze" class="ctrl-btn" title="Eyes follow the mouse">👀</div>
+            <div id="btn-toggle-render" class="ctrl-btn" title="Turn off VRM rendering (needs VMC on)">👁</div>
+            <div id="btn-toggle-vmc" class="ctrl-btn" title="VMC data sending on/off">📡</div>
+            <div id="btn-reset-position" class="ctrl-btn" title="Reset camera view">↺</div>
+            <div id="btn-click-through" class="ctrl-btn" title="Click-through (the model does not catch the mouse)">🖱</div>
         </div>
-        <div id="btn-toggle-panel" class="ctrl-btn" title="展开控制面板">⚙</div>
+        <div id="btn-toggle-panel" class="ctrl-btn" title="Show controls">⚙</div>
     </div>
 
     <div id="text-chat-container">
         <div id="chat-messages"></div>
         <div id="chat-input-container">
             <div class="chat-input-frame">
-                <div id="chat-input" contenteditable="true" role="textbox" aria-label="输入消息"></div>
-                <span class="chat-input-label">输入消息，回车发送</span>
+                <div id="chat-input" contenteditable="true" role="textbox" aria-label="Type a message"></div>
+                <span class="chat-input-label">Type a message, press Enter to send</span>
                 <span class="chat-input-topline"></span>
                 <span class="chat-input-underline"></span>
             </div>
-            <button id="chat-send-btn" type="button" hidden aria-hidden="true" tabindex="-1">发送</button>
+            <button id="chat-send-btn" type="button" hidden aria-hidden="true" tabindex="-1">Send</button>
         </div>
     </div>
 
@@ -71,10 +71,10 @@
     <!-- 快捷设置面板 -->
     <div id="quick-settings">
         <div id="quick-settings-items">
-            <div class="quick-item" id="btn-toggle-chat">💬 打字框</div>
-            <div class="quick-item" id="btn-toggle-mode">键盘V键录音</div>
+            <div class="quick-item" id="btn-toggle-chat">💬 Text box</div>
+            <div class="quick-item" id="btn-toggle-mode">Push-to-talk (V key)</div>
         </div>
-        <div id="quick-gear" title="快捷功能">⚙</div>
+        <div id="quick-gear" title="Quick menu">⚙</div>
     </div>
 
     <!-- 上游 PIXI 6 + pixi-live2d-display 运行时 -->

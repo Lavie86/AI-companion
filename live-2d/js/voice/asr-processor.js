@@ -93,7 +93,7 @@ class ASRProcessor {
         this.ws.onopen = async () => {
             console.log('VAD WebSocket已连接');
             if (this.config.cloud?.siliconflow_asr?.enabled === true) {
-                logToTerminal('info', '【SiliconFlow ASR】本地 VAD 已连接，等待说话');
+                logToTerminal('info', '[SiliconFlow ASR] Local VAD connected, waiting for speech');
             }
             this.retryCount = 0;
         };
@@ -128,7 +128,7 @@ class ASRProcessor {
         this.ws.onerror = (error) => {
             console.error('WebSocket错误:', error);
             if (this.config.cloud?.siliconflow_asr?.enabled === true) {
-                logToTerminal('error', `【SiliconFlow ASR】无法连接本地 VAD：${this.vadUrl}，请先启动 ASR 服务`);
+                logToTerminal('error', `[SiliconFlow ASR] Cannot connect to the local VAD: ${this.vadUrl}. Start the ASR service first`);
             }
         };
     }
@@ -371,12 +371,12 @@ class ASRProcessor {
         const gatewayConfig = this.config.api_gateway || {};
         const useGateway = gatewayConfig.use_gateway === true;
         let asrUrl;
-        let mode = '本地';
+        let mode = 'Local ';
 
         if (useGateway) {
             // 统一网关模式
             asrUrl = `${gatewayConfig.base_url}/asr/upload_audio`;
-            mode = '网关';
+            mode = 'Gateway ';
         } else {
             // 本地ASR
             asrUrl = this.asrUrl;
@@ -427,8 +427,8 @@ class ASRProcessor {
 
                 return recognizedText;
             } else {
-                const errorMsg = result.message || result.error || '未知错误';
-                logToTerminal('error', `【${mode}ASR】识别失败: ${errorMsg}`);
+                const errorMsg = result.message || result.error || 'Unknown error';
+                logToTerminal('error', `[${mode}ASR] recognition failed: ${errorMsg}`);
                 console.error('ASR失败:', errorMsg);
                 // 如果ASR失败，也要解锁ASR以便用户重试
                 this.asrLocked = false;
@@ -436,7 +436,7 @@ class ASRProcessor {
                 return null;
             }
         } catch (error) {
-            logToTerminal('error', `【${mode}ASR】处理录音失败: ${error.message}`);
+            logToTerminal('error', `[${mode}ASR] failed to process the recording: ${error.message}`);
             console.error('处理录音失败:', error);
             // 如果处理失败，也要解锁ASR以便用户重试
             this.asrLocked = false;
@@ -448,21 +448,21 @@ class ASRProcessor {
     async processSiliconFlowRecording(audioBlob) {
         try {
             const { ipcRenderer } = require('electron');
-            logToTerminal('info', '【SiliconFlow ASR】录音结束，正在提交识别');
+            logToTerminal('info', '[SiliconFlow ASR] Recording ended, sending it for recognition');
             const audioBytes = await audioBlob.arrayBuffer();
             const result = await ipcRenderer.invoke('siliconflow-asr-transcribe', audioBytes);
             if (!result?.success) {
-                throw new Error(result?.error || '识别请求失败');
+                throw new Error(result?.error || 'Recognition request failed');
             }
             const recognizedText = (result.text || '').trim();
             if (!recognizedText) {
-                throw new Error('接口未返回识别文本');
+                throw new Error('The API returned no text');
             }
             console.log('用户说:', recognizedText);
             if (this.onSpeechRecognized) this.onSpeechRecognized(recognizedText);
             return recognizedText;
         } catch (error) {
-            logToTerminal('error', `【SiliconFlow ASR】识别失败: ${error.message}`);
+            logToTerminal('error', `[SiliconFlow ASR] Recognition failed: ${error.message}`);
             console.error('SiliconFlow ASR 失败:', error);
             return null;
         } finally {
@@ -589,31 +589,31 @@ class ASRProcessor {
                 errorDetail = errorBody;
             }
         } catch (e) {
-            errorDetail = "无法读取错误详情";
+            errorDetail = "Could not read the error details";
         }
 
         let errorMessage = "";
         switch (response.status) {
             case 401:
-                errorMessage = `【${serviceName}ASR】API密钥验证失败，请检查你的API密钥是否正确`;
+                errorMessage = `[${serviceName}ASR] API key rejected. Check that your API key is correct`;
                 break;
             case 403:
-                errorMessage = `【${serviceName}ASR】API访问被禁止，你的账号可能被限制或额度已用完`;
+                errorMessage = `[${serviceName}ASR] API access denied. Your account may be restricted or out of credit`;
                 break;
             case 429:
-                errorMessage = `【${serviceName}ASR】请求过于频繁，超出API限制或额度已用完`;
+                errorMessage = `[${serviceName}ASR] Too many requests. You hit the API rate limit or ran out of credit`;
                 break;
             case 500:
             case 502:
             case 503:
             case 504:
-                errorMessage = `【${serviceName}ASR】服务器错误，AI服务当前不可用`;
+                errorMessage = `[${serviceName}ASR] Server error. The AI service is unavailable right now`;
                 break;
             default:
-                errorMessage = `【${serviceName}ASR】API错误: ${response.status} ${response.statusText}`;
+                errorMessage = `[${serviceName}ASR] API error: ${response.status} ${response.statusText}`;
         }
 
-        const fullError = `${errorMessage}\n详细信息: ${errorDetail}`;
+        const fullError = `${errorMessage}\nDetails: ${errorDetail}`;
         logToTerminal('error', fullError);
         console.error(errorMessage);
     }

@@ -128,7 +128,7 @@ class TTSFactory {
             };
 
             console.log('TTS已禁用，使用纯文本模式');
-            logToTerminal('info', 'TTS已禁用，使用纯文本模式');
+            logToTerminal('info', 'TTS is off, using text-only mode');
 
             return virtualTTS;
         }

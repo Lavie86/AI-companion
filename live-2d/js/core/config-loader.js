@@ -22,7 +22,7 @@ class ConfigLoader {
                 this.config = JSON.parse(configData);
             } catch (parseError) {
                 // JSON 解析失败，说明格式不对
-                throw new Error(`JSON格式错误: ${parseError.message}`);
+                throw new Error(`JSON format error: ${parseError.message}`);
             }
             
             console.log('配置文件加载成功');
@@ -65,7 +65,7 @@ class ConfigLoader {
         try {
             const configToSave = config || this.config;
             if (!configToSave) {
-                throw new Error('没有可保存的配置');
+                throw new Error('No config to save');
             }
             
             // 创建配置文件备份

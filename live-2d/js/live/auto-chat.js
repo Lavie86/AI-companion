@@ -70,7 +70,7 @@ class AutoChatModule {
        if (playingTTS || processingBarrage || processingUserInput) {
            console.log(`⏸️ 主动对话延迟 - TTS播放:${playingTTS}, 弹幕处理:${processingBarrage}, 用户输入:${processingUserInput}`);
            if (typeof logToTerminal === 'function') {
-               logToTerminal('warning', `⏸️ 主动对话延迟 - TTS:${playingTTS}, 弹幕:${processingBarrage}, 输入:${processingUserInput}`);
+               logToTerminal('warning', `⏸️ Proactive chat delayed - TTS:${playingTTS}, live chat:${processingBarrage}, input:${processingUserInput}`);
            }
            this.timeoutId = setTimeout(() => this.executeChat(), 5000);
            return;
@@ -79,7 +79,7 @@ class AutoChatModule {
        this.isProcessing = true;
        console.log('✅ 开始自动对话');
        if (typeof logToTerminal === 'function') {
-           logToTerminal('info', '🔧 开始自动对话执行');
+           logToTerminal('info', '🔧 Starting auto chat');
        }
 
        try {
@@ -115,7 +115,7 @@ class AutoChatModule {
        } catch (error) {
            console.error('自动对话错误:', error);
            if (typeof logToTerminal === 'function') {
-               logToTerminal('error', `❌ 自动对话执行失败: ${error.message}`);
+               logToTerminal('error', `❌ Auto chat failed: ${error.message}`);
            }
        } finally {
            this.isProcessing = false;

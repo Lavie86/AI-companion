@@ -83,7 +83,7 @@ class VRMInteractionController {
                 e.stopPropagation();
                 const isExpanded = panelButtons.classList.toggle('expanded');
                 toggleBtn.textContent = isExpanded ? '✕' : '⚙';
-                toggleBtn.title = isExpanded ? '收起面板' : '展开控制面板';
+                toggleBtn.title = isExpanded ? 'Hide controls' : 'Show controls';
             });
         }
 

@@ -314,7 +314,7 @@ class PluginContext {
             const raw = JSON.parse(fs.readFileSync(cfgPath, 'utf-8'));
             return this._resolveSchema(raw);
         } catch (e) {
-            this.log('warn', `plugin_config.json 读取失败: ${e.message}`);
+            this.log('warn', `plugin_config.json could not be read: ${e.message}`);
             return {};
         }
     }

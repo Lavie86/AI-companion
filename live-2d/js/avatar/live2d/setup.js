@@ -40,10 +40,10 @@ class Live2DSetup {
         // 2. 通过注册表解析模型（config.ui.live2d_model 驱动）
         const { modelPath, entry, all } = resolveLive2DModel(config?.ui?.live2d_model);
         if (!modelPath) {
-            throw new Error('2D 目录下没有找到任何 .model3.json 模型');
+            throw new Error('2D folder has no .model3.json models');
         }
         const fallbackPath = (all.find(m => m.modelPath !== modelPath) || {}).modelPath || null;
-        logToTerminal('info', `[Live2DSetup] 共发现 ${all.length} 个模型，选用: ${entry.name} (${modelPath})`);
+        logToTerminal('info', `[Live2DSetup] Found ${all.length} models, using: ${entry.name} (${modelPath})`);
 
         // 3. 加载（应用 per-model 偏好，回退全局 config）
         if (!_loader) _loader = new Live2DModelLoader(_stage);
@@ -127,7 +127,7 @@ class Live2DSetup {
             _ipcBound = true;
             ipcRenderer.on('live2d-switch-model', async (event, payload) => {
                 const { modelName, modelPath: nextPath, requestId } = payload || {};
-                let result = { success: false, message: 'Live2D 模型切换未执行' };
+                let result = { success: false, message: 'Live2D model switch did not run' };
                 const reportResult = async () => {
                     if (!requestId) return;
                     try {
@@ -143,26 +143,26 @@ class Live2DSetup {
                 };
 
                 if (!nextPath) {
-                    result = { success: false, message: '缺少 Live2D 模型路径' };
+                    result = { success: false, message: 'Missing the Live2D model path' };
                     await reportResult();
                     return;
                 }
                 if (global.avatarFacade && global.avatarFacade.getActiveType() !== 'live2d') {
                     console.log('[Live2DSetup] 当前非 Live2D 形态，忽略模型切换事件');
-                    result = { success: false, message: '当前不是 Live2D 形态' };
+                    result = { success: false, message: 'The current avatar type is not Live2D' };
                     await reportResult();
                     return;
                 }
                 if (_loader.currentModelPath === nextPath) {
                     console.log(`[Live2DSetup] 已是当前模型，跳过切换: ${modelName}`);
-                    result = { success: true, message: `已经是当前模型: ${modelName}` };
+                    result = { success: true, message: `Already the current model: ${modelName}` };
                     await reportResult();
                     return;
                 }
                 const previousModel = _loader.currentModel;
-                await avatarTransition.show('正在切换皮套');
+                await avatarTransition.show('Switching avatar');
                 try {
-                    logToTerminal('info', `[Live2DSetup] 热切换模型: ${modelName} (${nextPath})`);
+                    logToTerminal('info', `[Live2DSetup] Hot-swapping model: ${modelName} (${nextPath})`);
                     const nextPrefs = getModelPrefs('live2d', modelName);
                     await _loader.loadModel(nextPath, {
                         config: _context.config,
@@ -170,10 +170,10 @@ class Live2DSetup {
                         fallbackPath: null
                     });
                     _stage.notifyActivity();
-                    result = { success: true, message: `模型已切换到 ${modelName}` };
+                    result = { success: true, message: `Model switched to ${modelName}` };
                 } catch (e) {
                     console.error('[Live2DSetup] 热切换失败:', e);
-                    logToTerminal('error', `[Live2DSetup] 热切换失败: ${e.message}`);
+                    logToTerminal('error', `[Live2DSetup] Hot swap failed: ${e.message}`);
                     let restored = Boolean(previousModel && _loader.currentModel === previousModel);
                     let restoreError = null;
                     if (restored && global.currentModel !== previousModel) {
@@ -184,11 +184,11 @@ class Live2DSetup {
                             restoreError = error;
                         }
                     }
-                    const suffix = restoreError ? `；恢复失败: ${restoreError.message}` : '';
+                    const suffix = restoreError ? `; restore failed: ${restoreError.message}` : '';
                     result = {
                         success: false,
                         restored,
-                        message: `模型切换失败: ${e.message}${restored ? '，已保留原模型' : ''}${suffix}`
+                        message: `Model switch failed: ${e.message}${restored ? ', kept the original model' : ''}${suffix}`
                     };
                 }
                 avatarTransition.hide();
@@ -206,7 +206,7 @@ class Live2DSetup {
         try { _engine?.destroy?.(); } catch (_) {}
         _engine = null;
         try { _stage?.suspend?.(); } catch (_) {}
-        logToTerminal('info', '[Live2DSetup] 已挂起（保留渲染上下文）');
+        logToTerminal('info', '[Live2DSetup] Suspended (render context kept)');
     }
 }
 

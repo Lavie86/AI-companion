@@ -106,7 +106,7 @@ class ASRController {
 
             // 拼接到待发送文本（卡壳续说场景）
             this._pendingText = this._pendingText
-                ? this._pendingText + '，' + text
+                ? this._pendingText + ', ' + text
                 : text;
 
             // 实时显示已累积的文本
@@ -195,7 +195,7 @@ class ASRController {
      */
     getVoiceBargeInStatus() {
         if (!this.asrEnabled || !this.asrProcessor) {
-            return { enabled: false, reason: 'ASR未可用' };
+            return { enabled: false, reason: 'ASR unavailable' };
         }
         return this.asrProcessor.getVoiceBargeInStatus();
     }

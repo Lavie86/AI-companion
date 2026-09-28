@@ -60,7 +60,7 @@ function currentModelCenter(explicitModel = null) {
     return center;
 }
 
-async function show(label = '正在切换皮套') {
+async function show(label = 'Switching avatar') {
     clearTimeout(hideTimer);
     const element = overlay();
     if (!element) return;

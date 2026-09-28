@@ -87,7 +87,7 @@ describe('MCPManager', () => {
             quiet(() => manager.startServer('slow', {
                 command: process.execPath, args: ['-e', 'setInterval(() => {}, 1000)'], startup_timeout: 300
             })),
-            /启动失败/
+            /failed to start/
         );
         assert.ok(Date.now() - started < 5000);
         manager.stop();

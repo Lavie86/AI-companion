@@ -122,21 +122,21 @@ function startTelemetryBridge(eventBus, Events) {
     const safe = (cat, type, title, extra) => () => emitTelemetry({ cat, type, title, ...(extra || {}) });
 
     // 用户输入 / 语音
-    eventBus.on(Events.USER_MESSAGE_RECEIVED, safe('dialogue', 'user.input', '收到用户输入', { pipeline_stage: 'input' }));
-    eventBus.on(Events.ASR_TEXT_RECOGNIZED, safe('dialogue', 'asr.text', '语音识别完成', { pipeline_stage: 'input' }));
+    eventBus.on(Events.USER_MESSAGE_RECEIVED, safe('dialogue', 'user.input', 'User input received', { pipeline_stage: 'input' }));
+    eventBus.on(Events.ASR_TEXT_RECOGNIZED, safe('dialogue', 'asr.text', 'Speech recognized', { pipeline_stage: 'input' }));
 
     // 输出阶段
-    eventBus.on(Events.TTS_START, safe('dialogue', 'tts.start', 'TTS 开始播放', { pipeline_stage: 'output' }));
-    eventBus.on(Events.TTS_END, safe('dialogue', 'tts.end', 'TTS 播放结束', { pipeline_stage: 'idle' }));
-    eventBus.on(Events.TTS_INTERRUPTED, safe('dialogue', 'tts.interrupted', 'TTS 被中断', { level: 'warn', pipeline_stage: 'idle' }));
+    eventBus.on(Events.TTS_START, safe('dialogue', 'tts.start', 'TTS started', { pipeline_stage: 'output' }));
+    eventBus.on(Events.TTS_END, safe('dialogue', 'tts.end', 'TTS finished', { pipeline_stage: 'idle' }));
+    eventBus.on(Events.TTS_INTERRUPTED, safe('dialogue', 'tts.interrupted', 'TTS interrupted', { level: 'warn', pipeline_stage: 'idle' }));
 
     // 配置与生命周期
-    eventBus.on(Events.CONFIG_CHANGED, safe('config', 'config.reload', '配置已更新'));
-    eventBus.on(Events.APP_READY, safe('system', 'app.ready', '应用就绪'));
+    eventBus.on(Events.CONFIG_CHANGED, safe('config', 'config.reload', 'Config updated'));
+    eventBus.on(Events.APP_READY, safe('system', 'app.ready', 'App ready'));
     eventBus.on(Events.APP_ERROR, (data) => emitTelemetry({
         cat: 'system',
         type: 'app.error',
-        title: '应用错误: ' + String((data && (data.message || data.error)) || '未知').slice(0, 120),
+        title: 'App error: ' + String((data && (data.message || data.error)) || 'unknown').slice(0, 120),
         level: 'error'
     }));
 }

@@ -72,7 +72,7 @@ function waitForRendererRequest(requestId, senderId, timeoutMs = 30000) {
                 phase: 'failed',
                 timedOut: true,
                 reloadRequired: true,
-                message: `渲染进程未在 ${timeoutMs}ms 内确认操作`
+                message: `Waited ${timeoutMs}ms without the renderer confirming the action`
             });
         }, timeoutMs);
         pendingRendererRequests.set(requestId, { resolve, timer, senderId });
@@ -87,7 +87,7 @@ function cancelRendererRequest(requestId) {
     pending.resolve({
         success: false,
         phase: 'failed',
-        message: '渲染请求已取消'
+        message: 'Renderer request canceled'
     });
 }
 
@@ -95,10 +95,10 @@ function completeRendererRequest(event, payload) {
     const requestId = String(payload?.requestId || '');
     const pending = pendingRendererRequests.get(requestId);
     if (!pending) {
-        return { success: false, message: '找不到待确认的渲染请求' };
+        return { success: false, message: 'No pending renderer request found' };
     }
     if (pending.senderId != null && event.sender?.id !== pending.senderId) {
-        return { success: false, message: '渲染请求来源不匹配' };
+        return { success: false, message: 'The renderer request came from the wrong window' };
     }
 
     clearTimeout(pending.timer);
@@ -108,7 +108,7 @@ function completeRendererRequest(event, payload) {
         phase: AVATAR_RESULT_PHASES.has(payload?.phase) ? payload.phase : undefined,
         message: typeof payload?.message === 'string'
             ? payload.message
-            : (payload?.success === true ? '操作成功' : '操作失败'),
+            : (payload?.success === true ? 'Done' : 'Failed'),
         restored: payload?.restored === true,
         reloadRequired: payload?.reloadRequired === true,
         timedOut: payload?.timedOut === true,
@@ -123,11 +123,11 @@ function completeRendererRequest(event, payload) {
 function getRendererWindow(event) {
     const sender = event?.sender;
     if (!sender || sender.isDestroyed?.()) {
-        throw new Error('渲染窗口不可用');
+        throw new Error('Renderer window unavailable');
     }
     const win = BrowserWindow.fromWebContents(sender);
     if (!win || win.isDestroyed() || win.webContents.isDestroyed()) {
-        throw new Error('渲染窗口不可用');
+        throw new Error('Renderer window unavailable');
     }
     return win;
 }
@@ -154,7 +154,7 @@ function sendUiConfigPatch(win, patch) {
 
 function scheduleWindowReload(win, reason) {
     if (!win || win.isDestroyed() || win.webContents.isDestroyed()) {
-        throw new Error('渲染窗口不可用，无法安排重载');
+        throw new Error('Renderer window unavailable, cannot schedule a reload');
     }
     setImmediate(() => {
         if (!win || win.isDestroyed() || win.webContents.isDestroyed()) return;
@@ -258,7 +258,7 @@ function finalizeRendererFailure(win, result, reason) {
             return {
                 ...result,
                 phase: 'failed',
-                message: `${result.message || '渲染操作失败'}；安排恢复重载失败: ${error.message}`
+                message: `${result.message || 'Renderer action failed'}; scheduling the recovery reload failed: ${error.message}`
             };
         }
     }
@@ -616,10 +616,10 @@ ipcMain.handle('save-config', async (event, configData) => {
         // 通知用户需要重启应用
         const result = await dialog.showMessageBox({
             type: 'info',
-            title: '配置已保存',
-            message: '配置已成功保存',
-            detail: '需要重启应用以应用新配置。现在重启应用吗？',
-            buttons: ['是', '否'],
+            title: 'Config saved',
+            message: 'The config was saved',
+            detail: 'Restart the app to apply the new config. Restart now?',
+            buttons: ['Yes', 'No'],
             defaultId: 0
         });
 
@@ -682,7 +682,7 @@ ipcMain.handle('take-screenshot', async (event) => {
         const nativeDisplays = displays.sort((a, b) => (a.left || 0) - (b.left || 0));
 
         if (targetIndex >= nativeDisplays.length) {
-            throw new Error(`屏幕索引越界：鼠标在 Index ${targetIndex}，但原生只检测到 ${nativeDisplays.length} 个屏幕`);
+            throw new Error(`Screen index out of range: the mouse is on Index ${targetIndex}, but only ${nativeDisplays.length} screen(s) were found`);
         }
 
         const targetNativeDisplay = nativeDisplays[targetIndex];
@@ -695,7 +695,7 @@ ipcMain.handle('take-screenshot', async (event) => {
         // 视觉模型默认使用均衡画质：限制到 1600x900 内、保持比例且不放大小图。
         // 这样可显著减少 2K/4K 屏幕截图的 Base64 体积和上传延迟。
         const image = nativeImage.createFromBuffer(imgBuffer);
-        if (image.isEmpty()) throw new Error('截图图像解码失败');
+        if (image.isEmpty()) throw new Error('Could not decode the screenshot image');
         const sourceSize = image.getSize();
         const scale = Math.min(1, 1600 / sourceSize.width, 900 / sourceSize.height);
         const targetSize = {
@@ -718,14 +718,14 @@ ipcMain.handle('siliconflow-asr-transcribe', async (event, audioBytes) => {
         const configData = loadConfigData();
         const asrConfig = configData.cloud?.siliconflow_asr || {};
         if (asrConfig.enabled !== true) {
-            throw new Error('SiliconFlow ASR 未启用');
+            throw new Error('SiliconFlow ASR is not enabled');
         }
         if (!asrConfig.key) {
-            throw new Error('SiliconFlow ASR API Key 为空');
+            throw new Error('SiliconFlow ASR API Key is empty');
         }
 
         const audioSize = audioBytes?.byteLength || audioBytes?.length || 0;
-        logToTerminal('info', `【SiliconFlow ASR】开始上传录音（${audioSize} bytes，模型: ${asrConfig.model || 'XingChenAGI/XingChenASR-V3.2-Ultra'}）`);
+        logToTerminal('info', `[SiliconFlow ASR] Uploading the recording (${audioSize} bytes, model: ${asrConfig.model || 'XingChenAGI/XingChenASR-V3.2-Ultra'})`);
 
         const formData = new FormData();
         formData.append('file', new Blob([audioBytes], { type: 'audio/wav' }), 'recording.wav');
@@ -744,12 +744,12 @@ ipcMain.handle('siliconflow-asr-transcribe', async (event, audioBytes) => {
         try { result = JSON.parse(bodyText); } catch (_) { result = { error: bodyText }; }
         if (!response.ok) {
             const detail = result?.message || result?.error?.message || result?.error || bodyText;
-            throw new Error(`HTTP ${response.status}: ${detail || '识别请求失败'}`);
+            throw new Error(`HTTP ${response.status}: ${detail || 'Recognition request failed'}`);
         }
-        logToTerminal('info', `【SiliconFlow ASR】识别成功${result.text ? `：${result.text}` : '，但返回文本为空'}`);
+        logToTerminal('info', `[SiliconFlow ASR] Recognized${result.text ? `: ${result.text}` : ', but the text is empty'}`);
         return { success: true, text: result.text || '' };
     } catch (error) {
-        logToTerminal('error', `【SiliconFlow ASR】请求失败：${error.message}`);
+        logToTerminal('error', `[SiliconFlow ASR] Request failed: ${error.message}`);
         return { success: false, error: error.message };
     }
 })
@@ -806,7 +806,7 @@ ipcMain.handle('update-live2d-model', async (event) => {
 
         const { modelPath, entry, all } = resolveLive2DModel(preferred);
         if (!modelPath || !entry) {
-            return { success: false, message: '2D 目录下没有找到任何模型' };
+            return { success: false, message: '2D folder has no models' };
         }
 
         const win = getRendererWindow(event);
@@ -817,18 +817,18 @@ ipcMain.handle('update-live2d-model', async (event) => {
             'live2d-refresh'
         );
         if (!result.success) {
-            return finalizeRendererFailure(win, result, 'Live2D 模型恢复需要窗口重载');
+            return finalizeRendererFailure(win, result, 'Live2D model recovery needs a window reload');
         }
         return {
             success: true,
             phase: 'ready',
             targetType: 'live2d',
             activeType: 'live2d',
-            message: `已重新扫描（共 ${all.length} 个模型），已加载 ${entry.name}`
+            message: `Rescanned (total: ${all.length} models), loaded ${entry.name}`
         };
     } catch (error) {
         console.error('手动更新模型时出错:', error);
-        return { success: false, message: `更新失败: ${error.message}` };
+        return { success: false, message: `Update failed: ${error.message}` };
     }
 });
 
@@ -840,7 +840,7 @@ ipcMain.handle('switch-live2d-model', async (event, modelName) => {
         if (!entry) {
             return {
                 success: false,
-                message: `未找到模型 "${modelName}"（2D 目录下共 ${all.length} 个模型）`
+                message: `Model not found "${modelName}" (2D folder has ${all.length} models)`
             };
         }
 
@@ -852,7 +852,7 @@ ipcMain.handle('switch-live2d-model', async (event, modelName) => {
             'live2d-switch'
         );
         if (!result.success) {
-            return finalizeRendererFailure(win, result, 'Live2D 模型恢复需要窗口重载');
+            return finalizeRendererFailure(win, result, 'Live2D model recovery needs a window reload');
         }
 
         updateUiConfig({ live2d_model: entry.name });
@@ -862,11 +862,11 @@ ipcMain.handle('switch-live2d-model', async (event, modelName) => {
             phase: 'ready',
             targetType: 'live2d',
             activeType: 'live2d',
-            message: `模型已切换到 ${entry.name}`
+            message: `Model switched to ${entry.name}`
         };
     } catch (error) {
         console.error('切换模型时出错:', error);
-        return { success: false, message: `切换失败: ${error.message}` };
+        return { success: false, message: `Switch failed: ${error.message}` };
     }
 });
 
@@ -1026,7 +1026,7 @@ ipcMain.handle('avatar:switch-type', async (event, type) => {
         });
     } catch (error) {
         console.error('形态切换失败:', error);
-        return { success: false, phase: 'failed', message: `形态切换失败: ${error.message}` };
+        return { success: false, phase: 'failed', message: `Avatar type switch failed: ${error.message}` };
     }
 });
 
@@ -1035,19 +1035,19 @@ ipcMain.handle('avatar:set-model', async (event, payload) => {
     try {
         const type = String(payload?.type || '').trim().toLowerCase();
         if (!SUPPORTED_AVATAR_TYPES.has(type)) {
-            return { success: false, message: `当前 PR 未接入形态: ${type || '未指定'}` };
+            return { success: false, message: `Avatar type not supported in this version: ${type || 'not set'}` };
         }
 
         const requestedName = String(payload?.model_name || payload?.name || '');
         if (!requestedName.trim()) {
-            return { success: false, message: '未提供模型' };
+            return { success: false, message: 'No model given' };
         }
 
         const selection = resolveAvatarModelSelection(type, requestedName);
         if (!selection.entry) {
             return {
                 success: false,
-                message: `未找到 ${type} 模型 "${requestedName}"（当前共 ${selection.all.length} 个）`
+                message: `Could not find the ${type} model "${requestedName}" (there are ${selection.all.length} in total)`
             };
         }
 
@@ -1089,7 +1089,7 @@ ipcMain.handle('avatar:set-model', async (event, payload) => {
                 return finalizeRendererFailure(
                     win,
                     result,
-                    `${type} 模型恢复需要窗口重载`
+                    `${type} model recovery needs a window reload`
                 );
             }
         }
@@ -1102,7 +1102,7 @@ ipcMain.handle('avatar:set-model', async (event, payload) => {
                 phase: 'ready',
                 targetType: type,
                 activeType: type,
-                message: `已应用模型：${selection.entry.name}`
+                message: `Model applied: ${selection.entry.name}`
             };
         }
         return {
@@ -1110,11 +1110,11 @@ ipcMain.handle('avatar:set-model', async (event, payload) => {
             phase: 'ready',
             targetType: type,
             activeType,
-            message: `已保存模型选择：${selection.entry.name}（切换到 ${type} 形态时生效）`
+            message: `Model choice saved: ${selection.entry.name} (applies when you switch to the ${type} avatar type)`
         };
     } catch (error) {
         console.error('设置形态模型失败:', error);
-        return { success: false, message: `设置失败: ${error.message}` };
+        return { success: false, message: `Setting failed: ${error.message}` };
     }
 });
 
@@ -1130,7 +1130,7 @@ ipcMain.handle('avatar:get-models', async (event, type) => {
         if (!scan) {
             return {
                 success: false,
-                message: `当前 PR 未接入形态: ${type}`,
+                message: `Avatar type not supported in this version: ${type}`,
                 models: []
             };
         }
@@ -1149,7 +1149,7 @@ ipcMain.handle('switch-vrm-model', async (event, vrmFileName) => {
         if (!selection.entry) {
             return {
                 success: false,
-                message: `未找到 VRM 模型 "${vrmFileName}"（当前共 ${selection.all.length} 个）`
+                message: `Could not find the VRM model "${vrmFileName}" (there are ${selection.all.length} in total)`
             };
         }
 
@@ -1176,7 +1176,7 @@ ipcMain.handle('switch-vrm-model', async (event, vrmFileName) => {
                 return finalizeRendererFailure(
                     win,
                     reloadResult,
-                    'VRM 模型恢复需要窗口重载'
+                    'VRM model recovery needs a window reload'
                 );
             }
             updateUiConfig(modelPatch);
@@ -1186,7 +1186,7 @@ ipcMain.handle('switch-vrm-model', async (event, vrmFileName) => {
                 phase: 'ready',
                 targetType: 'vrm',
                 activeType: 'vrm',
-                message: `VRM 模型已切换到 ${selection.entry.name}`
+                message: `VRM model switched to ${selection.entry.name}`
             };
         }
 
@@ -1202,11 +1202,11 @@ ipcMain.handle('switch-vrm-model', async (event, vrmFileName) => {
         return {
             ...switchResult,
             message: switchResult.success
-                ? `${switchResult.message}；VRM 模型：${selection.entry.name}`
+                ? `${switchResult.message}; VRM model: ${selection.entry.name}`
                 : switchResult.message
         };
     } catch (error) {
         console.error('切换VRM模型时出错:', error);
-        return { success: false, message: `切换失败: ${error.message}` };
+        return { success: false, message: `Switch failed: ${error.message}` };
     }
 });

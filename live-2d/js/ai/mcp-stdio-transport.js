@@ -23,7 +23,7 @@ class MCPStdioTransport {
             const timeoutHandle = setTimeout(() => {
                 // Stop the server process too, or every slow start leaves one running
                 this.stop();
-                reject(new Error(`服务器 ${serverName} 启动超时`));
+                reject(new Error(`Server ${serverName} timed out while starting`));
             }, this.timeout);
 
             try {
@@ -60,15 +60,15 @@ class MCPStdioTransport {
                 // 错误处理
                 childProcess.on('error', (error) => {
                     clearTimeout(timeoutHandle);
-                    let errorMsg = `服务器 ${serverName} 启动失败: ${error.message}`;
+                    let errorMsg = `Server ${serverName} failed to start: ${error.message}`;
 
                     // 如果是找不到命令的错误,提供更友好的提示
                     if (error.code === 'ENOENT') {
-                        errorMsg += `\n提示: 找不到命令 '${command}'`;
+                        errorMsg += `\nTip: cannot find the command '${command}'`;
                         if (command === 'node' || command.includes('node')) {
-                            errorMsg += '\n请确保已安装 Node.js 或使用项目内置的 node.exe';
+                            errorMsg += '\nMake sure Node.js is installed, or use the bundled node.exe';
                         } else if (command === 'python') {
-                            errorMsg += '\n请确保已安装 Python 并添加到系统环境变量';
+                            errorMsg += '\nMake sure Python is installed and on your PATH';
                         }
                     }
 
@@ -174,7 +174,7 @@ class MCPStdioTransport {
     // 调用工具
     async callTool(toolName, args) {
         if (!this.process) {
-            throw new Error(`MCP服务器未启动: ${this.serverName}`);
+            throw new Error(`MCP server is not running: ${this.serverName}`);
         }
 
         const request = {
@@ -192,7 +192,7 @@ class MCPStdioTransport {
         return new Promise((resolve, reject) => {
             let buffer = '';
             const timeout = setTimeout(() => {
-                reject(new Error(`工具调用超时: ${toolName}`));
+                reject(new Error(`Tool call timed out: ${toolName}`));
             }, 30000);
 
             const onData = (data) => {

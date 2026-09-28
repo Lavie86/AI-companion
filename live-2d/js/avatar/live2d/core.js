@@ -58,7 +58,7 @@ class Live2DStage {
 
         this.canvas = document.getElementById(canvasId);
         if (!this.canvas) {
-            throw new Error(`Live2DStage: 找不到 canvas 元素 #${canvasId}`);
+            throw new Error(`Live2DStage: canvas element not found #${canvasId}`);
         }
 
         this.app = new PIXI.Application({
@@ -93,7 +93,7 @@ class Live2DStage {
         }
         this._startFpsGovernor();
 
-        const diag = `[Live2DStage] 初始化完成: ${width}x${height} CSS px, resolution=${resolution}, maxFPS=${this._activeFps}`;
+        const diag = `[Live2DStage] Ready: ${width}x${height} CSS px, resolution=${resolution}, maxFPS=${this._activeFps}`;
         console.log(diag);
         logToTerminal('info', diag);
         return this.app;

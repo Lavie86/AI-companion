@@ -188,7 +188,7 @@ class MCPManager {
                 console.log('MCP服务器列表:', Object.keys(this.mcpServers));
                 return;
             } catch (error) {
-                throw new Error(`MCP配置文件解析失败: ${error.message}`);
+                throw new Error(`MCP config file could not be parsed: ${error.message}`);
             }
         }
 
@@ -260,7 +260,7 @@ class MCPManager {
             this.transports.set(name, transport);
 
         } catch (error) {
-            throw new Error(`服务器 ${name} 启动失败: ${error.message}`);
+            throw new Error(`Server ${name} failed to start: ${error.message}`);
         }
     }
 
@@ -268,12 +268,12 @@ class MCPManager {
     async callMCPTool(toolName, args) {
         const tool = this.toolRegistry.findTool(toolName);
         if (!tool) {
-            throw new Error(`MCP工具未找到: ${toolName}`);
+            throw new Error(`MCP tool not found: ${toolName}`);
         }
 
         const transport = this.transports.get(tool.server);
         if (!transport) {
-            throw new Error(`MCP服务器未找到: ${tool.server}`);
+            throw new Error(`MCP server not found: ${tool.server}`);
         }
 
         return await transport.callTool(toolName, args);
@@ -291,7 +291,7 @@ class MCPManager {
     // 执行工具调用（统一接口，向外提供）
     async executeFunction(toolName, parameters) {
         if (!this.isEnabled) {
-            throw new Error('MCP管理器已禁用');
+            throw new Error('MCP manager is disabled');
         }
 
         console.log(`🔧 执行MCP工具: ${toolName}，参数:`, parameters);

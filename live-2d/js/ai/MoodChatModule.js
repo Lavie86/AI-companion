@@ -79,7 +79,7 @@ class MoodChatModule {
 
         // 异步评估初始心情（评估完成后才安排对话）
         this.evaluateInitialMood().catch(err => {
-            logToTerminal('error', `初始心情评估失败: ${err.message}`);
+            logToTerminal('error', `Initial mood check failed: ${err.message}`);
             // 评估失败时，用默认心情启动对话
             this.scheduleNextChat();
         });
@@ -89,7 +89,7 @@ class MoodChatModule {
      * 停止心情对话系统
      */
     stop() {
-        logToTerminal('info', '🛑 停止心情对话系统');
+        logToTerminal('info', '🛑 Stopping the mood chat system');
 
         if (this.chatTimer) {
             clearTimeout(this.chatTimer);
@@ -138,7 +138,7 @@ class MoodChatModule {
                         hasDiary = true;
                     }
                 } catch (err) {
-                    logToTerminal('warn', `⚠️ 读取日记文件失败: ${err.message}`);
+                    logToTerminal('warn', `⚠️ Failed to read the diary file: ${err.message}`);
                 }
             }
 
@@ -153,7 +153,7 @@ class MoodChatModule {
                         hasMemory = true;
                     }
                 } catch (err) {
-                    logToTerminal('warn', `⚠️ 读取记忆库文件失败: ${err.message}`);
+                    logToTerminal('warn', `⚠️ Failed to read the memory file: ${err.message}`);
                 }
             }
 
@@ -164,9 +164,9 @@ class MoodChatModule {
             if (!contextContent.trim()) {
                 this.moodScore = 80;
                 if (!hasDiary && !hasMemory) {
-                    logToTerminal('info', `🆕 首次启动，无历史记录，初始心情默认: ${this.moodScore}分`);
+                    logToTerminal('info', `🆕 First start with no history, default starting mood: ${this.moodScore} points`);
                 } else {
-                    logToTerminal('info', `📝 日记和记忆为空，初始心情默认: ${this.moodScore}分`);
+                    logToTerminal('info', `📝 Diary and memory are empty, default starting mood: ${this.moodScore} points`);
                 }
                 this.scheduleNextChat();
                 return;
@@ -175,13 +175,13 @@ class MoodChatModule {
             // 情况2：voiceChat不可用
             if (!voiceChat) {
                 this.moodScore = 80;
-                logToTerminal('warn', `⚠️ LLM不可用，无法评估心情，默认: ${this.moodScore}分`);
+                logToTerminal('warn', `⚠️ LLM unavailable, cannot check the mood, using the default: ${this.moodScore} points`);
                 this.scheduleNextChat();
                 return;
             }
 
             // 情况3：有历史记录，开始智能评估
-            logToTerminal('info', `🔍 发现历史记录（日记:${hasDiary ? '✓' : '✗'} 记忆:${hasMemory ? '✓' : '✗'}），开始评估心情...`);
+            logToTerminal('info', `🔍 Found history (diary:${hasDiary ? '✓' : '✗'} memory:${hasMemory ? '✓' : '✗'}), checking the mood...`);
 
             const prompt = `请根据以下内容，评估fake neuro（肥牛）的心情分数（0-100分）。只返回一个数字。\n\n${contextContent}`;
 
@@ -199,17 +199,17 @@ class MoodChatModule {
                 })
             });
 
-            if (!response.ok) throw new Error(`API请求失败: ${response.status}`);
+            if (!response.ok) throw new Error(`API request failed: ${response.status}`);
 
             const data = await response.json();
             const score = parseInt(data.choices[0].message.content.match(/\d+/)?.[0] || '80');
             this.moodScore = Math.max(0, Math.min(100, score));
 
-            logToTerminal('info', `✨ 评估完成，初始心情: ${this.moodScore}分`);
+            logToTerminal('info', `✨ Mood check done, starting mood: ${this.moodScore} points`);
             this.scheduleNextChat();
 
         } catch (error) {
-            logToTerminal('error', `❌ 心情评估失败: ${error.message}，使用默认值80分`);
+            logToTerminal('error', `❌ Mood check failed: ${error.message}, using the default of 80 points`);
             this.moodScore = 80;
             this.scheduleNextChat();
         }
@@ -242,14 +242,14 @@ class MoodChatModule {
         const interval = this.getChatInterval();
 
         if (interval === Infinity) {
-            logToTerminal('info', `😔 心情太低(${this.moodScore}分)，暂停主动对话`);
+            logToTerminal('info', `😔 Mood too low (${this.moodScore} points), pausing proactive chat`);
             // 即使暂停，也安排1小时后检查（心情可能会回升）
             this.chatTimer = setTimeout(() => this.scheduleNextChat(), 3600000);
             return;
         }
 
         const nextTime = new Date(Date.now() + interval).toLocaleTimeString();
-        logToTerminal('info', `⏰ 下次主动对话: ${nextTime} (心情${this.moodScore}分, ${interval/1000}秒后)`);
+        logToTerminal('info', `⏰ Next proactive chat: ${nextTime} (mood ${this.moodScore} points, ${interval/1000} seconds from now)`);
 
         this.chatTimer = setTimeout(() => {
             this.executeChat();
@@ -261,14 +261,14 @@ class MoodChatModule {
      */
     async executeChat() {
         if (this.isProcessing) {
-            logToTerminal('info', '⏸️ 正在处理中，跳过本次主动对话');
+            logToTerminal('info', '⏸️ Busy, skipping this proactive chat');
             this.scheduleNextChat();
             return;
         }
 
         // 检查系统状态
         if (appState.isPlayingTTS() || appState.isProcessingBarrage() || appState.isProcessingUserInput()) {
-            logToTerminal('info', '⏸️ 系统繁忙，延迟主动对话');
+            logToTerminal('info', '⏸️ System busy, delaying the proactive chat');
             setTimeout(() => this.executeChat(), 5000);
             return;
         }
@@ -277,11 +277,11 @@ class MoodChatModule {
         this.lastChatTime = Date.now();
 
         try {
-            logToTerminal('info', `💬 执行主动对话 (心情${this.moodScore}分)`);
+            logToTerminal('info', `💬 Starting a proactive chat (mood ${this.moodScore} points)`);
 
             const voiceChat = global.voiceChat;
             if (!voiceChat) {
-                logToTerminal('error', 'voiceChat不可用');
+                logToTerminal('error', 'voiceChat unavailable');
                 return;
             }
 
@@ -293,7 +293,7 @@ class MoodChatModule {
                 // TTS播放完成，现在才开始等待用户回应
                 this.waitingForResponse = true;
                 this.startResponseTimer();
-                logToTerminal('info', '🎤 TTS播放完成，开始等待用户回应');
+                logToTerminal('info', '🎤 TTS finished, waiting for the user to answer');
             };
 
             // 监听TTS结束或被打断
@@ -310,7 +310,7 @@ class MoodChatModule {
             }, 5000);
 
         } catch (error) {
-            logToTerminal('error', `❌ 主动对话执行失败: ${error.message}`);
+            logToTerminal('error', `❌ Proactive chat failed: ${error.message}`);
         } finally {
             this.isProcessing = false;
             // 安排下一次对话
@@ -329,7 +329,7 @@ class MoodChatModule {
 
         this.responseTimer = setTimeout(() => {
             if (this.waitingForResponse) {
-                logToTerminal('info', `😞 用户${this.responseTimeout/1000}秒内没有回应，心情下降`);
+                logToTerminal('info', `😞 The user did not answer within ${this.responseTimeout/1000} seconds, mood goes down`);
                 this.decreaseMood();
                 this.waitingForResponse = false;
             }
@@ -342,7 +342,7 @@ class MoodChatModule {
     onUserResponse() {
         if (!this.waitingForResponse) return;
 
-        logToTerminal('info', '😊 用户有回应，心情提升！');
+        logToTerminal('info', '😊 The user answered, mood goes up!');
 
         // 取消响应计时器
         if (this.responseTimer) {
@@ -364,7 +364,7 @@ class MoodChatModule {
         const oldScore = this.moodScore;
         this.moodScore = Math.max(0, this.moodScore - decrease);
 
-        logToTerminal('info', `📉 心情降低: ${oldScore} -> ${this.moodScore}`);
+        logToTerminal('info', `📉 Mood down: ${oldScore} -> ${this.moodScore}`);
 
         // 如果心情变化导致对话频率改变，重新安排
         if (this.getChatInterval() !== this.getChatInterval.call({ moodScore: oldScore })) {
@@ -380,7 +380,7 @@ class MoodChatModule {
         const oldScore = this.moodScore;
         this.moodScore = Math.min(100, this.moodScore + increase);
 
-        logToTerminal('info', `📈 心情提升: ${oldScore} -> ${this.moodScore}`);
+        logToTerminal('info', `📈 Mood up: ${oldScore} -> ${this.moodScore}`);
 
         // 如果心情变化导致对话频率改变，重新安排
         if (this.getChatInterval() !== this.getChatInterval.call({ moodScore: oldScore })) {
@@ -402,7 +402,7 @@ class MoodChatModule {
             }
 
             if (this.moodScore !== oldScore) {
-                logToTerminal('info', `🔄 心情回归: ${oldScore} -> ${this.moodScore} (目标${this.stableMood})`);
+                logToTerminal('info', `🔄 Mood drifting back: ${oldScore} -> ${this.moodScore} (target ${this.stableMood})`);
             }
         }, this.moodChanges.regressionInterval);
     }

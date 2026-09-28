@@ -34,7 +34,7 @@ function createLive2DDriver() {
             global.pixiApp = null;
             global.currentModel = null;
             state = null;
-            logToTerminal('info', '[Live2DDriver] 已挂起（上下文保留）');
+            logToTerminal('info', '[Live2DDriver] Suspended (context kept)');
         },
 
         getModel() { return state?.loader?.currentModel || null; },
@@ -65,7 +65,7 @@ function createVRMDriver() {
         engine: 'three',
         async init(context) {
             const { VRMSetup } = require('./vrm/setup.js');
-            logToTerminal('info', '[VRMDriver] 正在加载 VRM 3D 模型...');
+            logToTerminal('info', '[VRMDriver] Loading the VRM 3D model...');
             const result = await VRMSetup.initialize(
                 context.modelController,
                 context.config,
@@ -89,7 +89,7 @@ function createVRMDriver() {
             global.currentModel = null;
             global.currentVRMAdapter = null;
             state = null;
-            logToTerminal('info', '[VRMDriver] 已挂起（上下文保留）');
+            logToTerminal('info', '[VRMDriver] Suspended (context kept)');
         },
 
         getModel() { return state?.model || null; },

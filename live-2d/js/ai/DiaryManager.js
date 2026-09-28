@@ -120,7 +120,7 @@ ${todayInteractions}
             });
 
             if (!response.ok) {
-                throw new Error(`API请求失败: ${response.status}`);
+                throw new Error(`API request failed: ${response.status}`);
             }
 
             const data = await response.json();

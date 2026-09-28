@@ -34,7 +34,7 @@ class IPCHandlers {
     registerInterruptHandler() {
         ipcRenderer.on('interrupt-tts', () => {
             console.log('接收到中断信号');
-            logToTerminal('info', '接收到中断信号');
+            logToTerminal('info', 'Got an interrupt signal');
 
             if (this.ttsProcessor) {
                 this.ttsProcessor.interrupt();
@@ -55,12 +55,12 @@ class IPCHandlers {
                 setTimeout(() => {
                     this.voiceChat.resumeRecording();
                     console.log('ASR录音已恢复');
-                    logToTerminal('info', 'ASR录音已恢复');
+                    logToTerminal('info', 'ASR recording resumed');
                 }, 200);
             }
 
             console.log('系统已复位，可以继续对话');
-            logToTerminal('info', '系统已复位，可以继续对话');
+            logToTerminal('info', 'System reset, you can keep talking');
         });
     }
 

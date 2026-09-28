@@ -121,19 +121,19 @@ class ParamDirector {
         this.coreModel = coreModel;
 
         if (!coreModel || typeof coreModel.getParameterCount !== 'function') {
-            logToTerminal('warn', '[ParamDirector] coreModel 不可用，跳过参数导演');
+            logToTerminal('warn', '[ParamDirector] coreModel unavailable, skipping the parameter director');
             return false;
         }
 
         this._buildCatalog(model, coreModel);
         this._cacheAngleParams();
         if (this._catalog.length === 0 || this._angleInfos.length === 0) {
-            logToTerminal('warn', '[ParamDirector] 未找到可驱动的角度参数，跳过参数导演');
+            logToTerminal('warn', '[ParamDirector] No angle parameters to drive, skipping the parameter director');
             return false;
         }
 
         this._resetRuntimeState();
-        logToTerminal('info', `[ParamDirector] 已启用，参数=${this._catalog.length}，可编舞=${this._visibleCatalog.length}`);
+        logToTerminal('info', `[ParamDirector] On, parameters=${this._catalog.length}, choreographable=${this._visibleCatalog.length}`);
         return true;
     }
 
@@ -321,7 +321,7 @@ class ParamDirector {
     loadTimeline(keyframes, totalChars, channel = 'default') {
         if (this._motionMode === 'legacy') return false;
         if (!this._pendingSpeech && !this._speaking) {
-            logToTerminal('warn', '[ParamDirector] 收到过期 timeline，已丢弃');
+            logToTerminal('warn', '[ParamDirector] Got an outdated timeline, dropped it');
             return false;
         }
         if (!Array.isArray(keyframes) || keyframes.length === 0) return false;
@@ -336,7 +336,7 @@ class ParamDirector {
     appendTimelineFrames(frames, channel = 'default') {
         if (this._motionMode === 'legacy') return false;
         if (!this._pendingSpeech && !this._speaking) {
-            logToTerminal('warn', '[ParamDirector] 收到过期 timeline 追加，已丢弃');
+            logToTerminal('warn', '[ParamDirector] Got an outdated timeline append, dropped it');
             return false;
         }
         if (!Array.isArray(frames) || frames.length === 0) return false;

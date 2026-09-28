@@ -30,7 +30,7 @@ class Live2DModelLoader {
      */
     async loadModel(modelPath, options = {}) {
         if (this._isLoading) {
-            throw new Error(`模型正在加载中，忽略重复请求: ${modelPath}`);
+            throw new Error(`The model is still loading, ignoring the repeated request: ${modelPath}`);
         }
         this._isLoading = true;
         const token = ++this._loadToken;
@@ -40,7 +40,7 @@ class Live2DModelLoader {
 
         try {
             console.log(`[Live2DLoader] 开始加载模型: ${modelPath}`);
-            logToTerminal('info', `[Live2DLoader] 开始加载模型: ${modelPath}`);
+            logToTerminal('info', `[Live2DLoader] Loading model: ${modelPath}`);
 
             candidate = await PIXI.live2d.Live2DModel.from(modelPath, { autoFocus: false, autoInteract: false });
 
@@ -48,7 +48,7 @@ class Live2DModelLoader {
             if (token !== this._loadToken) {
                 await this._destroyModel(candidate);
                 candidate = null;
-                throw new Error('模型加载已被更新的请求取代');
+                throw new Error('The model load was replaced by a newer request');
             }
 
             this.stage.app.stage.addChild(candidate);
@@ -72,7 +72,7 @@ class Live2DModelLoader {
             }
 
             console.log(`[Live2DLoader] 模型加载完成: ${modelPath}, 位置(${candidate.x.toFixed(0)}, ${candidate.y.toFixed(0)}), 缩放${candidate.scale.x.toFixed(3)}, 可见=${showModel}`);
-            logToTerminal('info', `[Live2DLoader] 模型加载完成: ${modelPath}`);
+            logToTerminal('info', `[Live2DLoader] Model loaded: ${modelPath}`);
             return candidate;
         } catch (error) {
             const failedCandidate = candidate;
@@ -88,7 +88,7 @@ class Live2DModelLoader {
             }
 
             console.error(`[Live2DLoader] 模型加载失败: ${modelPath}`, error);
-            logToTerminal('error', `[Live2DLoader] 模型加载失败: ${modelPath} - ${error.message}`);
+            logToTerminal('error', `[Live2DLoader] Model failed to load: ${modelPath} - ${error.message}`);
 
             // 失败回退：加载 fallbackPath（只回退一次，避免死循环）
             const fallback = options.fallbackPath;

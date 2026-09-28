@@ -37,7 +37,7 @@ class PluginManager {
 
         const listPath = path.join(this._pluginsDir, 'enabled_plugins.json');
         if (!fs.existsSync(listPath)) {
-            logToTerminal('warn', '⚠️ 未找到 enabled_plugins.json，所有插件将被禁用');
+            logToTerminal('warn', '⚠️ enabled_plugins.json not found, all plugins will be off');
             this._enabledPlugins = new Set();
             return;
         }
@@ -47,7 +47,7 @@ class PluginManager {
                 (data.plugins || []).map(p => p.replace(/\\/g, '/'))
             );
         } catch (e) {
-            logToTerminal('warn', `⚠️ enabled_plugins.json 读取失败: ${e.message}`);
+            logToTerminal('warn', `⚠️ enabled_plugins.json could not be read: ${e.message}`);
             this._enabledPlugins = new Set();
         }
     }
@@ -76,10 +76,10 @@ class PluginManager {
     // ===== 加载 =====
 
     async loadAll() {
-        logToolAction('info', '🔌 开始加载插件...');
+        logToolAction('info', '🔌 Loading plugins...');
         await this._loadFromDir(this._builtinDir, 'built-in');
         await this._loadFromDir(this._communityDir, 'community');
-        logToolAction('info', `🔌 插件加载完成，共 ${this._plugins.size} 个插件`);
+        logToolAction('info', `🔌 Plugins loaded: ${this._plugins.size} plugins`);
     }
 
     async _loadFromDir(dir, type) {
@@ -89,7 +89,7 @@ class PluginManager {
         try {
             entries = fs.readdirSync(dir, { withFileTypes: true });
         } catch (e) {
-            logToTerminal('warn', `⚠️ 读取插件目录失败 (${dir}): ${e.message}`);
+            logToTerminal('warn', `⚠️ Failed to read the plugin folder (${dir}): ${e.message}`);
             return;
         }
 
@@ -97,7 +97,7 @@ class PluginManager {
             if (!entry.isDirectory()) continue;
             const pluginDir = path.join(dir, entry.name);
             await this.load(pluginDir).catch(err => {
-                logToolAction('error', `❌ 加载插件失败 (${entry.name}): ${err.message}`);
+                logToolAction('error', `❌ Failed to load plugin (${entry.name}): ${err.message}`);
             });
         }
     }
@@ -114,7 +114,7 @@ class PluginManager {
         try {
             metadata = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
         } catch (e) {
-            throw new Error(`metadata.json 解析失败: ${e.message}`);
+            throw new Error(`metadata.json could not be parsed: ${e.message}`);
         }
 
         const { name, main = 'index.js', lang } = metadata;
@@ -136,7 +136,7 @@ class PluginManager {
         const mainPath = path.join(pluginDir, resolvedMain);
 
         if (!fs.existsSync(mainPath)) {
-            throw new Error(`入口文件不存在: ${mainPath}`);
+            throw new Error(`Entry file not found: ${mainPath}`);
         }
 
         const context = new PluginContext(relPath, this._config, this, pluginDir);
@@ -151,7 +151,7 @@ class PluginManager {
                 const mod = require(mainPath);
                 PluginClass = mod.default || mod[Object.keys(mod)[0]] || mod;
             } catch (e) {
-                throw new Error(`加载插件模块失败: ${e.message}`);
+                throw new Error(`Failed to load the plugin module: ${e.message}`);
             }
             plugin = new PluginClass(metadata, context);
         }
@@ -160,7 +160,7 @@ class PluginManager {
 
         this._plugins.set(relPath, { plugin, metadata, pluginDir });
         const displayName = metadata.displayName || name;
-        logToolAction('info', `✅ 插件已加载: ${displayName} v${metadata.version || '?'}${isPython ? ' [Python]' : ''}`);
+        logToolAction('info', `✅ Plugin loaded: ${displayName} v${metadata.version || '?'}${isPython ? ' [Python]' : ''}`);
     }
 
     /**
@@ -175,7 +175,7 @@ class PluginManager {
         await entry.plugin.onDestroy().catch(() => {});
         this._plugins.delete(name);
         this._dynamicTools.delete(name);
-        logToTerminal('info', `🔌 插件已卸载: ${name}`);
+        logToTerminal('info', `🔌 Plugin unloaded: ${name}`);
     }
 
     /**
@@ -184,7 +184,7 @@ class PluginManager {
      */
     async reload(name) {
         const entry = this._plugins.get(name);
-        if (!entry) throw new Error(`插件不存在: ${name}`);
+        if (!entry) throw new Error(`Plugin not found: ${name}`);
 
         const { pluginDir, metadata } = entry;
 
@@ -199,7 +199,7 @@ class PluginManager {
         const newEntry = this._plugins.get(name);
         if (newEntry) await newEntry.plugin.onStart();
 
-        logToTerminal('info', `🔄 插件已热重载: ${name}`);
+        logToTerminal('info', `🔄 Plugin hot-reloaded: ${name}`);
     }
 
     /**
@@ -211,7 +211,7 @@ class PluginManager {
             try {
                 await this.reload(name);
             } catch (e) {
-                logToTerminal('error', `❌ 热重载失败 (${name}): ${e.message}`);
+                logToTerminal('error', `❌ Hot reload failed (${name}): ${e.message}`);
             }
         }
     }
@@ -220,7 +220,7 @@ class PluginManager {
      * 同步 enabled_plugins.json 的变更：加载新启用的、卸载被禁用的
      */
     async syncEnabledPlugins() {
-        logToTerminal('info', '🔄 检测到插件启用列表变更，开始同步...');
+        logToTerminal('info', '🔄 The enabled plugin list changed, syncing...');
 
         this._loadEnabledList(true);
 
@@ -238,9 +238,9 @@ class PluginManager {
             if (!enabledRelPaths.has(relPath)) {
                 try {
                     await this.unload(name);
-                    logToTerminal('info', `🔌 插件已因禁用而卸载: ${name}`);
+                    logToTerminal('info', `🔌 Plugin unloaded because it was turned off: ${name}`);
                 } catch (e) {
-                    logToTerminal('error', `❌ 卸载插件失败 (${name}): ${e.message}`);
+                    logToTerminal('error', `❌ Failed to unload plugin (${name}): ${e.message}`);
                 }
             }
         }
@@ -256,13 +256,13 @@ class PluginManager {
                 const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
                 const newEntry = this._plugins.get(relPath);
                 if (newEntry) await newEntry.plugin.onStart();
-                logToTerminal('info', `🔌 插件已因启用而加载: ${meta.name}`);
+                logToTerminal('info', `🔌 Plugin loaded because it was turned on: ${meta.name}`);
             } catch (e) {
-                logToTerminal('error', `❌ 加载新启用插件失败 (${relPath}): ${e.message}`);
+                logToTerminal('error', `❌ Failed to load the newly enabled plugin (${relPath}): ${e.message}`);
             }
         }
 
-        logToTerminal('info', `🔌 插件同步完成，当前共 ${this._plugins.size} 个插件`);
+        logToTerminal('info', `🔌 Plugin sync done, now ${this._plugins.size} plugins`);
     }
 
     /**
@@ -289,7 +289,7 @@ class PluginManager {
     startWatching() {
         this._watchEnabledList();
         this._watchSourceFiles();
-        logToTerminal('info', '👁️ 插件热加载监听已启动');
+        logToTerminal('info', '👁️ Plugin hot-reload watcher started');
     }
 
     stopWatching() {
@@ -304,7 +304,7 @@ class PluginManager {
         clearTimeout(this._syncDebounceTimer);
         for (const t of this._reloadDebounceTimers.values()) clearTimeout(t);
         this._reloadDebounceTimers.clear();
-        logToTerminal('info', '👁️ 插件热加载监听已停止');
+        logToTerminal('info', '👁️ Plugin hot-reload watcher stopped');
     }
 
     /**
@@ -319,12 +319,12 @@ class PluginManager {
                 clearTimeout(this._syncDebounceTimer);
                 this._syncDebounceTimer = setTimeout(() => {
                     this.syncEnabledPlugins().catch(e => {
-                        logToTerminal('error', `❌ 同步插件启用列表失败: ${e.message}`);
+                        logToTerminal('error', `❌ Failed to sync the enabled plugin list: ${e.message}`);
                     });
                 }, 500);
             });
         } catch (e) {
-            logToTerminal('warn', `⚠️ 无法监听 enabled_plugins.json: ${e.message}`);
+            logToTerminal('warn', `⚠️ Cannot watch enabled_plugins.json: ${e.message}`);
         }
     }
 
@@ -351,15 +351,15 @@ class PluginManager {
                     clearTimeout(this._reloadDebounceTimers.get(targetName));
                     this._reloadDebounceTimers.set(targetName, setTimeout(() => {
                         this._reloadDebounceTimers.delete(targetName);
-                        logToTerminal('info', `👁️ 检测到源码变更: ${filename}，重载插件 ${targetName}`);
+                        logToTerminal('info', `👁️ Source changed: ${filename}, reloading plugin ${targetName}`);
                         this.reload(targetName).catch(e => {
-                            logToTerminal('error', `❌ 源码变更热重载失败 (${targetName}): ${e.message}`);
+                            logToTerminal('error', `❌ Hot reload after a source change failed (${targetName}): ${e.message}`);
                         });
                     }, 500));
                 });
                 this._sourceWatchers.push(watcher);
             } catch (e) {
-                logToTerminal('warn', `⚠️ 无法监听插件源码目录 (${baseDir}): ${e.message}`);
+                logToTerminal('warn', `⚠️ Cannot watch the plugin source folder (${baseDir}): ${e.message}`);
             }
         }
     }
@@ -403,7 +403,7 @@ class PluginManager {
             try {
                 await plugin.onStart();
             } catch (e) {
-                logToTerminal('error', `❌ 插件 onStart 失败 (${name}): ${e.message}`);
+                logToTerminal('error', `❌ Plugin onStart failed (${name}): ${e.message}`);
             }
         }
     }
@@ -413,7 +413,7 @@ class PluginManager {
             try {
                 await plugin.onStop();
             } catch (e) {
-                logToTerminal('error', `❌ 插件 onStop 失败 (${name}): ${e.message}`);
+                logToTerminal('error', `❌ Plugin onStop failed (${name}): ${e.message}`);
             }
         }
     }
@@ -430,7 +430,7 @@ class PluginManager {
             try {
                 await plugin.onUserInput(event);
             } catch (e) {
-                logToTerminal('error', `❌ onUserInput 插件错误 (${name}): ${e.message}`);
+                logToTerminal('error', `❌ onUserInput plugin error (${name}): ${e.message}`);
             }
         }
     }
@@ -444,7 +444,7 @@ class PluginManager {
             try {
                 await plugin.onLLMRequest(request);
             } catch (e) {
-                logToTerminal('error', `❌ onLLMRequest 插件错误 (${name}): ${e.message}`);
+                logToTerminal('error', `❌ onLLMRequest plugin error (${name}): ${e.message}`);
             }
         }
     }
@@ -458,7 +458,7 @@ class PluginManager {
             try {
                 await plugin.onLLMResponse(response);
             } catch (e) {
-                logToTerminal('error', `❌ onLLMResponse 插件错误 (${name}): ${e.message}`);
+                logToTerminal('error', `❌ onLLMResponse plugin error (${name}): ${e.message}`);
             }
         }
     }
@@ -475,7 +475,7 @@ class PluginManager {
                 const modified = await plugin.onTTSText(result);
                 if (typeof modified === 'string') result = modified;
             } catch (e) {
-                logToTerminal('error', `❌ onTTSText 插件错误 (${name}): ${e.message}`);
+                logToTerminal('error', `❌ onTTSText plugin error (${name}): ${e.message}`);
             }
         }
         return result;
@@ -490,7 +490,7 @@ class PluginManager {
             try {
                 await plugin.onTTSStart(text);
             } catch (e) {
-                logToTerminal('error', `❌ onTTSStart 插件错误 (${name}): ${e.message}`);
+                logToTerminal('error', `❌ onTTSStart plugin error (${name}): ${e.message}`);
             }
         }
     }
@@ -501,7 +501,7 @@ class PluginManager {
             try {
                 await plugin.onTTSEnd();
             } catch (e) {
-                logToTerminal('error', `❌ onTTSEnd 插件错误 (${name}): ${e.message}`);
+                logToTerminal('error', `❌ onTTSEnd plugin error (${name}): ${e.message}`);
             }
         }
     }
@@ -545,7 +545,7 @@ class PluginManager {
                 return await plugin.executeTool(name, params);
             }
         }
-        throw new Error(`找不到提供工具的插件: ${name}`);
+        throw new Error(`No plugin provides the tool: ${name}`);
     }
 
     /**

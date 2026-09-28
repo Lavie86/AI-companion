@@ -1986,7 +1986,7 @@ function renderLLMFallbackModelSelect() {
     if (selectedValue && !Array.from(select.options).some(o => o.value === selectedValue)) {
         const opt = document.createElement('option');
         opt.value = selectedValue;
-        opt.textContent = selectedValue + '(no longer available)';
+        opt.textContent = selectedValue + ' (no longer available)';
         select.appendChild(opt);
     }
 
@@ -2304,7 +2304,7 @@ function createModelParamsPanel(model) {
     if (!Array.from(effortSelect.options).some(o => o.value === savedEffort)) {
         const opt = document.createElement('option');
         opt.value = savedEffort;
-        opt.textContent = savedEffort + '(custom)';
+        opt.textContent = savedEffort + ' (custom)';
         effortSelect.appendChild(opt);
     }
     effortSelect.value = savedEffort;
@@ -4092,7 +4092,7 @@ function createConfigField(key, field, objectPath) {
             ) {
                 const invalidOption = document.createElement('option');
                 invalidOption.value = currentValue;
-                invalidOption.textContent = currentValue + '(current value is not an option)';
+                invalidOption.textContent = currentValue + ' (current value is not an option)';
                 inputElement.appendChild(invalidOption);
             }
             inputElement.value = currentValue;
@@ -4202,7 +4202,7 @@ function populatePluginLlmProviderSelect(select, selectedValue) {
     if (selectedValue && !Array.from(select.options).some(o => o.value === selectedValue)) {
         const opt = document.createElement('option');
         opt.value = selectedValue;
-        opt.textContent = selectedValue + '(no longer available)';
+        opt.textContent = selectedValue + ' (no longer available)';
         select.appendChild(opt);
     }
     select.value = selectedValue || '';
@@ -4233,7 +4233,7 @@ function populatePluginLlmModelSelect(select, providerId, selectedValue) {
     if (selectedValue && !Array.from(select.options).some(o => o.value === selectedValue)) {
         const opt = document.createElement('option');
         opt.value = selectedValue;
-        opt.textContent = selectedValue + '(not in list)';
+        opt.textContent = selectedValue + ' (not in list)';
         select.appendChild(opt);
     }
     select.value = selectedValue || '';
@@ -4581,7 +4581,7 @@ function fillModelRefSelect(selectId, options, selectedValue) {
     if (selectedValue && !Array.from(select.options).some(o => o.value === selectedValue)) {
         const opt = document.createElement('option');
         opt.value = selectedValue;
-        opt.textContent = selectedValue + '(no longer available)';
+        opt.textContent = selectedValue + ' (no longer available)';
         select.appendChild(opt);
     }
     select.value = selectedValue || (select.options[0] ? select.options[0].value : '');
@@ -5533,7 +5533,7 @@ function describePluginInstallResult(data) {
         }
     }
     if (data.source_used && data.source_used !== 'direct' && data.source_used !== 'upload') {
-        text += `(via ${data.source_used} mirror)`;
+        text += ` (via ${data.source_used} mirror)`;
     }
     return text;
 }

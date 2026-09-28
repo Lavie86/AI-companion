@@ -76,9 +76,9 @@ class LLMProviderManager {
         this._initialized = true;
 
         if (this._providers.size > 0) {
-            logToTerminal('info', `✅ 已加载 ${this._providers.size} 个 LLM 提供商（默认: ${this._defaultId || '无'}，当前模型: ${this._activeModelId || '未指定'}）`);
+            logToTerminal('info', `✅ Loaded ${this._providers.size} LLM providers (default: ${this._defaultId || 'none'}, current model: ${this._activeModelId || 'not set'})`);
         } else {
-            logToTerminal('warn', '⚠️ 未配置任何 LLM 提供商');
+            logToTerminal('warn', '⚠️ No LLM provider is configured');
         }
     }
 
@@ -92,7 +92,7 @@ class LLMProviderManager {
      */
     getProvider(id) {
         if (!this._initialized) {
-            logToTerminal('warn', '⚠️ LLMProviderManager 尚未初始化');
+            logToTerminal('warn', '⚠️ LLMProviderManager is not initialized yet');
             return null;
         }
         return this._providers.get(id) || null;
@@ -182,9 +182,9 @@ class LLMProviderManager {
                 return this._buildResolved(provider, modelId);
             }
             if (provider && provider.enabled === false) {
-                logToTerminal('warn', `⚠️ LLM 提供商 "${providerId}" 已禁用，降级到默认提供商`);
+                logToTerminal('warn', `⚠️ LLM provider "${providerId}" is disabled, falling back to the default provider`);
             } else {
-                logToTerminal('warn', `⚠️ 未找到 LLM 提供商 "${providerId}"，降级到默认提供商`);
+                logToTerminal('warn', `⚠️ Could not find the LLM provider "${providerId}", falling back to the default provider`);
             }
         }
 
@@ -193,10 +193,10 @@ class LLMProviderManager {
             return this._buildResolved(defaultProvider, modelId);
         }
 
-        logToTerminal('error', '❌ 没有可用的 LLM 提供商配置');
+        logToTerminal('error', '❌ No usable LLM provider config');
         return {
             id: '_empty',
-            name: '未配置',
+            name: 'Not configured',
             api_key: '',
             api_url: '',
             model: '',

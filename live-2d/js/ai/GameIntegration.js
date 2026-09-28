@@ -52,10 +52,10 @@ class GameIntegration {
                     message: text
                 });
                 console.log(`语音输入已发送到Minecraft: ${text}`);
-                this.voiceChat.showSubtitle(`已发送到Minecraft: ${text}`, 2000);
+                this.voiceChat.showSubtitle(`Sent to Minecraft: ${text}`, 2000);
             } else {
                 console.log('Mindcraft连接未建立，无法发送消息');
-                this.voiceChat.showSubtitle('Mindcraft连接未建立', 2000);
+                this.voiceChat.showSubtitle('Mindcraft is not connected', 2000);
             }
         }
     }

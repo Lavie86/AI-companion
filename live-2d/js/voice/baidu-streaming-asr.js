@@ -101,7 +101,7 @@ class BaiduStreamingASR {
             };
 
             this.ws.onerror = (error) => {
-                logToTerminal('error', `百度流式ASR: WebSocket错误`);
+                logToTerminal('error', `Baidu streaming ASR: WebSocket error`);
                 reject(error);
             };
         });
@@ -156,8 +156,8 @@ class BaiduStreamingASR {
                 }
 
             } else if (result.err_no !== undefined && result.err_no !== 0) {
-                const errMsg = result.err_msg || '未知错误';
-                logToTerminal('error', `百度流式ASR错误: ${result.err_no} - ${errMsg}`);
+                const errMsg = result.err_msg || 'Unknown error';
+                logToTerminal('error', `Baidu streaming ASR error: ${result.err_no} - ${errMsg}`);
             }
         } catch (e) {
             // 忽略非JSON消息
@@ -220,7 +220,7 @@ class BaiduStreamingASR {
             this.isRecording = true;
 
         } catch (error) {
-            logToTerminal('error', `百度流式ASR启动失败: ${error.message}`);
+            logToTerminal('error', `Baidu streaming ASR failed to start: ${error.message}`);
         }
     }
 

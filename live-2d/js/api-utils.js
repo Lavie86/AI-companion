@@ -57,43 +57,43 @@ async function handleAPIError(response) {
             errorDetail = errorBody;
         }
     } catch (e) {
-        errorDetail = "无法读取错误详情";
+        errorDetail = "Could not read the error details";
     }
 
     // 多模态不支持是预期的可恢复错误，降级为 warn 避免误导用户
     const isMultimodalUnsupported = errorDetail.toLowerCase().includes('multimodal') ||
         (response.status === 400 && errorDetail.toLowerCase().includes('image') && errorDetail.toLowerCase().includes('support'));
     if (isMultimodalUnsupported) {
-        logToTerminal('warn', `📷 当前模型不支持图片/多模态，将自动过滤图片后重试`);
+        logToTerminal('warn', `📷 The current model does not support images/multimodal input. Removing the images and retrying`);
     } else {
-        logToTerminal('error', `API错误 (${response.status} ${response.statusText}):\n${errorDetail}`);
+        logToTerminal('error', `API error (${response.status} ${response.statusText}):\n${errorDetail}`);
     }
 
     let errorMessage = "";
     switch (response.status) {
         case 401:
-            errorMessage = "API密钥验证失败，请检查你的API密钥";
+            errorMessage = "API key rejected. Check your API key";
             break;
         case 403:
-            errorMessage = "API访问被禁止，你的账号可能被限制";
+            errorMessage = "API access denied. Your account may be restricted";
             break;
         case 404:
-            errorMessage = "API接口未找到，请检查API地址";
+            errorMessage = "API endpoint not found. Check the API URL";
             break;
         case 429:
-            errorMessage = "请求过于频繁，超出API限制";
+            errorMessage = "Too many requests. You hit the API rate limit";
             break;
         case 500:
         case 502:
         case 503:
         case 504:
-            errorMessage = "服务器错误，AI服务当前不可用";
+            errorMessage = "Server error. The AI service is unavailable right now";
             break;
         default:
-            errorMessage = `API错误: ${response.status} ${response.statusText}`;
+            errorMessage = `API error: ${response.status} ${response.statusText}`;
     }
 
-    throw new Error(`${errorMessage}\n详细信息: ${errorDetail}`);
+    throw new Error(`${errorMessage}\nDetails: ${errorDetail}`);
 }
 
 // 统一的工具列表合并函数

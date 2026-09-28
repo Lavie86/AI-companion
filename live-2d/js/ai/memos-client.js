@@ -116,7 +116,7 @@ class MemosClient {
                 
                 return { 
                     status: 'saved', 
-                    message: `已保存 ${this.saveInterval} 轮对话`,
+                    message: `Saved ${this.saveInterval} rounds of conversation`,
                     result 
                 };
             } catch (error) {
@@ -153,7 +153,7 @@ class MemosClient {
             
             return { 
                 status: 'flushed', 
-                message: `已保存 ${savedRounds} 轮对话`,
+                message: `Saved ${savedRounds} rounds of conversation`,
                 result 
             };
         } catch (error) {

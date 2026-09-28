@@ -24,7 +24,7 @@ class BilibiliLiveClient {
     }
 
     start() {
-        if (!Number.isInteger(this.roomId) || this.roomId <= 0) throw new Error('直播间 ID 必须是正整数');
+        if (!Number.isInteger(this.roomId) || this.roomId <= 0) throw new Error('The live room ID must be a positive integer');
         if (!this.stopped) return;
         this.stopped = false;
         void this.connect();
@@ -71,13 +71,13 @@ class BilibiliLiveClient {
             this.heartbeat.unref?.();
         });
         socket.on('message', raw => this.handleFrame(toBuffer(raw)));
-        socket.on('error', error => this.log.warn?.(`B站直播连接错误: ${error.message}`));
+        socket.on('error', error => this.log.warn?.(`Bilibili live connection error: ${error.message}`));
         socket.on('close', (code, reason) => {
             if (this.socket !== socket) return;
             this.socket = null;
             clearInterval(this.heartbeat);
             this.heartbeat = null;
-            if (!this.stopped) this.scheduleReconnect(`连接断开(${code}) ${reason.toString()}`);
+            if (!this.stopped) this.scheduleReconnect(`Disconnected (${code}) ${reason.toString()}`);
         });
     }
 
@@ -87,13 +87,13 @@ class BilibiliLiveClient {
                 if (frame.code === 0) {
                     this.retryDelay = 2000;
                     this.setStatus('connected');
-                    this.log.info?.(`B站直播已实时连接，房间 ${this.realRoomId}`);
-                } else this.scheduleReconnect(`认证失败 code=${frame.code}`);
+                    this.log.info?.(`Bilibili live connected, room ${this.realRoomId}`);
+                } else this.scheduleReconnect(`Authentication failed code=${frame.code}`);
             } else if (frame.kind === 'popularity') {
                 this.onPopularity(frame.value);
             } else if (frame.kind === 'command') {
                 try { this.onCommand(frame.message); }
-                catch (error) { this.log.warn?.(`B站事件处理失败: ${error.message}`); }
+                catch (error) { this.log.warn?.(`Bilibili event handling failed: ${error.message}`); }
             }
         }
     }
@@ -107,7 +107,7 @@ class BilibiliLiveClient {
         if (this.stopped) return;
         const delay = this.retryDelay;
         this.setStatus('retrying', reason);
-        this.log.warn?.(`B站直播连接中断：${reason}，${Math.round(delay / 1000)} 秒后重连`);
+        this.log.warn?.(`Bilibili live connection lost: ${reason}, ${Math.round(delay / 1000)} seconds until reconnecting`);
         clearTimeout(this.retryTimer);
         this.retryTimer = setTimeout(() => {
             this.retryTimer = null;
@@ -135,14 +135,14 @@ class BilibiliLiveClient {
             const mixin = mixinKey(fileKey(wbi.img_url), fileKey(wbi.sub_url));
             const uid = number(navData.mid);
             const roomResponse = await this.getJson(`https://api.live.bilibili.com/room/v1/Room/get_info?room_id=${this.roomId}`, controller.signal, cookie);
-            if (number(roomResponse.code) !== 0) throw new Error(`直播间不存在：${roomResponse.message || roomResponse.code}`);
+            if (number(roomResponse.code) !== 0) throw new Error(`Live room not found: ${roomResponse.message || roomResponse.code}`);
             const room = object(roomResponse.data);
             this.realRoomId = number(room.room_id);
             const danmu = await this.getJson(`https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?${wbiQuery({ id: this.realRoomId, type: 0 }, mixin)}`, controller.signal, cookie);
-            if (number(danmu.code) !== 0) throw new Error(`获取弹幕服务器失败：${danmu.message || danmu.code}`);
+            if (number(danmu.code) !== 0) throw new Error(`Failed to get the live chat server: ${danmu.message || danmu.code}`);
             const danmuData = object(danmu.data);
             const host = object(Array.isArray(danmuData.host_list) ? danmuData.host_list[0] : null);
-            if (!host.host) throw new Error('弹幕服务器列表为空');
+            if (!host.host) throw new Error('The live chat server list is empty');
             return {
                 url: `wss://${host.host}:${number(host.wss_port) || 443}/sub`,
                 auth: { uid, roomid: this.realRoomId, protover: 3, platform: 'web', type: 2, buvid, key: danmuData.token || '' }

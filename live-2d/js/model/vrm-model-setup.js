@@ -62,7 +62,7 @@ class VRMModelSetup {
 
         // 拒绝VRM 1.0模型（仅支持VRM 0.x）
         if (vrm.meta?.metaVersion === '1') {
-            throw new Error('不支持VRM 1.0模型，请使用VRM 0.x格式的模型');
+            throw new Error('VRM 1.0 models are not supported. Please use a VRM 0.x model');
         }
 
         // 用 Group 包裹 vrm.scene（用于统一控制可见性）
@@ -164,7 +164,7 @@ class VRMModelSetup {
         console.log(`VRM文件绝对路径: ${absPath}`);
 
         if (!fs.existsSync(absPath)) {
-            throw new Error(`VRM文件不存在: ${absPath}`);
+            throw new Error(`VRM file not found: ${absPath}`);
         }
 
         // 用 Node.js fs 读取文件（绕过 fetch + file:// 协议问题）
@@ -191,7 +191,7 @@ class VRMModelSetup {
 
         const vrm = gltf.userData.vrm;
         if (!vrm) {
-            throw new Error('GLTF文件中未找到VRM数据');
+            throw new Error('GLTF file has no VRM data');
         }
 
         // 优化VRM模型
