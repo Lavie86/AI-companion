@@ -141,6 +141,7 @@ class ToolExecutor {
                     screenshotData = {
                         tool_call_id: toolCall.id,
                         base64: toolResult.base64,
+                        mimeType: toolResult.mimeType,
                         message: toolResult.message
                     };
                     // 将简单的成功消息添加到结果中
