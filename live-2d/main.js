@@ -15,6 +15,10 @@ const {
 const { ShortcutManager } = require('./js/shortcut-manager')
 const screenshot = require('screenshot-desktop');
 const { logToTerminal } = require('./js/api-utils');
+const { registerToolApprovalDialog } = require('./js/services/tool-approval-dialog');
+
+// Ask the user before the AI runs tools that can change the PC (js/ai/tool-approval.js).
+registerToolApprovalDialog();
 
 // 添加配置文件路径；隔离测试可通过环境变量指向临时副本。
 const configPath = process.env.MY_NEURO_CONFIG_PATH

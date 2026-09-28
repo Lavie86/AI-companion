@@ -1,5 +1,23 @@
 // tool-executor.js - 统一的工具调用执行器
 const { logToTerminal, logToolAction } = require('../api-utils.js');
+const { toolApproval } = require('./tool-approval.js');
+
+// The MCP tool that handles this name, if MCP is on (same lookup as mcpManager.handleToolCalls).
+function findMcpTool(functionName) {
+    const manager = global.mcpManager;
+    if (!manager || !manager.isEnabled || !manager.toolRegistry) return null;
+    return manager.toolRegistry.findTool(functionName) || null;
+}
+
+// True when a loaded plugin offers this tool (pluginManager.executeTool would find it).
+function pluginProvidesTool(functionName) {
+    try {
+        return global.pluginManager.getAllTools()
+            .some(tool => tool && (tool.name === functionName || tool.function?.name === functionName));
+    } catch (error) {
+        return false;
+    }
+}
 
 // 遥测：可选依赖，加载/写盘失败必须吞掉，不能影响工具执行
 let _emitTelemetry = null;
@@ -61,30 +79,58 @@ class ToolExecutor {
                 global.showToolBubble(functionName, parameters);
             }
 
+            // Ask the user first when a tool can change the PC (js/ai/tool-approval.js, tool_safety.json).
+            // Each source is approved on its own: an MCP tool as "mcp:<server>/<name>", a plugin tool by its name.
+            let denial = null;
+            const mcpTool = findMcpTool(functionName);
+
             // 优先尝试MCP工具
-            if (global.mcpManager && global.mcpManager.isEnabled) {
-                try {
-                    const mcpResult = await global.mcpManager.handleToolCalls([toolCall]);
-                    if (mcpResult) {
-                        toolResult = mcpResult;
-                        hasToolExecuted = true;
+            if (mcpTool) {
+                denial = await toolApproval.denialFor({
+                    toolId: `mcp:${mcpTool.server}/${functionName}`,
+                    toolName: functionName,
+                    source: `MCP server "${mcpTool.server}"`
+                }, parameters);
+
+                if (!denial) {
+                    try {
+                        const mcpResult = await global.mcpManager.handleToolCalls([toolCall]);
+                        if (mcpResult) {
+                            toolResult = mcpResult;
+                            hasToolExecuted = true;
+                        }
+                    } catch (error) {
+                        logToolAction('warn', `MCP工具 ${functionName} 执行失败，尝试本地工具: ${error.message}`);
                     }
-                } catch (error) {
-                    logToolAction('warn', `MCP工具 ${functionName} 执行失败，尝试本地工具: ${error.message}`);
                 }
             }
 
             // 如果MCP没有处理，尝试插件工具
-            if (!toolResult && global.pluginManager) {
-                try {
-                    const pluginResult = await global.pluginManager.executeTool(functionName, parameters);
-                    if (pluginResult !== undefined) {
-                        toolResult = pluginResult;
-                        hasToolExecuted = true;
+            if (!toolResult && !denial && global.pluginManager && pluginProvidesTool(functionName)) {
+                denial = await toolApproval.denialFor({
+                    toolId: functionName,
+                    toolName: functionName,
+                    source: 'plugin'
+                }, parameters);
+
+                if (!denial) {
+                    try {
+                        const pluginResult = await global.pluginManager.executeTool(functionName, parameters);
+                        if (pluginResult !== undefined) {
+                            toolResult = pluginResult;
+                            hasToolExecuted = true;
+                        }
+                    } catch (error) {
+                        logToolAction('error', `插件工具 ${functionName} 执行失败: ${error.message}`);
                     }
-                } catch (error) {
-                    logToolAction('error', `插件工具 ${functionName} 执行失败: ${error.message}`);
                 }
+            }
+
+            // The LLM still gets a tool result for a denied call, so the conversation stays valid.
+            if (denial) {
+                logToolAction('warn', `Tool ${functionName} did not run: ${denial}`);
+                toolResult = denial;
+                hasToolExecuted = true;
             }
 
             // 如果工具执行成功，添加结果
@@ -126,7 +172,7 @@ class ToolExecutor {
             // 工具结束遥测（含耗时与成败）
             const toolDurationMs = Date.now() - toolStartTs;
             const toolSecs = (toolDurationMs / 1000).toFixed(1);
-            const toolFailed = !toolResult;
+            const toolFailed = !toolResult || Boolean(denial);
             safeEmitTelemetry({
                 cat: 'tool',
                 type: toolFailed ? 'tool.error' : 'tool.end',
