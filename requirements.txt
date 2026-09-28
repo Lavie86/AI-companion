@@ -6,7 +6,7 @@ python-multipart
 # torch>=1.7.0  # 已注释，请手动安装CUDA版本
 # torchaudio    # 已注释，请手动安装CUDA版本
 numpy
-funasr>=0.9.6
+funasr>=1.1.3
 websockets
 modelscope
 onnxruntime
