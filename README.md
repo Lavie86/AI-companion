@@ -1,3 +1,5 @@
+> **This is a fork of my-neuro with English defaults, PC control and safety fixes. Start with [START_HERE.md](START_HERE.md).**
+
 <h1 align="center">My-neuro</h1>
 
 <div align="center">
