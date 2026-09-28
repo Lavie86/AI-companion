@@ -1,9 +1,9 @@
 {
   "name": "code-executor",
-  "displayName": "代码执行",
+  "displayName": "Code Execution",
   "version": "1.0.0",
   "author": "official",
-  "description": "执行 AI 生成的 Python 代码，提供 execute_code / install_packages 工具",
+  "description": "Runs AI-written Python code. Provides the execute_code / install_packages tools.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

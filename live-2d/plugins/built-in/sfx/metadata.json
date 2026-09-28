@@ -1,9 +1,9 @@
 {
   "name": "sfx",
-  "displayName": "音效播放",
+  "displayName": "Sound Effects",
   "version": "1.0.0",
   "author": "official",
-  "description": "播放音效增强对话表现力，提供 play_sound_effect 工具",
+  "description": "Plays sound effects to make chats livelier. Provides the play_sound_effect tool.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

@@ -1,9 +1,9 @@
 {
   "name": "bilibili-live",
-  "displayName": "B站直播弹幕",
+  "displayName": "Bilibili Live Chat",
   "version": "2.0.0",
   "author": "official",
-  "description": "实时监听B站直播间弹幕、礼物、醒目留言和上舰事件，并让AI自然互动",
+  "description": "Listens to Bilibili live room chat, gifts, Super Chats and guard purchases in real time, and lets the AI react naturally.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

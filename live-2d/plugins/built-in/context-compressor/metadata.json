@@ -1,8 +1,8 @@
 {
   "name": "context-compressor",
-  "displayName": "上下文压缩",
+  "displayName": "Context Compression",
   "version": "1.0.0",
   "author": "official",
-  "description": "对话超过阈值时自动压缩旧消息，节省token",
+  "description": "Compresses old messages when the chat gets too long, to save tokens.",
   "main": "index.js"
 }

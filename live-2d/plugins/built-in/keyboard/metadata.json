@@ -1,9 +1,9 @@
 {
   "name": "keyboard",
-  "displayName": "键盘控制",
+  "displayName": "Keyboard Control",
   "version": "1.0.0",
   "author": "official",
-  "description": "按方向键控制，提供 press_arrow 工具",
+  "description": "Presses arrow keys. Provides the press_arrow tool.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

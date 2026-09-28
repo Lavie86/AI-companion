@@ -1,9 +1,9 @@
 {
   "name": "music",
-  "displayName": "音乐播放",
+  "displayName": "Music Player",
   "version": "1.0.0",
   "author": "official",
-  "description": "控制歌曲播放/停止/列表，提供 play_random_music / stop_music / list_music_files / play_specific_music 工具",
+  "description": "Plays, stops and lists songs. Provides the play_random_music / stop_music / list_music_files / play_specific_music tools.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

@@ -1,9 +1,9 @@
 {
   "name": "test-logger",
-  "displayName": "测试插件",
+  "displayName": "Test Plugin",
   "version": "1.0.0",
   "author": "test",
-  "description": "验证插件框架是否正常工作",
+  "description": "Checks that the plugin framework works.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

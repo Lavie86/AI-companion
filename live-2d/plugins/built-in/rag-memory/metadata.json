@@ -1,9 +1,9 @@
 {
   "name": "rag-memory",
-  "displayName": "RAG 记忆检索",
+  "displayName": "RAG Memory Search",
   "version": "1.0.0",
   "author": "official",
-  "description": "从 RAG 记忆系统中检索相关历史对话，提供 search_memory 工具",
+  "description": "Searches past conversations in the RAG memory system. Provides the search_memory tool.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

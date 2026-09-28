@@ -1,9 +1,9 @@
 {
   "name": "web-search",
-  "displayName": "网络搜索",
+  "displayName": "Web Search",
   "version": "1.0.0",
   "author": "official",
-  "description": "游览器搜索，桌宠可使用此插件获取最新的互联网内容",
+  "description": "Web search, so the pet can get up-to-date information from the internet.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

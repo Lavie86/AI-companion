@@ -1,34 +1,34 @@
 {
   "enabled": {
-    "title": "启用",
+    "title": "Enabled",
     "type": "bool",
     "default": true,
     "value": true
   },
   "log_to_terminal": {
-    "title": "输出到终端",
-    "description": "每次请求时在终端打印摘要",
+    "title": "Print to terminal",
+    "description": "Prints a summary in the terminal for each request",
     "type": "bool",
     "default": true,
     "value": true
   },
   "save_to_file": {
-    "title": "保存到文件",
-    "description": "将完整请求/响应追加写入 AI记录室/LLM抓包.jsonl",
+    "title": "Save to file",
+    "description": "Appends each full request/response to AI记录室/LLM抓包.jsonl",
     "type": "bool",
     "default": true,
     "value": true
   },
   "max_content_chars": {
-    "title": "终端显示最大字符数",
-    "description": "每条消息在终端最多显示多少字符，0 = 不限制（文件保存始终完整）",
+    "title": "Max characters in the terminal",
+    "description": "Max characters shown per message in the terminal. 0 = no limit (the file always has everything)",
     "type": "int",
     "default": 0,
     "value": 0
   },
   "show_tools": {
-    "title": "显示工具定义",
-    "description": "是否在终端输出 tools 列表（仅显示名称，不展开完整 schema）",
+    "title": "Show tool definitions",
+    "description": "Whether to print the tools list in the terminal (names only, not the full schema)",
     "type": "bool",
     "default": true,
     "value": true
