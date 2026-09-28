@@ -6,13 +6,13 @@ const SERVICE_LABELS = {
     live2d: 'Live2D',
     asr: 'ASR',
     tts: 'TTS',
-    memos: '记忆系统',
+    memos: 'Memory System',
     rag: 'RAG',
     bert: 'BERT'
 };
 const LIVE2D_GATE_TIMEOUT_MS = 90000;
-const UNSAVED_CONFIG_MESSAGE = '当前配置有未保存的修改，请先保存配置。';
-const START_WITH_UNSAVED_MESSAGE = '当前配置有未保存的修改，启动桌宠前建议先保存配置。仍要继续启动吗？';
+const UNSAVED_CONFIG_MESSAGE = 'You have unsaved changes. Please save the config first.';
+const START_WITH_UNSAVED_MESSAGE = 'You have unsaved changes. Saving before you start the pet is recommended. Start anyway?';
 const CONFIG_DIRTY_PANELS = new Set(['basic-config', 'dialog-config', 'persona-config', 'llm-config', 'voice-settings', 'ui-settings']);
 const configDirtyItems = new Set();
 let isConfigDirtyTrackingReady = false;
@@ -405,7 +405,7 @@ function resetServiceLogFingerprint(serviceName) {
     }
 }
 
-function renderClearedLog(outputId, message = '日志已清空') {
+function renderClearedLog(outputId, message = 'Log cleared') {
     const logOutput = document.getElementById(outputId);
     if (logOutput) {
         logOutput.innerHTML = `<div class="log-entry log-info">${message}</div>`;
@@ -491,7 +491,7 @@ function syncLogTabToPanel2(tabId) {
         
         document.getElementById(tabId2).classList.add('active');
         // 找到对应的按钮并添加 active
-        const buttonText = tabId === 'system-log' ? '系统日志' : tabId === 'pet-log' ? '桌宠日志' : '工具日志';
+        const buttonText = tabId === 'system-log' ? 'System Log' : tabId === 'pet-log' ? 'Pet Log' : 'Tool Log';
         const buttons = document.querySelectorAll('#logPanelContainer2 .log-tab');
         buttons.forEach(btn => {
             if (btn.textContent === buttonText) {
@@ -511,12 +511,12 @@ function clearCurrentLog() {
 
     // 如果是历史对话选项卡，调用清空 API
     if (currentLogTab === 'chat-history') {
-        if (confirm('确定要清空所有对话历史吗？此操作不可恢复！')) {
+        if (confirm('Clear all chat history? This cannot be undone!')) {
             fetch('/api/chat-history/clear', { method: 'POST' })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        showToast('对话历史已清空', 'success');
+                        showToast('Chat history cleared', 'success');
                         chatHistoryState.messages = [];
                         chatHistoryState.page = 1;
                         chatHistoryState.hasMore = false;
@@ -524,10 +524,10 @@ function clearCurrentLog() {
                         chatHistoryState.expandedContentKeys.clear();
                         renderChatHistory([]);
                     } else {
-                        showToast('清空失败：' + data.error, 'error');
+                        showToast('Clear failed: ' + data.error, 'error');
                     }
                 })
-                .catch(err => showToast('清空失败：' + err.message, 'error'));
+                .catch(err => showToast('Clear failed: ' + err.message, 'error'));
         }
         return;
     }
@@ -544,7 +544,7 @@ function clearCurrentLog() {
             outputId = 'system-log-output';
     }
     const logOutput = document.getElementById(outputId);
-    logOutput.innerHTML = '<div class="log-entry log-info">日志已清空</div>';
+    logOutput.innerHTML = '<div class="log-entry log-info">Log cleared</div>';
 
     // 重置内容指纹，使下次轮询能重新渲染
     if (currentLogTab === 'pet-log') lastPetLogContent = '';
@@ -562,13 +562,13 @@ function toggleLogSplit() {
         wrapper.classList.remove('split');
         container2.style.display = 'none';
         button.classList.remove('active');
-        button.textContent = '拆分';
+        button.textContent = 'Split';
     } else {
         // 拆分
         wrapper.classList.add('split');
         container2.style.display = 'flex';
         button.classList.add('active');
-        button.textContent = '合并';
+        button.textContent = 'Merge';
         // 同步当前日志到第二个面板
         syncLogToPanel2();
     }
@@ -609,13 +609,13 @@ function clearCurrentLog2() {
 
     let outputId;
     const activeTab = document.querySelector('#logPanelContainer2 .log-tab.active');
-    const tabName = activeTab ? activeTab.textContent : '系统日志';
+    const tabName = activeTab ? activeTab.textContent : 'System Log';
 
-    if (tabName === '桌宠日志') {
+    if (tabName === 'Pet Log') {
         outputId = 'pet-log-output2';
-    } else if (tabName === '工具日志') {
+    } else if (tabName === 'Tool Log') {
         outputId = 'tool-log-output2';
-    } else if (tabName === '历史对话') {
+    } else if (tabName === 'Chat History') {
         // 历史对话清空与第一个面板相同
         clearCurrentLog();
         return;
@@ -624,7 +624,7 @@ function clearCurrentLog2() {
     }
 
     const logOutput = document.getElementById(outputId);
-    logOutput.innerHTML = '<div class="log-entry log-info">日志已清空</div>';
+    logOutput.innerHTML = '<div class="log-entry log-info">Log cleared</div>';
 }
 
 // ============ 对话历史功能 ============
@@ -651,7 +651,7 @@ async function loadLastPageOfChatHistory() {
         // 如果总数为 0，显示空状态
         if (data.total === 0) {
             document.getElementById('chat-history-output').innerHTML = 
-                '<div class="log-entry log-info">暂无对话记录</div>';
+                '<div class="log-entry log-info">No chat history yet</div>';
             chatHistoryState.messages = [];
             chatHistoryState.page = 1;
             chatHistoryState.hasMorePrev = false;
@@ -690,7 +690,7 @@ async function loadLastPageOfChatHistory() {
     } catch (error) {
         console.error('[ChatHistory] 加载失败:', error);
         document.getElementById('chat-history-output').innerHTML =
-            `<div class="log-entry log-error">加载失败：${error.message}</div>`;
+            `<div class="log-entry log-error">Load failed: ${error.message}</div>`;
     } finally {
         chatHistoryState.isLoading = false;
     }
@@ -742,7 +742,7 @@ async function loadChatHistory(page = 1, prependToTop = false) {
     } catch (error) {
         console.error('加载对话历史失败:', error);
         document.getElementById('chat-history-output').innerHTML =
-            `<div class="log-entry log-error">加载失败：${error.message}</div>`;
+            `<div class="log-entry log-error">Load failed: ${error.message}</div>`;
     } finally {
         chatHistoryState.isLoading = false;
     }
@@ -766,7 +766,7 @@ function renderChatHistory(messages, prependToTop = false, scrollBeforeLoad = 0,
 
     if (!messages || messages.length === 0) {
         console.log('[ChatHistory] 消息为空，显示空状态');
-        container.innerHTML = '<div class="log-entry log-info">暂无对话记录</div>';
+        container.innerHTML = '<div class="log-entry log-info">No chat history yet</div>';
         return;
     }
 
@@ -776,7 +776,7 @@ function renderChatHistory(messages, prependToTop = false, scrollBeforeLoad = 0,
     htmlParts.push(`
         <div class="chat-load-more" id="chat-load-more-container">
             <button id="chat-load-more-btn" onclick="loadMoreChatHistory()" ${!chatHistoryState.hasMorePrev ? 'disabled' : ''}>
-                ${chatHistoryState.hasMorePrev ? '加载更多历史对话' : '没有更多了'}
+                ${chatHistoryState.hasMorePrev ? 'Load earlier messages' : 'No more messages'}
             </button>
         </div>
     `);
@@ -884,7 +884,7 @@ function renderChatHistory(messages, prependToTop = false, scrollBeforeLoad = 0,
                 cursor: not-allowed;
                 font-size: 13px;
             }
-            /* 工具调用样式 */
+            /* tool call styles */
             .chat-tool-calls {
                 margin: 8px 0;
                 padding: 8px;
@@ -912,7 +912,7 @@ function renderChatHistory(messages, prependToTop = false, scrollBeforeLoad = 0,
                 padding: 4px 8px;
                 border-radius: 4px;
             }
-            /* 确保 chat-history-output 容器内的内容不会撑开父容器 */
+            /* keep content inside chat-history-output from stretching the parent */
             #chat-history-output {
                 max-width: 100%;
             }
@@ -922,7 +922,7 @@ function renderChatHistory(messages, prependToTop = false, scrollBeforeLoad = 0,
     // 遍历消息（保持原顺序：旧→新）
     messages.forEach((msg, messageIndex) => {
         const role = msg.role === 'user' ? 'user' : 'assistant';
-        const senderName = role === 'user' ? '用户' : 'AI';
+        const senderName = role === 'user' ? 'You' : 'AI';
         const messageKey = getChatHistoryMessageKey(msg, messageIndex);
         let contentPartIndex = 0;
         
@@ -936,7 +936,7 @@ function renderChatHistory(messages, prependToTop = false, scrollBeforeLoad = 0,
                 const functionArgs = tool.function?.arguments || '{}';
                 contentHtml += `
                     <div class="chat-tool-call">
-                        <div class="chat-tool-name">🔧 调用工具：${escapeHtml(functionName)}</div>
+                        <div class="chat-tool-name">🔧 Tool call: ${escapeHtml(functionName)}</div>
                         <div class="chat-tool-args">${escapeHtml(functionArgs)}</div>
                     </div>
                 `;
@@ -956,9 +956,9 @@ function renderChatHistory(messages, prependToTop = false, scrollBeforeLoad = 0,
                     } else if (item.type === 'image_url') {
                         const imageUrl = item.image_url?.url || '';
                         if (imageUrl.startsWith('data:image/')) {
-                            contentHtml += `<img src="${imageUrl}" alt="图片" onclick="previewImage(this.src)" style="max-width: 100%; border-radius: 6px; margin: 8px 0; cursor: pointer;">`;
+                            contentHtml += `<img src="${imageUrl}" alt="Image" onclick="previewImage(this.src)" style="max-width: 100%; border-radius: 6px; margin: 8px 0; cursor: pointer;">`;
                         } else {
-                            contentHtml += `<img src="${imageUrl}" alt="图片" onclick="previewImage(this.src)" style="max-width: 100%; border-radius: 6px; margin: 8px 0; cursor: pointer;">`;
+                            contentHtml += `<img src="${imageUrl}" alt="Image" onclick="previewImage(this.src)" style="max-width: 100%; border-radius: 6px; margin: 8px 0; cursor: pointer;">`;
                         }
                     }
                 });
@@ -1017,7 +1017,7 @@ function createCollapsibleChatContent(content, stateKey) {
     const safeStateKey = escapeHtml(String(stateKey));
     const isExpanded = chatHistoryState.expandedContentKeys.has(stateKey);
     const collapsedClass = isExpanded ? '' : ' chat-content-collapsed';
-    const toggleText = isExpanded ? '收起' : '展开';
+    const toggleText = isExpanded ? 'Collapse' : 'Expand';
 
     return `
         <div class="chat-content${collapsedClass}" data-chat-content-key="${safeStateKey}">${content}</div>
@@ -1042,7 +1042,7 @@ function setupCollapsibleChatContent(root) {
 
         if (hasOverflow) {
             toggle.classList.add('visible');
-            toggle.textContent = content.classList.contains('chat-content-collapsed') ? '展开' : '收起';
+            toggle.textContent = content.classList.contains('chat-content-collapsed') ? 'Expand' : 'Collapse';
             return;
         }
 
@@ -1084,7 +1084,7 @@ function setChatContentCollapsed(content, collapsed) {
 
     const toggle = content.nextElementSibling;
     if (toggle && toggle.classList.contains('chat-content-toggle')) {
-        toggle.textContent = collapsed ? '展开' : '收起';
+        toggle.textContent = collapsed ? 'Expand' : 'Collapse';
     }
 }
 
@@ -1126,7 +1126,7 @@ function renderBase64Images(content) {
     // 匹配 data:image/jpeg;base64, 开头的图片
     const imageRegex = /data:image\/jpeg;base64,[A-Za-z0-9+/=]+/g;
     return content.replace(imageRegex, (match) => {
-        return `<img src="${match}" alt="图片" onclick="previewImage(this.src)">`;
+        return `<img src="${match}" alt="Image" onclick="previewImage(this.src)">`;
     });
 }
 
@@ -1177,7 +1177,7 @@ function updateChatHistoryLoadMoreButton() {
     const btn = document.getElementById('chat-load-more-btn');
     if (btn) {
         btn.disabled = !chatHistoryState.hasMorePrev;
-        btn.textContent = chatHistoryState.hasMorePrev ? '加载更多历史对话' : '没有更多了';
+        btn.textContent = chatHistoryState.hasMorePrev ? 'Load earlier messages' : 'No more messages';
     }
 }
 
@@ -1278,7 +1278,7 @@ async function loadRuntimeLogs() {
         const response = await fetch('/api/logs/runtime' + suffix);
         const data = await response.json();
         if (!response.ok) {
-            throw new Error(data.error || '运行日志读取失败');
+            throw new Error(data.error || 'Failed to read the runtime log');
         }
 
         if (data.reset) {
@@ -1322,7 +1322,7 @@ async function loadServiceLog(serviceName) {
             if (logs.length > 0) {
                 appendNewLogs(serviceName, logs);
             } else {
-                renderClearedLog(serviceName + '-log-output', `等待 ${getServiceLabel(serviceName)} 服务启动...`);
+                renderClearedLog(serviceName + '-log-output', `Waiting for ${getServiceLabel(serviceName)} service to start...`);
             }
             lastServiceLogContent[serviceName] = contentFingerprint;
             syncLogToPanel2();
@@ -1414,7 +1414,7 @@ function applyLive2DGateState() {
     if (startBtn) {
         startBtn.disabled = isLive2DRunning || live2dGateState.gated;
         startBtn.title = live2dGateState.gated
-            ? '等待 ' + live2dGateState.blocking.map(getServiceLabel).join('、') + ' 端口响应...'
+            ? 'Waiting for ' + live2dGateState.blocking.map(getServiceLabel).join(', ') + ' ports to respond...'
             : '';
     }
 
@@ -1424,10 +1424,10 @@ function applyLive2DGateState() {
 
     if (hint) {
         if (live2dGateState.gated) {
-            hint.textContent = '等待 ' + live2dGateState.blocking.map(getServiceLabel).join('、') + ' 端口响应后才能启动 Live2D';
+            hint.textContent = 'Waiting for ' + live2dGateState.blocking.map(getServiceLabel).join(', ') + ' ports to respond before starting Live2D';
             hint.classList.remove('warning');
         } else if (live2dGateState.timedOut.length > 0) {
-            hint.textContent = live2dGateState.timedOut.map(getServiceLabel).join('、') + ' 可能启动失败，已允许手动启动 Live2D';
+            hint.textContent = live2dGateState.timedOut.map(getServiceLabel).join(', ') + ' may have failed to start. You can now start Live2D';
             hint.classList.add('warning');
         } else {
             hint.textContent = '';
@@ -1532,7 +1532,7 @@ async function startService(serviceName, options = {}) {
             if (!options.skipGateCheck) {
                 const gate = await updateLive2DGate();
                 if (gate.gated) {
-                    const message = 'Live2D 正在等待 ' + gate.blocking.map(getServiceLabel).join('、') + ' 端口响应';
+                    const message = 'Live2D is waiting for ' + gate.blocking.map(getServiceLabel).join(', ') + ' ports to respond';
                     addLog(message, 'warning', 'system');
                     showWarning(message);
                     return false;
@@ -1540,15 +1540,15 @@ async function startService(serviceName, options = {}) {
             }
         }
 
-        setButtonLoading(startBtn, '启动中...');
-        addLog('正在启动 ' + serviceName + ' 服务...', 'info', 'system');
+        setButtonLoading(startBtn, 'Starting...');
+        addLog('Starting ' + serviceName + ' service...', 'info', 'system');
         const response = await fetch('/api/start/' + serviceName, { method: 'POST' });
         const result = await response.json();
 
         if (response.ok && result.already_running) {
             updateServiceStatus(serviceName, 'running');
-            addLog(serviceName + ' 服务已在运行', 'info', 'system');
-            showSuccess(serviceName + ' 服务已在运行');
+            addLog(serviceName + ' service is already running', 'info', 'system');
+            showSuccess(serviceName + ' service is already running');
             if (SERVICE_LOG_TYPES.includes(serviceName)) {
                 loadServiceLog(serviceName);
             }
@@ -1558,16 +1558,16 @@ async function startService(serviceName, options = {}) {
 
         if (response.ok && result.success) {
             updateServiceStatus(serviceName, 'running');
-            addLog(serviceName + ' 服务启动成功', 'success', 'system');
+            addLog(serviceName + ' service started', 'success', 'system');
             if (SERVICE_LOG_TYPES.includes(serviceName)) {
                 loadServiceLog(serviceName);
             }
             updateLive2DGate();
             return true;
         } else {
-            addLog(serviceName + ' 服务启动失败：' + (result.error || '未知错误'), 'error', 'system');
+            addLog(serviceName + ' service failed to start: ' + (result.error || 'Unknown error'), 'error', 'system');
             updateServiceStatus(serviceName, 'stopped');
-            showError(serviceName + ' 服务启动失败：' + (result.error || '未知错误'));
+            showError(serviceName + ' service failed to start: ' + (result.error || 'Unknown error'));
             if (result.log && SERVICE_LOG_TYPES.includes(result.log)) {
                 switchToServiceLog(result.log);
             }
@@ -1575,9 +1575,9 @@ async function startService(serviceName, options = {}) {
             return false;
         }
     } catch (error) {
-        addLog(serviceName + ' 服务启动异常：' + error.message, 'error', 'system');
+        addLog(serviceName + ' service start error: ' + error.message, 'error', 'system');
         updateServiceStatus(serviceName, 'stopped');
-        showError(serviceName + ' 服务启动异常：' + error.message);
+        showError(serviceName + ' service start error: ' + error.message);
         return false;
     } finally {
         restoreButtonText(startBtn);
@@ -1590,26 +1590,26 @@ async function startService(serviceName, options = {}) {
 async function openMemosWebUI() {
     const button = document.getElementById('memos-webui-start');
     try {
-        setButtonLoading(button, '打开中...');
-        addLog('正在打开记忆系统 WebUI...', 'info', 'system');
+        setButtonLoading(button, 'Opening...');
+        addLog('Opening the Memory System WebUI...', 'info', 'system');
 
         const response = await fetch('/api/memos/webui/start', { method: 'POST' });
         const result = await response.json();
 
         if (response.ok && result.success) {
-            const message = result.already_running ? '记忆系统 WebUI 已打开' : '记忆系统 WebUI 正在启动';
-            addLog(`${message}：${result.url || 'http://127.0.0.1:8004'}`, 'success', 'system');
+            const message = result.already_running ? 'Memory System WebUI is already open' : 'Memory System WebUI is starting';
+            addLog(`${message}: ${result.url || 'http://127.0.0.1:8004'}`, 'success', 'system');
             showSuccess(message);
             return true;
         }
 
-        const error = result.error || '未知错误';
-        addLog('打开记忆系统 WebUI 失败：' + error, 'error', 'system');
-        showError('打开记忆系统 WebUI 失败：' + error);
+        const error = result.error || 'Unknown error';
+        addLog('Failed to open the Memory System WebUI: ' + error, 'error', 'system');
+        showError('Failed to open the Memory System WebUI: ' + error);
         return false;
     } catch (error) {
-        addLog('打开记忆系统 WebUI 异常：' + error.message, 'error', 'system');
-        showError('打开记忆系统 WebUI 异常：' + error.message);
+        addLog('Error opening the Memory System WebUI: ' + error.message, 'error', 'system');
+        showError('Error opening the Memory System WebUI: ' + error.message);
         return false;
     } finally {
         restoreButtonText(button);
@@ -1621,26 +1621,26 @@ async function stopService(serviceName) {
     const startBtn = getServiceButton(serviceName, 'start');
     const stopBtn = getServiceButton(serviceName, 'stop');
     try {
-        setButtonLoading(stopBtn, '停止中...');
+        setButtonLoading(stopBtn, 'Stopping...');
         if (startBtn) startBtn.disabled = true;
-        addLog('正在停止 ' + serviceName + ' 服务...', 'warning', 'system');
+        addLog('Stopping ' + serviceName + ' service...', 'warning', 'system');
         const response = await fetch('/api/stop/' + serviceName, { method: 'POST' });
         const result = await response.json();
         
         if (response.ok && result.success) {
             updateServiceStatus(serviceName, 'stopped');
-            addLog(serviceName + ' 服务已停止', 'info', 'system');
+            addLog(serviceName + ' service stopped', 'info', 'system');
             if (SERVICE_LOG_TYPES.includes(serviceName)) {
                 await clearServiceLog(serviceName);
             }
             updateLive2DGate();
             return true;
         } else {
-            addLog(serviceName + ' 服务停止失败：' + (result.error || '未知错误'), 'error', 'system');
+            addLog(serviceName + ' service failed to stop: ' + (result.error || 'Unknown error'), 'error', 'system');
             return false;
         }
     } catch (error) {
-        addLog(serviceName + ' 服务停止异常：' + error.message, 'error', 'system');
+        addLog(serviceName + ' service stop error: ' + error.message, 'error', 'system');
         return false;
     } finally {
         restoreButtonText(stopBtn);
@@ -1653,11 +1653,11 @@ async function restartService(serviceName) {
         if (serviceName === 'live2d' && !confirmStartLive2dWithCurrentConfig()) {
             return;
         }
-        addLog('正在重启 ' + serviceName + ' 服务...', 'info', 'system');
+        addLog('Restarting ' + serviceName + ' service...', 'info', 'system');
         await stopService(serviceName);
         setTimeout(function() { startService(serviceName, { skipUnsavedCheck: serviceName === 'live2d' }); }, 1500);
     } catch (error) {
-        addLog(serviceName + ' 服务重启异常：' + error.message, 'error', 'system');
+        addLog(serviceName + ' service restart error: ' + error.message, 'error', 'system');
     }
 }
 
@@ -1667,7 +1667,7 @@ async function startAllServices() {
         return;
     }
 
-    addLog('开始一键启动全部服务...', 'info', 'system');
+    addLog('Starting all services...', 'info', 'system');
     const services = ['asr', 'tts', 'memos', 'rag', 'bert'];
     let successCount = 0;
     let failCount = 0;
@@ -1681,10 +1681,10 @@ async function startAllServices() {
         }
     }
 
-    addLog('正在等待 ASR/TTS/记忆系统端口就绪...', 'info', 'system');
+    addLog('Waiting for the ASR/TTS/Memory System ports...', 'info', 'system');
     const ready = await waitForLive2DGate();
     if (!ready && live2dGateState.blocking.length > 0) {
-        addLog('等待端口超时：' + live2dGateState.blocking.map(getServiceLabel).join('、') + '，继续尝试启动 Live2D', 'warning', 'system');
+        addLog('Timed out waiting for ports: ' + live2dGateState.blocking.map(getServiceLabel).join(', ') + ', still trying to start Live2D', 'warning', 'system');
     }
 
     if (serviceStates.live2d !== 'running') {
@@ -1693,43 +1693,43 @@ async function startAllServices() {
         else failCount++;
     }
     
-    addLog('一键启动完成：成功 ' + successCount + ' 个，失败 ' + failCount + ' 个', 'info', 'system');
+    addLog('Start all finished: succeeded ' + successCount + ' , failed ' + failCount + ' ', 'info', 'system');
 }
 
 // 一键停止全部服务
 async function stopAllServices() {
-    addLog('开始一键停止全部服务...', 'warning', 'system');
+    addLog('Stopping all services...', 'warning', 'system');
     const services = ['live2d', 'asr', 'tts', 'memos', 'rag', 'bert'];
     let successCount = 0;
     let failCount = 0;
     
     for (const service of services) {
         if (serviceStates[service] === 'running') {
-            addLog('正在停止 ' + service + ' 服务...', 'warning', 'system');
+            addLog('Stopping ' + service + ' service...', 'warning', 'system');
             try {
                 const response = await fetch('/api/stop/' + service, { method: 'POST' });
                 const result = await response.json();
 
                 if (response.ok && result.success) {
                     updateServiceStatus(service, 'stopped');
-                    addLog(service + ' 服务已停止', 'info', 'system');
+                    addLog(service + ' service stopped', 'info', 'system');
                     if (SERVICE_LOG_TYPES.includes(service)) {
                         await clearServiceLog(service);
                     }
                     successCount++;
                 } else {
-                    addLog(service + ' 服务停止失败：' + (result.error || '未知错误'), 'error', 'system');
+                    addLog(service + ' service failed to stop: ' + (result.error || 'Unknown error'), 'error', 'system');
                     failCount++;
                 }
             } catch (error) {
-                addLog(service + ' 服务停止异常：' + error.message, 'error', 'system');
+                addLog(service + ' service stop error: ' + error.message, 'error', 'system');
                 failCount++;
             }
             await sleep(500);
         }
     }
     
-    addLog('一键停止完成：成功 ' + successCount + ' 个，失败 ' + failCount + ' 个', 'info', 'system');
+    addLog('Stop all finished: succeeded ' + successCount + ' , failed ' + failCount + ' ', 'info', 'system');
 }
 
 // 切换标签页
@@ -1762,7 +1762,7 @@ function createConfigSaveButton(tabName, saveHandler) {
     const isDirty = configDirtyItems.has(tabName);
     const dirtyClass = isDirty ? ' config-unsaved' : '';
     const titleAttr = isDirty ? ` title="${UNSAVED_CONFIG_MESSAGE}"` : '';
-    return `<button class="config-save-button${dirtyClass}" onclick="${saveHandler}"${titleAttr}>保存配置</button>`;
+    return `<button class="config-save-button${dirtyClass}" onclick="${saveHandler}"${titleAttr}>Save Config</button>`;
 }
 
 function updateConfigDirtyIndicators() {
@@ -1909,10 +1909,10 @@ async function saveConfig(url, data, successMsg, dirtyKey = null) {
                 clearConfigDirty(dirtyKey);
             }
         } else {
-            addLog('保存失败：' + (result.error || '未知错误'), 'error', 'system');
+            addLog('Save failed: ' + (result.error || 'Unknown error'), 'error', 'system');
         }
     } catch (error) {
-        addLog('保存时出错：' + error.message, 'error', 'system');
+        addLog('Error while saving: ' + error.message, 'error', 'system');
     }
 }
 
@@ -1968,7 +1968,7 @@ function renderLLMFallbackModelSelect() {
 
     const emptyOpt = document.createElement('option');
     emptyOpt.value = '';
-    emptyOpt.textContent = '（不启用保底模型）';
+    emptyOpt.textContent = '(no fallback model)';
     select.appendChild(emptyOpt);
 
     for (const provider of (llmProviderState.providers || [])) {
@@ -1986,7 +1986,7 @@ function renderLLMFallbackModelSelect() {
     if (selectedValue && !Array.from(select.options).some(o => o.value === selectedValue)) {
         const opt = document.createElement('option');
         opt.value = selectedValue;
-        opt.textContent = selectedValue + '（已失效）';
+        opt.textContent = selectedValue + '(no longer available)';
         select.appendChild(opt);
     }
 
@@ -2020,19 +2020,19 @@ function renderLLMProviderList() {
         if (provider.id === llmProviderState.activeProviderId) {
             const badge = document.createElement('span');
             badge.className = 'llm-provider-badge active';
-            badge.textContent = '对话';
+            badge.textContent = 'Chat';
             badges.appendChild(badge);
         }
         if (provider.id === llmProviderState.fallbackProviderId) {
             const badge = document.createElement('span');
             badge.className = 'llm-provider-badge fallback';
-            badge.textContent = '保底';
+            badge.textContent = 'Fallback';
             badges.appendChild(badge);
         }
         if (provider.enabled === false) {
             const badge = document.createElement('span');
             badge.className = 'llm-provider-badge muted';
-            badge.textContent = '已禁用';
+            badge.textContent = 'Disabled';
             badges.appendChild(badge);
         }
         item.appendChild(badges);
@@ -2049,8 +2049,8 @@ function renderLLMProviderEditor() {
     if (!provider) {
         emptyEl.style.display = '';
         emptyEl.textContent = llmProviderState.providers.length === 0
-            ? '还没有提供商，点击左侧「添加」创建一个'
-            : '在左侧选择一个提供商进行编辑';
+            ? 'No providers yet. Click "+ Add" on the left to create one.'
+            : 'Pick a provider on the left to edit it';
         bodyEl.style.display = 'none';
         return;
     }
@@ -2097,7 +2097,7 @@ function renderLLMProviderModels() {
 
     const models = Array.isArray(provider.models) ? provider.models : (provider.models = []);
     const enabledCount = models.filter(m => m.enabled !== false).length;
-    if (titleEl) titleEl.textContent = `模型列表（${enabledCount}/${models.length} 启用）`;
+    if (titleEl) titleEl.textContent = `Models (${enabledCount}/${models.length} enabled)`;
 
     const keyword = (document.getElementById('provider-model-search')?.value || '').trim().toLowerCase();
     const visibleModels = keyword
@@ -2107,12 +2107,12 @@ function renderLLMProviderModels() {
     if (visibleModels.length === 0 && models.length > 0) {
         const empty = document.createElement('div');
         empty.className = 'llm-provider-model-empty';
-        empty.textContent = '没有匹配的模型';
+        empty.textContent = 'No matching models';
         listEl.appendChild(empty);
     } else if (models.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'llm-provider-model-empty';
-        empty.textContent = '还没有模型。可以「从 API 获取」或手动添加';
+        empty.textContent = 'No models yet. Use "Fetch from API" or add one by hand.';
         listEl.appendChild(empty);
     }
 
@@ -2127,7 +2127,7 @@ function renderLLMProviderModels() {
     if (fetched.length > 0) {
         const header = document.createElement('div');
         header.className = 'llm-provider-model-fetched-header';
-        header.textContent = `从 API 获取到 ${fetched.length} 个可添加模型：`;
+        header.textContent = `Fetched ${fetched.length} models you can add:`;
         listEl.appendChild(header);
         for (const modelId of fetched) {
             listEl.appendChild(createFetchedModelRow(provider, modelId));
@@ -2147,7 +2147,7 @@ function createProviderModelRow(provider, model) {
     // 启用开关
     const enableLabel = document.createElement('label');
     enableLabel.className = 'llm-provider-toggle';
-    enableLabel.title = '启用/禁用该模型';
+    enableLabel.title = 'Enable or disable this model';
     const enableCb = document.createElement('input');
     enableCb.type = 'checkbox';
     enableCb.checked = model.enabled !== false;
@@ -2170,20 +2170,20 @@ function createProviderModelRow(provider, model) {
     if (isActive) {
         const badge = document.createElement('span');
         badge.className = 'llm-provider-badge active';
-        badge.textContent = '✦ 当前对话';
+        badge.textContent = '✦ Current chat model';
         main.appendChild(badge);
     } else {
         const useBtn = document.createElement('button');
         useBtn.type = 'button';
         useBtn.className = 'llm-provider-mini-btn';
-        useBtn.textContent = '设为对话模型';
+        useBtn.textContent = 'Use for chat';
         useBtn.onclick = () => setActiveProviderModel(model.model_id);
         main.appendChild(useBtn);
     }
     if (isFallback) {
         const badge = document.createElement('span');
         badge.className = 'llm-provider-badge fallback';
-        badge.textContent = '保底';
+        badge.textContent = 'Fallback';
         main.appendChild(badge);
     }
 
@@ -2192,7 +2192,7 @@ function createProviderModelRow(provider, model) {
     paramsBtn.type = 'button';
     paramsBtn.className = 'llm-provider-mini-btn';
     const expanded = !!llmProviderState.expandedParams[model.model_id];
-    paramsBtn.textContent = expanded ? '参数 ▴' : '参数 ▾';
+    paramsBtn.textContent = expanded ? 'Params ▴' : 'Params ▾';
     paramsBtn.onclick = () => {
         llmProviderState.expandedParams[model.model_id] = !expanded;
         renderLLMProviderModels();
@@ -2203,7 +2203,7 @@ function createProviderModelRow(provider, model) {
     const testBtn = document.createElement('button');
     testBtn.type = 'button';
     testBtn.className = 'llm-provider-mini-btn';
-    testBtn.textContent = '测活';
+    testBtn.textContent = 'Test';
     testBtn.onclick = () => testProviderModel(model.model_id, testBtn);
     main.appendChild(testBtn);
 
@@ -2211,7 +2211,7 @@ function createProviderModelRow(provider, model) {
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'llm-provider-mini-btn danger';
-    delBtn.textContent = '删除';
+    delBtn.textContent = 'Delete';
     delBtn.onclick = () => {
         provider.models = provider.models.filter(m => m.model_id !== model.model_id);
         if (provider.id === llmProviderState.fallbackProviderId && model.model_id === llmProviderState.fallbackModelId) {
@@ -2245,7 +2245,7 @@ function createModelParamsPanel(model) {
     tempCb.type = 'checkbox';
     tempCb.checked = model.temperature_enabled === true;
     tempLabel.appendChild(tempCb);
-    tempLabel.appendChild(document.createTextNode(' 启用温度'));
+    tempLabel.appendChild(document.createTextNode(' Set temperature'));
     tempRow.appendChild(tempLabel);
 
     const tempInput = document.createElement('input');
@@ -2281,18 +2281,18 @@ function createModelParamsPanel(model) {
     reasonCb.type = 'checkbox';
     reasonCb.checked = model.reasoning_enabled === true;
     reasonLabel.appendChild(reasonCb);
-    reasonLabel.appendChild(document.createTextNode(' 启用思考模式（推理模型生效）'));
+    reasonLabel.appendChild(document.createTextNode(' Enable thinking (reasoning models only)'));
     reasonRow.appendChild(reasonLabel);
 
     const effortSelect = document.createElement('select');
     effortSelect.className = 'llm-provider-param-select';
     for (const [value, label] of [
-        ['minimal', 'minimal - 最低'],
-        ['low', 'low - 低'],
-        ['medium', 'medium - 中'],
-        ['high', 'high - 高'],
-        ['xhigh', 'xhigh - 超高（extra high，部分模型支持）'],
-        ['max', 'max - 最大（部分模型支持）']
+        ['minimal', 'minimal'],
+        ['low', 'low'],
+        ['medium', 'medium'],
+        ['high', 'high'],
+        ['xhigh', 'xhigh (extra high, some models only)'],
+        ['max', 'max (some models only)']
     ]) {
         const opt = document.createElement('option');
         opt.value = value;
@@ -2304,7 +2304,7 @@ function createModelParamsPanel(model) {
     if (!Array.from(effortSelect.options).some(o => o.value === savedEffort)) {
         const opt = document.createElement('option');
         opt.value = savedEffort;
-        opt.textContent = savedEffort + '（自定义）';
+        opt.textContent = savedEffort + '(custom)';
         effortSelect.appendChild(opt);
     }
     effortSelect.value = savedEffort;
@@ -2323,7 +2323,7 @@ function createModelParamsPanel(model) {
 
     const hint = document.createElement('div');
     hint.className = 'llm-provider-param-hint';
-    hint.textContent = '思考模式默认关闭。未勾选时会明确要求模型不要思考，以降低延迟和 token。勾选后按右侧档位发送，仅对支持思考的模型生效。温度未勾选时仍不发送该参数。';
+    hint.textContent = 'Thinking is off by default. When unchecked, the model is told not to think, which lowers latency and token use. When checked, the level on the right is sent (only models that support thinking use it). An unchecked temperature is not sent either.';
     panel.appendChild(hint);
     return panel;
 }
@@ -2343,7 +2343,7 @@ function createFetchedModelRow(provider, modelId) {
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'llm-provider-mini-btn';
-    addBtn.textContent = '＋ 添加';
+    addBtn.textContent = '+ Add';
     addBtn.onclick = () => {
         provider.models.push({ model_id: modelId, name: modelId, enabled: true });
         markConfigDirty('llm-config');
@@ -2365,7 +2365,7 @@ function addLLMProvider() {
     const id = generateProviderId();
     llmProviderState.providers.push({
         id,
-        name: '新提供商',
+        name: 'New provider',
         api_key: '',
         api_url: '',
         enabled: true,
@@ -2379,7 +2379,7 @@ function addLLMProvider() {
 function deleteLLMProvider() {
     const provider = getSelectedLLMProvider();
     if (!provider) return;
-    if (!confirm(`确定删除提供商「${provider.name || provider.id}」及其全部模型配置？`)) return;
+    if (!confirm(`Delete provider "${provider.name || provider.id}" and all of its model settings?`)) return;
     llmProviderState.providers = llmProviderState.providers.filter(p => p.id !== provider.id);
     if (llmProviderState.activeProviderId === provider.id) {
         llmProviderState.activeProviderId = '';
@@ -2409,11 +2409,11 @@ function addProviderModelManually() {
     const input = document.getElementById('provider-new-model-id');
     const modelId = (input?.value || '').trim();
     if (!modelId) {
-        showError('请输入模型 ID');
+        showError('Please enter a model ID');
         return;
     }
     if (provider.models.some(m => m.model_id === modelId)) {
-        showError('该模型已存在');
+        showError('This model already exists');
         return;
     }
     provider.models.push({ model_id: modelId, name: modelId, enabled: true });
@@ -2436,12 +2436,12 @@ async function fetchProviderModels() {
     if (!provider) return;
     onProviderEditorInput();  // 先同步编辑器中的 key/url
     if (!provider.api_url || !provider.api_key) {
-        showError('请先填写 API Key 和 API URL');
+        showError('Please fill in the API Key and API URL');
         return;
     }
     const btn = document.getElementById('provider-fetch-models-btn');
     const originalText = btn ? btn.textContent : '';
-    if (btn) { btn.disabled = true; btn.textContent = '获取中...'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Fetching...'; }
     try {
         const response = await fetch('/api/config/llm/providers/models/fetch', {
             method: 'POST',
@@ -2451,13 +2451,13 @@ async function fetchProviderModels() {
         const result = await response.json();
         if (response.ok && result.success) {
             llmProviderState.fetchedModels[provider.id] = result.models || [];
-            addLog(`获取到 ${(result.models || []).length} 个模型`, 'success', 'system');
+            addLog(`Fetched ${(result.models || []).length} models`, 'success', 'system');
             renderLLMProviderModels();
         } else {
-            showError(result.error || '获取模型列表失败');
+            showError(result.error || 'Failed to fetch the model list');
         }
     } catch (error) {
-        showError('获取模型列表出错：' + error.message);
+        showError('Error fetching the model list: ' + error.message);
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = originalText; }
     }
@@ -2468,7 +2468,7 @@ async function testProviderModel(modelId, btn) {
     if (!provider) return;
     onProviderEditorInput();
     const originalText = btn ? btn.textContent : '';
-    if (btn) { btn.disabled = true; btn.textContent = '测试中'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Testing'; }
     try {
         const response = await fetch('/api/config/llm/providers/models/test', {
             method: 'POST',
@@ -2481,14 +2481,14 @@ async function testProviderModel(modelId, btn) {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            showSuccess(`✅ ${modelId} 测活成功`);
-            addLog(`模型测活成功: ${modelId}`, 'success', 'system');
+            showSuccess(`✅ ${modelId} test passed`);
+            addLog(`Model test passed: ${modelId}`, 'success', 'system');
         } else {
-            showError(`❌ ${modelId} 测活失败：` + (result.detail || result.error || '未知错误'));
-            addLog(`模型测活失败: ${modelId} - ${result.detail || result.error || ''}`, 'error', 'system');
+            showError(`❌ ${modelId} test failed: ` + (result.detail || result.error || 'Unknown error'));
+            addLog(`Model test failed: ${modelId} - ${result.detail || result.error || ''}`, 'error', 'system');
         }
     } catch (error) {
-        showError('测活出错：' + error.message);
+        showError('Test error: ' + error.message);
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = originalText; }
     }
@@ -2501,7 +2501,7 @@ async function saveLLMConfig() {
     // 基本校验
     for (const provider of llmProviderState.providers) {
         if (!provider.api_url) {
-            showError(`提供商「${provider.name || provider.id}」缺少 API URL`);
+            showError(`Provider "${provider.name || provider.id}" has no API URL`);
             return;
         }
     }
@@ -2520,20 +2520,20 @@ async function saveLLMConfig() {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            addLog('LLM 配置保存成功', 'success', 'system');
-            showSuccess('LLM 配置保存成功');
+            addLog('LLM config saved', 'success', 'system');
+            showSuccess('LLM config saved');
             clearConfigDirty('llm-config');
             // 重新加载，同步后端规范化结果，并刷新对话/视觉模型下拉
             await loadLLMConfig();
             try { await loadDialogConfig(); } catch (e) { /* 忽略 */ }
             try { await loadBasicConfig(); } catch (e) { /* 忽略 */ }
         } else {
-            addLog('LLM 配置保存失败：' + (result.error || '未知错误'), 'error', 'system');
-            showError('LLM 配置保存失败：' + (result.error || '未知错误'));
+            addLog('LLM config save failed: ' + (result.error || 'Unknown error'), 'error', 'system');
+            showError('LLM config save failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        addLog('LLM 配置保存时出错：' + error.message, 'error', 'system');
-        showError('LLM 配置保存时出错：' + error.message);
+        addLog('LLM error while saving config: ' + error.message, 'error', 'system');
+        showError('LLM error while saving config: ' + error.message);
     }
 }
 
@@ -2593,14 +2593,14 @@ async function savePersonaSettings() {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            addLog('人格设置保存成功', 'success', 'system');
-            showSuccess('人格设置保存成功');
+            addLog('Persona settings saved', 'success', 'system');
+            showSuccess('Persona settings saved');
             clearConfigDirty('persona-config');
         } else {
-            showError('人格设置保存失败：' + (result.error || '未知错误'));
+            showError('Failed to save persona settings: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        showError('人格设置保存时出错：' + error.message);
+        showError('Error while saving persona settings: ' + error.message);
     }
 }
 
@@ -2613,7 +2613,7 @@ async function saveChatSettings() {
         persistent_history: document.getElementById('persistent-history').checked,
         history_file: document.getElementById('history-file').value
     };
-    await saveConfig('/api/settings/chat', settings, '对话设置保存成功', 'dialog-config');
+    await saveConfig('/api/settings/chat', settings, 'Chat settings saved', 'dialog-config');
 }
 
 // 保存云端配置
@@ -2670,16 +2670,16 @@ async function saveCloudSettings() {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            addLog('云端配置保存成功', 'success', 'system');
-            showSuccess('云端配置保存成功');
+            addLog('Cloud config saved', 'success', 'system');
+            showSuccess('Cloud config saved');
             clearConfigDirty('voice-settings');
         } else {
-            addLog('云端配置保存失败：' + (result.error || '未知错误'), 'error', 'system');
-            showError('云端配置保存失败：' + (result.error || '未知错误'));
+            addLog('Cloud config save failed: ' + (result.error || 'Unknown error'), 'error', 'system');
+            showError('Cloud config save failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        addLog('云端配置保存时出错：' + error.message, 'error', 'system');
-        showError('云端配置保存时出错：' + error.message);
+        addLog('Error while saving cloud config: ' + error.message, 'error', 'system');
+        showError('Error while saving cloud config: ' + error.message);
     }
 }
 
@@ -2785,7 +2785,7 @@ function handleModelFileSelect(files) {
     if (files && files.length > 0) {
         selectedModelFile = files[0];
         const statusEl = document.getElementById('model-file-status');
-        statusEl.textContent = '已选择：' + selectedModelFile.name;
+        statusEl.textContent = 'Selected: ' + selectedModelFile.name;
         statusEl.classList.add('has-file');
     }
 }
@@ -2795,7 +2795,7 @@ function handleAudioFileSelect(files) {
     if (files && files.length > 0) {
         selectedAudioFile = files[0];
         const statusEl = document.getElementById('audio-file-status');
-        statusEl.textContent = '已选择：' + selectedAudioFile.name;
+        statusEl.textContent = 'Selected: ' + selectedAudioFile.name;
         statusEl.classList.add('has-file');
     }
 }
@@ -2805,7 +2805,7 @@ function handleGptModelFileSelect(files) {
     if (files && files.length > 0) {
         selectedGptModelFile = files[0];
         const statusEl = document.getElementById('gpt-model-file-status');
-        statusEl.textContent = '已选择：' + selectedGptModelFile.name;
+        statusEl.textContent = 'Selected: ' + selectedGptModelFile.name;
         statusEl.classList.add('has-file');
     }
 }
@@ -2894,19 +2894,19 @@ async function generateTTSBat() {
     const text = document.getElementById('voice-clone-text').value.trim();
 
     if (!selectedModelFile) {
-        showError('请先选择模型文件（pth）');
+        showError('Please choose a model file (.pth) first');
         return;
     }
     if (!selectedAudioFile) {
-        showError('请先选择参考音频（wav）');
+        showError('Please choose a reference audio file (.wav) first');
         return;
     }
     if (!roleName) {
-        showError('请输入角色名称');
+        showError('Please enter a character name');
         return;
     }
     if (!text) {
-        showError('请输入参考音频的文本内容');
+        showError('Please enter the text spoken in the reference audio');
         return;
     }
 
@@ -2930,17 +2930,17 @@ async function generateTTSBat() {
         const statusEl = document.getElementById('voice-clone-status');
 
         if (response.ok && result.success) {
-            statusEl.textContent = '状态：' + result.message;
+            statusEl.textContent = 'Status: ' + result.message;
             statusEl.classList.add('has-file');
             showSuccess(result.message);
         } else {
-            statusEl.textContent = '状态：生成失败 - ' + (result.error || '未知错误');
-            showError('生成失败：' + (result.error || '未知错误'));
+            statusEl.textContent = 'Status: generation failed - ' + (result.error || 'Unknown error');
+            showError('Generation failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
         const statusEl = document.getElementById('voice-clone-status');
-        statusEl.textContent = '状态：生成失败 - ' + error.message;
-        showError('生成时出错：' + error.message);
+        statusEl.textContent = 'Status: generation failed - ' + error.message;
+        showError('Error during generation: ' + error.message);
     }
 }
 
@@ -2992,7 +2992,7 @@ document.addEventListener('DOMContentLoaded', function() {
     lastToolLogContent = '';
     lastServiceLogContent = { asr: '', tts: '', memos: '' };
 
-    addLog('WebUI 控制面板已就绪', 'success', 'system');
+    addLog('WebUI control panel is ready', 'success', 'system');
 
     console.log('My Neuro WebUI 初始化完成');
 
@@ -3069,13 +3069,13 @@ async function saveBilibiliSettings() {
         checkInterval: parseInt(document.getElementById('bilibili-check-interval').value),
         maxMessages: parseInt(document.getElementById('bilibili-max-messages').value)
     };
-    await saveConfig('/api/settings/bilibili', settings, '直播设置保存成功');
+    await saveConfig('/api/settings/bilibili', settings, 'Live stream settings saved');
 }
 
 // 保存当前模型
 async function saveCurrentModel() {
     const model = document.getElementById('current-model').value;
-    await saveConfig('/api/settings/current-model', { model }, '模型已切换为：' + model);
+    await saveConfig('/api/settings/current-model', { model }, 'Model switched to: ' + model);
 }
 
 // 保存 UI 设置
@@ -3098,16 +3098,16 @@ async function saveUISettings() {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            addLog('UI 设置保存成功', 'success', 'system');
-            showSuccess('UI 设置保存成功');
+            addLog('UI settings saved', 'success', 'system');
+            showSuccess('UI settings saved');
             clearConfigDirty('ui-settings');
         } else {
-            addLog('UI 设置保存失败：' + (result.error || '未知错误'), 'error', 'system');
-            showError('UI 设置保存失败：' + (result.error || '未知错误'));
+            addLog('UI settings save failed: ' + (result.error || 'Unknown error'), 'error', 'system');
+            showError('UI settings save failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        addLog('UI 设置保存时出错：' + error.message, 'error', 'system');
-        showError('UI 设置保存时出错：' + error.message);
+        addLog('UI error while saving settings: ' + error.message, 'error', 'system');
+        showError('UI error while saving settings: ' + error.message);
     }
 }
 
@@ -3120,7 +3120,7 @@ async function saveAutoChatSettings() {
         mood_chat_enabled: document.getElementById('mood-chat-enabled').checked,
         ai_diary_enabled: document.getElementById('ai-diary-enabled').checked
     };
-    await saveConfig('/api/settings/autochat', settings, '主动对话设置保存成功');
+    await saveConfig('/api/settings/autochat', settings, 'Proactive chat settings saved');
 }
 
 // 保存动态主动对话设置
@@ -3129,7 +3129,7 @@ async function saveMoodChatSettings() {
         enabled: document.getElementById('mood-chat-enabled').checked,
         prompt: document.getElementById('mood-chat-prompt').value
     };
-    await saveConfig('/api/settings/mood-chat', settings, '动态主动对话设置保存成功');
+    await saveConfig('/api/settings/mood-chat', settings, 'Mood chat settings saved');
 }
 
 // 保存高级设置
@@ -3143,7 +3143,7 @@ async function saveAdvancedSettings() {
         memos_similarity: parseFloat(document.getElementById('memos-similarity').value),
         auto_close_services: document.getElementById('auto-close-services').checked
     };
-    await saveConfig('/api/settings/advanced', settings, '高级设置保存成功');
+    await saveConfig('/api/settings/advanced', settings, 'Advanced settings saved');
 }
 
 // ============ 工具和模型 ============
@@ -3202,7 +3202,7 @@ async function refreshFCTools() {
 
         const tools = data.tools || [];
         if (tools.length === 0) {
-            fcToolsList.innerHTML = '<div class="log-entry log-info">没有找到 Function Call 工具</div>';
+            fcToolsList.innerHTML = '<div class="log-entry log-info">No Function Call tools found</div>';
             return;
         }
 
@@ -3214,7 +3214,7 @@ async function refreshFCTools() {
         console.error('获取 FC 工具列表失败:', error);
         const fcToolsList = document.getElementById('fc-tools-list');
         if (fcToolsList) {
-            fcToolsList.innerHTML = `<div class="log-entry log-error">加载失败：${error.message}</div>`;
+            fcToolsList.innerHTML = `<div class="log-entry log-error">Load failed: ${error.message}</div>`;
         }
     }
 }
@@ -3240,7 +3240,7 @@ async function refreshMCPTools() {
 
         const tools = data.tools || [];
         if (tools.length === 0) {
-            mcpToolsList.innerHTML = '<div class="log-entry log-info">没有找到 MCP 工具</div>';
+            mcpToolsList.innerHTML = '<div class="log-entry log-info">No MCP tools found</div>';
             return;
         }
 
@@ -3252,7 +3252,7 @@ async function refreshMCPTools() {
         console.error('获取 MCP 工具列表失败:', error);
         const mcpToolsList = document.getElementById('mcp-tools-list');
         if (mcpToolsList) {
-            mcpToolsList.innerHTML = `<div class="log-entry log-error">加载失败：${error.message}</div>`;
+            mcpToolsList.innerHTML = `<div class="log-entry log-error">Load failed: ${error.message}</div>`;
         }
     }
 }
@@ -3266,15 +3266,15 @@ function createToolCard(tool, type = 'fc') {
     card.setAttribute('data-is-external', tool.is_external === true ? 'true' : 'false');
 
     const statusClass = tool.enabled ? 'enabled' : 'disabled';
-    const statusText = tool.enabled ? '已启用' : '已禁用';
-    const toggleText = tool.enabled ? '禁用' : '启用';
+    const statusText = tool.enabled ? 'Enabled' : 'Disabled';
+    const toggleText = tool.enabled ? 'Disable' : 'Enable';
 
     // 工具名称：使用 short_desc（来自注释第一行）
     const toolName = tool.name;
     // 简介：使用 short_desc（注释提取的简短描述）
-    const briefDesc = tool.short_desc || '无描述';
+    const briefDesc = tool.short_desc || 'No description';
     // 完整描述：name: description 格式
-    const fullDesc = tool.name + ': ' + (tool.description || '无详细描述');
+    const fullDesc = tool.name + ': ' + (tool.description || 'No detailed description');
 
     card.innerHTML = `
         <div class="tool-card-body">
@@ -3346,29 +3346,29 @@ async function toggleTool(event, toolName, toolType) {
             // 外部 MCP 工具切换后需要刷新列表（因为名称会变化）
             if (isExternal) {
                 await refreshMCPTools();
-                addLog(`工具已${result.enabled ? '启用' : '禁用'}`, 'success', 'system');
+                addLog(`Tool ${result.enabled ? 'enabled' : 'disabled'}`, 'success', 'system');
             } else {
                 const newEnabled = result.enabled;
 
                 // 更新按钮文本
-                toggleBtn.textContent = newEnabled ? '禁用' : '启用';
+                toggleBtn.textContent = newEnabled ? 'Disable' : 'Enable';
 
                 // 更新状态显示（使用 tool-status-inline）
                 const statusEl = card.querySelector('.tool-status-inline');
                 if (statusEl) {
                     const statusIcon = newEnabled ? '●' : '○';
-                    const statusText = newEnabled ? '已启用' : '已禁用';
+                    const statusText = newEnabled ? 'Enabled' : 'Disabled';
                     statusEl.className = `tool-status-inline ${newEnabled ? 'enabled' : 'disabled'}`;
                     statusEl.textContent = `${statusIcon} ${statusText}`;
                 }
 
-                addLog(`工具 ${toolName} 已${newEnabled ? '启用' : '禁用'}`, 'success', 'system');
+                addLog(`Tool ${toolName} ${newEnabled ? 'enabled' : 'disabled'}`, 'success', 'system');
             }
         } else {
-            addLog(`工具切换失败：${result.error || '未知错误'}`, 'error', 'system');
+            addLog(`Tool toggle failed: ${result.error || 'Unknown error'}`, 'error', 'system');
         }
     } catch (error) {
-        addLog(`工具切换异常：${error.message}`, 'error', 'system');
+        addLog(`Tool toggle error: ${error.message}`, 'error', 'system');
     }
 }
 // 刷新模型列表（v2：四形态皮套统一入口）
@@ -3396,11 +3396,11 @@ async function loadAvatarStatus() {
 
         const currentLabel = document.getElementById('avatar-type-current');
         if (currentLabel) {
-            currentLabel.textContent = `当前形态：${AVATAR_TYPE_LABELS[data.model_type] || data.model_type}`;
+            currentLabel.textContent = `Current avatar type: ${AVATAR_TYPE_LABELS[data.model_type] || data.model_type}`;
         }
         const petStatus = document.getElementById('avatar-pet-status');
         if (petStatus) {
-            petStatus.textContent = data.pet_running ? '（桌宠运行中，改动即时生效）' : '（桌宠未运行，改动将在启动后生效）';
+            petStatus.textContent = data.pet_running ? '(pet is running, changes apply right away)' : '(pet is not running, changes apply when it starts)';
         }
 
         await loadAvatarModels(typeSelect.value);
@@ -3413,7 +3413,7 @@ async function loadAvatarStatus() {
 async function loadAvatarModels(type) {
     const modelSelect = document.getElementById('avatar-model-select');
     if (!modelSelect) return;
-    modelSelect.innerHTML = '<option value="">加载中...</option>';
+    modelSelect.innerHTML = '<option value="">Loading...</option>';
     try {
         const response = await fetch(`/api/avatar/models/${encodeURIComponent(type)}`);
         const data = await response.json();
@@ -3423,14 +3423,14 @@ async function loadAvatarModels(type) {
         if (models.length === 0) {
             const option = document.createElement('option');
             option.value = '';
-            option.textContent = `（未找到模型，请按目录约定放置后刷新）`;
+            option.textContent = `(no models found. Put them in the model folders, then refresh)`;
             modelSelect.appendChild(option);
             return;
         }
         models.forEach(m => {
             const option = document.createElement('option');
             option.value = m.value;
-            option.textContent = m.name + (m.value !== m.name ? `（${m.value}）` : '');
+            option.textContent = m.name + (m.value !== m.name ? ` (${m.value})` : '');
             modelSelect.appendChild(option);
         });
 
@@ -3441,7 +3441,7 @@ async function loadAvatarModels(type) {
         }
     } catch (error) {
         console.error('获取形态模型列表失败:', error);
-        modelSelect.innerHTML = '<option value="">加载失败</option>';
+        modelSelect.innerHTML = '<option value="">Failed to load</option>';
     }
 }
 
@@ -3464,14 +3464,14 @@ async function applyAvatarType() {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            addLog(result.message || `皮套形态已切换为：${AVATAR_TYPE_LABELS[type] || type}`, 'success', 'system');
+            addLog(result.message || `Avatar type switched to: ${AVATAR_TYPE_LABELS[type] || type}`, 'success', 'system');
             // 跨引擎切换会重载桌宠窗口，延迟刷新状态
             setTimeout(loadAvatarStatus, result.hot ? 4000 : 500);
         } else {
-            addLog('切换形态失败：' + (result.error || '未知错误'), 'error', 'system');
+            addLog('Failed to switch avatar type: ' + (result.error || 'Unknown error'), 'error', 'system');
         }
     } catch (error) {
-        addLog('切换形态时出错：' + error.message, 'error', 'system');
+        addLog('Error while switching avatar type: ' + error.message, 'error', 'system');
     }
 }
 
@@ -3483,7 +3483,7 @@ async function applyAvatarModel() {
     const type = typeSelect.value;
     const model = modelSelect.value;
     if (!model) {
-        addLog('请先选择模型', 'warning', 'system');
+        addLog('Please choose a model first', 'warning', 'system');
         return;
     }
     try {
@@ -3494,7 +3494,7 @@ async function applyAvatarModel() {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            addLog(result.message || `模型已应用：${model}`, 'success', 'system');
+            addLog(result.message || `Model applied: ${model}`, 'success', 'system');
             if (type === 'live2d') {
                 // Live2D 换模型后刷新动作/表情配置面板
                 live2dPreviewState.info = null;
@@ -3504,10 +3504,10 @@ async function applyAvatarModel() {
             }
             setTimeout(loadAvatarStatus, 1500);
         } else {
-            addLog('应用模型失败：' + (result.error || '未知错误'), 'error', 'system');
+            addLog('Failed to apply model: ' + (result.error || 'Unknown error'), 'error', 'system');
         }
     } catch (error) {
-        addLog('应用模型时出错：' + error.message, 'error', 'system');
+        addLog('Error while applying model: ' + error.message, 'error', 'system');
     }
 }
 
@@ -3520,17 +3520,17 @@ async function startMinecraftGame() {
         const result = await response.json();
         
         if (response.ok && result.success) {
-            showSuccess('Minecraft 游戏已启动！');
+            showSuccess('Minecraft game started!');
         } else {
-            const errorMsg = result.error || '启动失败';
+            const errorMsg = result.error || 'Failed to start';
             if (errorMsg.includes('开启游戏终端.bat')) {
-                showError('启动脚本不存在：开启游戏终端.bat');
+                showError('Launch script not found: 开启游戏终端.bat');
             } else {
-                showError('启动失败：' + errorMsg);
+                showError('Failed to start: ' + errorMsg);
             }
         }
     } catch (error) {
-        showError('启动时出错：' + error.message);
+        showError('Error while starting: ' + error.message);
     }
 }
 
@@ -3538,7 +3538,7 @@ async function startMinecraftGame() {
 
 // 添加工具调用日志的函数（供外部调用）
 function addToolLog(toolName, result) {
-    addLog('工具调用：' + toolName + ' -> ' + result, 'info', 'tool');
+    addLog('Tool call: ' + toolName + ' -> ' + result, 'info', 'tool');
 }
 
 // ============ 配置加载 ============
@@ -3596,13 +3596,13 @@ function updateUptime() {
     
     let uptimeStr;
     if (days > 0) {
-        uptimeStr = `${days}天${hours}小时${minutes}分钟${seconds}秒`;
+        uptimeStr = `${days}d ${hours}h ${minutes}m ${seconds}s`;
     } else if (hours > 0) {
-        uptimeStr = `${hours}小时${minutes}分钟${seconds}秒`;
+        uptimeStr = `${hours}h ${minutes}m ${seconds}s`;
     } else if (minutes > 0) {
-        uptimeStr = `${minutes}分钟${seconds}秒`;
+        uptimeStr = `${minutes}m ${seconds}s`;
     } else {
-        uptimeStr = `${seconds}秒`;
+        uptimeStr = `${seconds}s`;
     }
     
     document.getElementById('system-uptime').textContent = uptimeStr;
@@ -3617,16 +3617,16 @@ async function refreshPlugins() {
         if (btn) {
             const originalText = btn.textContent;
             btn.disabled = true;
-            btn.textContent = '🔄 刷新中...';
+            btn.textContent = '🔄 Refreshing...';
             setTimeout(() => {
                 btn.disabled = false;
                 btn.textContent = originalText;
             }, 2000);
         }
         await loadPlugins();
-        addLog('插件列表已刷新', 'success', 'system');
+        addLog('Plugin list refreshed', 'success', 'system');
     } catch (error) {
-        addLog('刷新插件列表失败：' + error.message, 'error', 'system');
+        addLog('Failed to refresh the plugin list: ' + error.message, 'error', 'system');
     }
 }
 
@@ -3662,10 +3662,10 @@ async function loadPlugins() {
             renderPlugins(plugins);
             updatePluginPanelButtons(plugins);
         } else {
-            addLog('加载插件列表失败', 'error', 'system');
+            addLog('Failed to load the plugin list', 'error', 'system');
         }
     } catch (error) {
-        addLog('加载插件列表时出错：' + error.message, 'error', 'system');
+        addLog('Error while loading the plugin list: ' + error.message, 'error', 'system');
     }
 }
 
@@ -3700,22 +3700,22 @@ function createPluginCard(plugin) {
     card.dataset.pluginPath = plugin.plugin_path;
 
     const statusIcon = plugin.enabled ? '●' : '○';
-    const statusText = plugin.enabled ? '已启用' : '已禁用';
+    const statusText = plugin.enabled ? 'Enabled' : 'Disabled';
     const compatibilityWarning = plugin.compatible === false
-        ? `<div class="market-card-warning">${escapeHtml(plugin.compatibility_message || '插件框架版本可能不兼容')}</div>`
+        ? `<div class="market-card-warning">${escapeHtml(plugin.compatibility_message || 'This plugin may not work with this app version')}</div>`
         : '';
     const updateBadge = plugin.has_update && plugin.latest_version
-        ? `<span class="update-badge version-badge">可更新到 ${escapeHtml(plugin.latest_version)}</span>`
+        ? `<span class="update-badge version-badge">Update available: ${escapeHtml(plugin.latest_version)}</span>`
         : '';
     const panelButton = plugin.has_local_panel
-        ? `<button class="btn-open-panel" onclick="openPluginPanel('${escapeJsString(plugin.plugin_path)}')">打开面板</button>`
+        ? `<button class="btn-open-panel" onclick="openPluginPanel('${escapeJsString(plugin.plugin_path)}')">Open panel</button>`
         : '';
 
     card.innerHTML = `
         <div class="plugin-card-header">
             <div>
                 <h4>${escapeHtml(plugin.display_name)} <span style="font-size: 12px; opacity: 0.6;">v${escapeHtml(plugin.version)}</span> ${updateBadge}</h4>
-                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.7;">作者：${escapeHtml(plugin.author)}</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.7;">Author: ${escapeHtml(plugin.author)}</p>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span class="plugin-status ${plugin.enabled ? 'enabled' : 'disabled'}">
@@ -3727,10 +3727,10 @@ function createPluginCard(plugin) {
         <p class="plugin-description">${escapeHtml(plugin.description)}</p>
         <div class="plugin-actions">
             <button class="btn-plugin-toggle" onclick="togglePlugin('${escapeJsString(plugin.plugin_path)}')">
-                ${plugin.enabled ? '禁用' : '启用'}
+                ${plugin.enabled ? 'Disable' : 'Enable'}
             </button>
             <button class="btn-open-config" onclick="openPluginConfig('${escapeJsString(plugin.plugin_path)}')">
-                ${plugin.has_own_config ? '配置' : '打开配置'}
+                ${plugin.has_own_config ? 'Settings' : 'Open settings'}
             </button>
             ${panelButton}
         </div>
@@ -3759,19 +3759,19 @@ async function togglePlugin(pluginPath) {
                 const toggleBtn = card.querySelector('.btn-plugin-toggle');
 
                 statusEl.className = `plugin-status ${newEnabled ? 'enabled' : 'disabled'}`;
-                statusEl.innerHTML = `${newEnabled ? '●' : '○'} ${newEnabled ? '已启用' : '已禁用'}`;
-                toggleBtn.textContent = newEnabled ? '禁用' : '启用';
+                statusEl.innerHTML = `${newEnabled ? '●' : '○'} ${newEnabled ? 'Enabled' : 'Disabled'}`;
+                toggleBtn.textContent = newEnabled ? 'Disable' : 'Enable';
             }
 
-            addLog(`插件 ${pluginPath} 已${newEnabled ? '启用' : '禁用'}`, 'success', 'system');
+            addLog(`Plugin ${pluginPath} ${newEnabled ? 'enabled' : 'disabled'}`, 'success', 'system');
 
             // 重新加载插件列表
             loadPlugins();
         } else {
-            addLog('切换插件状态失败：' + (result.error || '未知错误'), 'error', 'system');
+            addLog('Failed to toggle the plugin: ' + (result.error || 'Unknown error'), 'error', 'system');
         }
     } catch (error) {
-        addLog('切换插件状态时出错：' + error.message, 'error', 'system');
+        addLog('Error while toggling the plugin: ' + error.message, 'error', 'system');
     }
 }
 
@@ -3781,7 +3781,7 @@ async function openPluginConfig(pluginPath) {
         // 首先检查插件是否有配置文件
         const pluginsResponse = await fetch('/api/plugins/list');
         if (!pluginsResponse.ok) {
-            throw new Error('无法获取插件列表');
+            throw new Error('Could not get the plugin list');
         }
         
         const plugins = await pluginsResponse.json();
@@ -3800,9 +3800,9 @@ async function openPluginConfig(pluginPath) {
             if (response.ok && result.success) {
                 addLog(result.message, 'success', 'system');
             } else {
-                addLog('打开配置失败：' + (result.error || '未知错误'), 'error', 'system');
+                addLog('Failed to open settings: ' + (result.error || 'Unknown error'), 'error', 'system');
                 if (result.config_path) {
-                    addLog(`配置路径：${result.config_path}`, 'info', 'system');
+                    addLog(`Settings path: ${result.config_path}`, 'info', 'system');
                 }
             }
             return;
@@ -3811,7 +3811,7 @@ async function openPluginConfig(pluginPath) {
         // 如果有配置文件，打开配置模态框 - 使用 display_name 作为标识符
         openPluginConfigModal(pluginPath, plugin.display_name);
     } catch (error) {
-        addLog('打开配置时出错：' + error.message, 'error', 'system');
+        addLog('Error while opening settings: ' + error.message, 'error', 'system');
     }
 }
 
@@ -3831,7 +3831,7 @@ async function openPluginPanel(pluginPath) {
             const url = result.url || '';
             if (!result.enabled) {
                 if (popup) popup.close();
-                addLog('该插件未启用，独立页面没有运行', 'warning', 'system');
+                addLog('This plugin is not enabled, so its page is not running', 'warning', 'system');
                 return;
             }
             if (popup) {
@@ -3841,23 +3841,23 @@ async function openPluginPanel(pluginPath) {
             } else {
                 window.open(url, '_blank', 'noopener,noreferrer');
             }
-            const panelLabel = result.panel_kind === 'feiniu-house' ? '肥牛小屋' : '人格导演面板';
+            const panelLabel = result.panel_kind === 'feiniu-house' ? 'Feiniu\'s House' : 'Persona Director panel';
             addLog(result.available
-                ? `已打开${panelLabel}：${url}`
-                : `已打开${panelLabel}地址，但当前未探测到运行状态：${url}`,
+                ? `Opened ${panelLabel}: ${url}`
+                : `Opened ${panelLabel} address, but it does not seem to be running: ${url}`,
                 result.available ? 'success' : 'warning',
                 'system'
             );
         } else {
             if (popup) popup.close();
-            addLog('打开面板失败：' + (result.error || '未知错误'), 'error', 'system');
+            addLog('Failed to open panel: ' + (result.error || 'Unknown error'), 'error', 'system');
             if (result.url) {
-                addLog(`面板地址：${result.url}`, 'info', 'system');
+                addLog(`Panel address: ${result.url}`, 'info', 'system');
             }
         }
     } catch (error) {
         if (popup) popup.close();
-        addLog('打开面板时出错：' + error.message, 'error', 'system');
+        addLog('Error while opening panel: ' + error.message, 'error', 'system');
     }
 }
 
@@ -3868,7 +3868,7 @@ function openFeiniuHouse() {
 // 打开插件配置模态框
 function openPluginConfigModal(pluginPath, displayName) {
     // 设置模态框标题（使用 display_name 显示）
-    document.getElementById('pluginConfigModalTitle').textContent = `插件配置 - ${displayName}`;
+    document.getElementById('pluginConfigModalTitle').textContent = `Plugin Settings - ${displayName}`;
     
     // 显示加载状态
     document.getElementById('pluginConfigLoading').style.display = 'block';
@@ -3948,7 +3948,7 @@ async function checkReadmeExists(displayName) {
 // 打开插件 README 文件 - 使用 display_name 识别插件
 async function openPluginReadme() {
     if (!window.currentPluginDisplayName) {
-        showToast('没有打开的插件配置', 'warning');
+        showToast('No plugin settings are open', 'warning');
         return;
     }
     
@@ -3960,12 +3960,12 @@ async function openPluginReadme() {
         const result = await response.json();
         
         if (response.ok && result.success) {
-            showToast('已打开 README 文件', 'success');
+            showToast('Opened the README file', 'success');
         } else {
-            showToast('该插件没有 README.md 文件', 'warning');
+            showToast('This plugin has no README.md file', 'warning');
         }
     } catch (error) {
-        showToast('打开配置说明时出错', 'error');
+        showToast('Error while opening the settings guide', 'error');
     }
 }
 
@@ -3997,12 +3997,12 @@ async function loadPluginConfig(displayName) {
             // 显示错误
             document.getElementById('pluginConfigLoading').style.display = 'none';
             document.getElementById('pluginConfigError').style.display = 'block';
-            document.getElementById('pluginConfigErrorText').textContent = result.error || '加载配置失败';
+            document.getElementById('pluginConfigErrorText').textContent = result.error || 'Failed to load settings';
         }
     } catch (error) {
         document.getElementById('pluginConfigLoading').style.display = 'none';
         document.getElementById('pluginConfigError').style.display = 'block';
-        document.getElementById('pluginConfigErrorText').textContent = '加载配置时出错：' + error.message;
+        document.getElementById('pluginConfigErrorText').textContent = 'Error while loading settings: ' + error.message;
     }
 }
 
@@ -4092,7 +4092,7 @@ function createConfigField(key, field, objectPath) {
             ) {
                 const invalidOption = document.createElement('option');
                 invalidOption.value = currentValue;
-                invalidOption.textContent = currentValue + '（当前值不在选项中）';
+                invalidOption.textContent = currentValue + '(current value is not an option)';
                 inputElement.appendChild(invalidOption);
             }
             inputElement.value = currentValue;
@@ -4190,7 +4190,7 @@ function populatePluginLlmProviderSelect(select, selectedValue) {
     select.innerHTML = '';
     const emptyOpt = document.createElement('option');
     emptyOpt.value = '';
-    emptyOpt.textContent = '（跟随全局对话模型）';
+    emptyOpt.textContent = '(use the global chat model)';
     select.appendChild(emptyOpt);
     for (const provider of (llmProviderState.providers || [])) {
         if (provider.enabled === false) continue;
@@ -4202,7 +4202,7 @@ function populatePluginLlmProviderSelect(select, selectedValue) {
     if (selectedValue && !Array.from(select.options).some(o => o.value === selectedValue)) {
         const opt = document.createElement('option');
         opt.value = selectedValue;
-        opt.textContent = selectedValue + '（已失效）';
+        opt.textContent = selectedValue + '(no longer available)';
         select.appendChild(opt);
     }
     select.value = selectedValue || '';
@@ -4215,8 +4215,8 @@ function populatePluginLlmModelSelect(select, providerId, selectedValue) {
     const emptyOpt = document.createElement('option');
     emptyOpt.value = '';
     emptyOpt.textContent = hasProvider
-        ? '（自动选择该提供商默认模型）'
-        : '（请先选择提供商）';
+        ? '(use this provider\'s default model)'
+        : '(choose a provider first)';
     select.appendChild(emptyOpt);
     if (!hasProvider) {
         select.value = '';
@@ -4233,7 +4233,7 @@ function populatePluginLlmModelSelect(select, providerId, selectedValue) {
     if (selectedValue && !Array.from(select.options).some(o => o.value === selectedValue)) {
         const opt = document.createElement('option');
         opt.value = selectedValue;
-        opt.textContent = selectedValue + '（不在列表）';
+        opt.textContent = selectedValue + '(not in list)';
         select.appendChild(opt);
     }
     select.value = selectedValue || '';
@@ -4271,7 +4271,7 @@ function resetPluginConfig() {
     refreshPluginLlmModelSelects();
 
     markConfigDirty('plugin-config');
-    addLog('配置已重置为默认值', 'info', 'system');
+    addLog('Settings reset to defaults', 'info', 'system');
 }
 
 function resetFieldToDefault(key, field, objectPath) {
@@ -4297,7 +4297,7 @@ function resetFieldToDefault(key, field, objectPath) {
 // 保存插件配置（使用 display_name 作为唯一标识符）
 async function savePluginConfig() {
     if (!window.currentPluginConfig || !window.currentPluginDisplayName) {
-        addLog('没有打开的插件配置', 'warning', 'system');
+        addLog('No plugin settings are open', 'warning', 'system');
         return;
     }
     
@@ -4317,19 +4317,19 @@ async function savePluginConfig() {
         const result = await response.json();
         
         if (response.ok && result.success) {
-            addLog('插件配置保存成功', 'success', 'system');
-            showSuccess('插件配置保存成功');
+            addLog('Plugin settings saved', 'success', 'system');
+            showSuccess('Plugin settings saved');
             clearConfigDirty('plugin-config');
             closePluginConfigModal(true);
             // 重新加载插件列表以更新状态
             loadPlugins();
         } else {
-            addLog('保存配置失败：' + (result.error || '未知错误'), 'error', 'system');
-            showError('保存配置失败：' + (result.error || '未知错误'));
+            addLog('Failed to save config: ' + (result.error || 'Unknown error'), 'error', 'system');
+            showError('Failed to save config: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        addLog('保存配置时出错：' + error.message, 'error', 'system');
-        showError('保存配置时出错：' + error.message);
+        addLog('Error while saving config: ' + error.message, 'error', 'system');
+        showError('Error while saving config: ' + error.message);
     }
 }
 
@@ -4439,11 +4439,11 @@ function updatePluginCardButtons(plugins) {
             const configBtn = card.querySelector('.btn-open-config');
             if (configBtn) {
                 if (plugin.has_own_config) {
-                    configBtn.textContent = '配置';
+                    configBtn.textContent = 'Settings';
                     configBtn.disabled = false;
                     configBtn.style.background = ''; // 清掉内联渐变,回到 CSS 主题配色
                 } else {
-                    configBtn.textContent = '无配置';
+                    configBtn.textContent = 'No settings';
                     configBtn.disabled = true;
                     configBtn.style.background = ''; // 由 button:disabled 主题样式接管
                 }
@@ -4462,7 +4462,7 @@ function updatePluginPanelButtons(plugins) {
         panelBtn.disabled = !canOpen;
         panelBtn.style.opacity = canOpen ? '1' : '0.45';
         panelBtn.style.cursor = canOpen ? 'pointer' : 'not-allowed';
-        panelBtn.textContent = canOpen ? '打开面板' : '面板未运行';
+        panelBtn.textContent = canOpen ? 'Open panel' : 'Panel not running';
     });
 }
 
@@ -4528,16 +4528,16 @@ async function saveBasicSettings() {
 
         if (response.ok && result.success) {
             setPTTKeyValue(result.ptt_key || config.ptt_key);
-            addLog('基础配置已保存', 'success', 'system');
-            showSuccess('基础配置已保存');
+            addLog('Basic config saved', 'success', 'system');
+            showSuccess('Basic config saved');
             clearConfigDirty('basic-config');
         } else {
-            addLog('保存基础配置失败：' + (result.error || '未知错误'), 'error', 'system');
-            showError('保存基础配置失败：' + (result.error || '未知错误'));
+            addLog('Failed to save basic config: ' + (result.error || 'Unknown error'), 'error', 'system');
+            showError('Failed to save basic config: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        addLog('保存基础配置时出错：' + error.message, 'error', 'system');
-        showError('保存基础配置时出错：' + error.message);
+        addLog('Error while saving basic config: ' + error.message, 'error', 'system');
+        showError('Error while saving basic config: ' + error.message);
     }
 }
 
@@ -4581,7 +4581,7 @@ function fillModelRefSelect(selectId, options, selectedValue) {
     if (selectedValue && !Array.from(select.options).some(o => o.value === selectedValue)) {
         const opt = document.createElement('option');
         opt.value = selectedValue;
-        opt.textContent = selectedValue + '（已失效）';
+        opt.textContent = selectedValue + '(no longer available)';
         select.appendChild(opt);
     }
     select.value = selectedValue || (select.options[0] ? select.options[0].value : '');
@@ -4652,7 +4652,7 @@ function updatePTTKeyCaptureUI(active) {
 
     if (input) {
         input.value = active
-            ? pttTranslation('dialog_config.ptt_key_waiting', '请按键...')
+            ? pttTranslation('dialog_config.ptt_key_waiting', 'Press a key...')
             : formatPTTKeyLabel(input.dataset.key || 'v');
     }
     if (button) {
@@ -4661,8 +4661,8 @@ function updatePTTKeyCaptureUI(active) {
             : 'dialog_config.ptt_key_change';
         button.setAttribute('data-i18n', translationKey);
         button.textContent = active
-            ? pttTranslation(translationKey, '取消')
-            : pttTranslation(translationKey, '更改按键');
+            ? pttTranslation(translationKey, 'Cancel')
+            : pttTranslation(translationKey, 'Change key');
         button.setAttribute('aria-pressed', String(active));
     }
 }
@@ -4692,7 +4692,7 @@ function capturePTTKey(event) {
 
     const key = pttKeyFromKeyboardEvent(event);
     if (!key) {
-        showError(pttTranslation('dialog_config.ptt_key_unsupported', '这个按键暂不支持'));
+        showError(pttTranslation('dialog_config.ptt_key_unsupported', 'This key is not supported'));
         return;
     }
 
@@ -4741,16 +4741,16 @@ async function saveDialogSettings() {
 
         if (response.ok && result.success) {
             setPTTKeyValue(result.ptt_key || config.ptt_key);
-            addLog('对话配置已保存', 'success', 'system');
-            showSuccess('对话配置已保存');
+            addLog('Chat config saved', 'success', 'system');
+            showSuccess('Chat config saved');
             clearConfigDirty('dialog-config');
         } else {
-            addLog('保存对话配置失败：' + (result.error || '未知错误'), 'error', 'system');
-            showError('保存对话配置失败：' + (result.error || '未知错误'));
+            addLog('Failed to save chat config: ' + (result.error || 'Unknown error'), 'error', 'system');
+            showError('Failed to save chat config: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        addLog('保存对话配置时出错：' + error.message, 'error', 'system');
-        showError('保存对话配置时出错：' + error.message);
+        addLog('Error while saving chat config: ' + error.message, 'error', 'system');
+        showError('Error while saving chat config: ' + error.message);
     }
 }
 
@@ -4761,7 +4761,7 @@ async function loadDialogConfig() {
         if (response.ok) {
             const config = await response.json();
             fillModelRefSelect('dialog-model-select', config.dialog_model_options, config.dialog_model_ref || '');
-            document.getElementById('intro-text').value = config.intro_text || '你好啊';
+            document.getElementById('intro-text').value = config.intro_text || 'Hey. You finally showed up.';
             document.getElementById('max-messages').value = config.max_messages || 30;
             document.getElementById('enable-limit').checked = config.enable_limit === true;
             document.getElementById('persistent-history').checked = config.persistent_history === true;
@@ -4844,15 +4844,15 @@ async function resetModelPosition() {
         const result = await response.json();
 
         if (response.ok && result.success) {
-            addLog('皮套位置已复位', 'success', 'system');
-            showSuccess('皮套位置已复位，请重启桌宠生效');
+            addLog('Avatar position reset', 'success', 'system');
+            showSuccess('Avatar position reset. Restart the pet to apply it.');
         } else {
-            addLog('复位皮套位置失败：' + (result.error || '未知错误'), 'error', 'system');
-            showError('复位失败：' + (result.error || '未知错误'));
+            addLog('Failed to reset avatar position: ' + (result.error || 'Unknown error'), 'error', 'system');
+            showError('Reset failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        addLog('复位皮套位置时出错：' + error.message, 'error', 'system');
-        showError('复位出错：' + error.message);
+        addLog('Error while resetting avatar position: ' + error.message, 'error', 'system');
+        showError('Reset error: ' + error.message);
     }
 }
 
@@ -4867,15 +4867,15 @@ async function adjustSubtitlePosition() {
         const result = await response.json();
 
         if (response.ok && result.success) {
-            addLog('已进入字幕调整模式', 'success', 'system');
-            showSuccess(result.message || '已进入字幕调整模式，请到桌宠窗口拖动调整');
+            addLog('Subtitle adjust mode is on', 'success', 'system');
+            showSuccess(result.message || 'Subtitle adjust mode is on. Drag the subtitles in the pet window.');
         } else {
-            addLog('进入字幕调整模式失败：' + (result.error || '未知错误'), 'error', 'system');
-            showError('调整失败：' + (result.error || '未知错误'));
+            addLog('Failed to enter subtitle adjust mode: ' + (result.error || 'Unknown error'), 'error', 'system');
+            showError('Adjust failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        addLog('进入字幕调整模式时出错：' + error.message, 'error', 'system');
-        showError('调整出错：' + error.message);
+        addLog('Error while entering subtitle adjust mode: ' + error.message, 'error', 'system');
+        showError('Adjust error: ' + error.message);
     }
 }
 
@@ -4890,15 +4890,15 @@ async function resetSubtitlePosition() {
         const result = await response.json();
 
         if (response.ok && result.success) {
-            addLog('字幕位置已复位', 'success', 'system');
-            showSuccess(result.message || '字幕位置已复位');
+            addLog('Subtitle position reset', 'success', 'system');
+            showSuccess(result.message || 'Subtitle position reset');
         } else {
-            addLog('复位字幕位置失败：' + (result.error || '未知错误'), 'error', 'system');
-            showError('复位失败：' + (result.error || '未知错误'));
+            addLog('Failed to reset subtitle position: ' + (result.error || 'Unknown error'), 'error', 'system');
+            showError('Reset failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        addLog('复位字幕位置时出错：' + error.message, 'error', 'system');
-        showError('复位出错：' + error.message);
+        addLog('Error while resetting subtitle position: ' + error.message, 'error', 'system');
+        showError('Reset error: ' + error.message);
     }
 }
 
@@ -4931,7 +4931,7 @@ function switchMarketTab(tab) {
 async function refreshPromptMarket() {
     try {
         const listElement = document.getElementById('prompt-market-list');
-        listElement.innerHTML = '<div class="log-entry log-info">正在加载提示词列表...</div>';
+        listElement.innerHTML = '<div class="log-entry log-info">Loading prompt list...</div>';
 
         const response = await fetch('/api/market/prompts');
         const data = await response.json();
@@ -4943,13 +4943,13 @@ async function refreshPromptMarket() {
                 listElement.appendChild(card);
             });
         } else if (data.success) {
-            listElement.innerHTML = '<div class="log-entry log-info">��无提示词</div>';
+            listElement.innerHTML = '<div class="log-entry log-info">��No prompts</div>';
         } else {
-            listElement.innerHTML = '<div class="log-entry log-error">' + (data.error || '加载失败') + '</div>';
+            listElement.innerHTML = '<div class="log-entry log-error">' + (data.error || 'Failed to load') + '</div>';
         }
     } catch (error) {
         document.getElementById('prompt-market-list').innerHTML = 
-            '<div class="log-entry log-error">加载出错：' + error.message + '</div>';
+            '<div class="log-entry log-error">Load error: ' + error.message + '</div>';
     }
 }
 
@@ -4958,7 +4958,7 @@ function createPromptCard(prompt) {
     const card = document.createElement('div');
     card.className = 'market-card';
 
-    const title = prompt.title || '未命名提示词';
+    const title = prompt.title || 'Untitled prompt';
     const summary = prompt.summary || '';
     const prerequisites = prompt.prerequisites || '';
     const content = prompt.content || '';
@@ -4972,11 +4972,11 @@ function createPromptCard(prompt) {
     }
 
     if (prerequisites) {
-        html += `<div class="market-card-warning">⚠️ 使用条件：${prerequisites}</div>`;
+        html += `<div class="market-card-warning">⚠️ Requirements: ${prerequisites}</div>`;
     }
 
     // 添加应用按钮
-    html += `<button onclick="applyPrompt('${title.replace(/'/g, "\\'")}')" class="btn-sm" style="margin-top: 10px;">应用</button>`;
+    html += `<button onclick="applyPrompt('${title.replace(/'/g, "\\'")}')" class="btn-sm" style="margin-top: 10px;">Apply</button>`;
 
     card.innerHTML = html;
     return card;
@@ -5003,14 +5003,14 @@ async function applyPrompt(title) {
                     if (promptInput) {
                         promptInput.value = res.content;
                     }
-                    showSuccess('提示词已应用，请在 LLM 配置中保存');
+                    showSuccess('Prompt applied. Save it in LLM Config.');
                 } else {
-                    showError('应用失败：' + (res.error || '未知错误'));
+                    showError('Apply failed: ' + (res.error || 'Unknown error'));
                 }
             }
         }
     } catch (error) {
-        showError('应用时出错：' + error.message);
+        showError('Error while applying: ' + error.message);
     }
 }
 
@@ -5018,7 +5018,7 @@ async function applyPrompt(title) {
 async function refreshToolMarket() {
     try {
         const listElement = document.getElementById('tool-market-list');
-        listElement.innerHTML = '<div class="log-entry log-info">正在加载工具列表...</div>';
+        listElement.innerHTML = '<div class="log-entry log-info">Loading tool list...</div>';
 
         const response = await fetch('/api/market/tools');
         const data = await response.json();
@@ -5030,13 +5030,13 @@ async function refreshToolMarket() {
                 listElement.appendChild(card);
             });
         } else if (data.success) {
-            listElement.innerHTML = '<div class="log-entry log-info">暂无工具</div>';
+            listElement.innerHTML = '<div class="log-entry log-info">No tools yet</div>';
         } else {
-            listElement.innerHTML = '<div class="log-entry log-error">' + (data.error || '加载失败') + '</div>';
+            listElement.innerHTML = '<div class="log-entry log-error">' + (data.error || 'Failed to load') + '</div>';
         }
     } catch (error) {
         document.getElementById('tool-market-list').innerHTML = 
-            '<div class="log-entry log-error">加载出错：' + error.message + '</div>';
+            '<div class="log-entry log-error">Load error: ' + error.message + '</div>';
     }
 }
 
@@ -5045,7 +5045,7 @@ function createMarketToolCard(tool) {
     const card = document.createElement('div');
     card.className = 'market-card';
 
-    const toolName = tool.tool_name || tool.name || '未命名工具';
+    const toolName = tool.tool_name || tool.name || 'Untitled tool';
     const toolId = tool.id || '';
     const fileName = tool.file_name || toolName + '.js';
 
@@ -5055,7 +5055,7 @@ function createMarketToolCard(tool) {
     const html = `<div class="market-card-header">
         <h4 class="market-card-title">📦 ${toolName}</h4>
     </div>
-    <button onclick="downloadTool('${toolName.replace(/'/g, "\\'")}', '${downloadUrl}', '${fileName}')" class="btn-sm" style="margin-top: 10px;">⬇ 下载</button>`;
+    <button onclick="downloadTool('${toolName.replace(/'/g, "\\'")}', '${downloadUrl}', '${fileName}')" class="btn-sm" style="margin-top: 10px;">⬇ Download</button>`;
 
     card.innerHTML = html;
     return card;
@@ -5075,12 +5075,12 @@ async function downloadTool(toolName, downloadUrl, fileName) {
         });
         const res = await result.json();
         if (res.success) {
-            showSuccess(`工具 ${toolName} 已下载！`);
+            showSuccess(`Tool ${toolName} downloaded!`);
         } else {
-            showError('下载失败：' + (res.error || '未知错误'));
+            showError('Download failed: ' + (res.error || 'Unknown error'));
         }
     } catch (error) {
-        showError('下载时出错：' + error.message);
+        showError('Error while downloading: ' + error.message);
     }
 }
 
@@ -5088,7 +5088,7 @@ async function downloadTool(toolName, downloadUrl, fileName) {
 async function refreshFCMarket() {
     try {
         const listElement = document.getElementById('fc-market-list');
-        listElement.innerHTML = '<div class="log-entry log-info">正在加载 FC 工具列表...</div>';
+        listElement.innerHTML = '<div class="log-entry log-info">Loading FC tool list...</div>';
 
         const response = await fetch('/api/market/fc-tools');
         const data = await response.json();
@@ -5100,13 +5100,13 @@ async function refreshFCMarket() {
                 listElement.appendChild(card);
             });
         } else if (data.success) {
-            listElement.innerHTML = '<div class="log-entry log-info">暂无 FC 工具</div>';
+            listElement.innerHTML = '<div class="log-entry log-info">No FC tools yet</div>';
         } else {
-            listElement.innerHTML = '<div class="log-entry log-error">' + (data.error || '加载失败') + '</div>';
+            listElement.innerHTML = '<div class="log-entry log-error">' + (data.error || 'Failed to load') + '</div>';
         }
     } catch (error) {
         document.getElementById('fc-market-list').innerHTML =
-            '<div class="log-entry log-error">加载出错：' + error.message + '</div>';
+            '<div class="log-entry log-error">Load error: ' + error.message + '</div>';
     }
 }
 
@@ -5115,13 +5115,13 @@ function createFCCard(tool) {
     const card = document.createElement('div');
     card.className = 'market-card';
 
-    const toolName = tool.tool_name || tool.name || '未命名工具';
+    const toolName = tool.tool_name || tool.name || 'Untitled tool';
     const downloadUrl = tool.download_url || '';
 
     const html = `<div class="market-card-header">
         <h4 class="market-card-title">🔧 ${toolName}</h4>
     </div>
-    <button onclick="downloadFCtool('${toolName.replace(/'/g, "\\'")}', '${downloadUrl}')" class="btn-sm" style="margin-top: 10px;">⬇ 下载</button>`;
+    <button onclick="downloadFCtool('${toolName.replace(/'/g, "\\'")}', '${downloadUrl}')" class="btn-sm" style="margin-top: 10px;">⬇ Download</button>`;
 
     card.innerHTML = html;
     return card;
@@ -5137,12 +5137,12 @@ async function downloadFCtool(toolName, downloadUrl) {
         });
         const res = await result.json();
         if (res.success) {
-            showSuccess(`FC 工具 ${toolName} 已下载！`);
+            showSuccess(`FC Tool ${toolName} downloaded!`);
         } else {
-            showError('下载失败：' + (res.error || '未知错误'));
+            showError('Download failed: ' + (res.error || 'Unknown error'));
         }
     } catch (error) {
-        showError('下载时出错：' + error.message);
+        showError('Error while downloading: ' + error.message);
     }
 }
 
@@ -5180,7 +5180,7 @@ function updatePluginMarketToolbar() {
     if (!toolbar || !updateAllBtn || !updateCount) return;
 
     const count = pluginMarketUpdateCandidates.length;
-    updateCount.textContent = count > 0 ? `发现 ${count} 个可更新插件` : '暂无可更新插件';
+    updateCount.textContent = count > 0 ? `Found ${count} plugins with updates` : 'No plugin updates';
     updateAllBtn.classList.toggle('is-hidden', count === 0);
     toolbar.classList.remove('is-hidden');
 }
@@ -5190,7 +5190,7 @@ function renderPluginMarketList(plugins) {
     if (!listElement) return;
 
     if (!plugins || plugins.length === 0) {
-        listElement.innerHTML = '<div class="log-entry log-info">暂无插件</div>';
+        listElement.innerHTML = '<div class="log-entry log-info">No plugins yet</div>';
         return;
     }
 
@@ -5206,7 +5206,7 @@ async function refreshPluginMarket() {
     try {
         const refreshSeq = ++pluginMarketRefreshSeq;
         const listElement = document.getElementById('plugin-market-list');
-        listElement.innerHTML = '<div class="log-entry log-info">正在加载插件列表...</div>';
+        listElement.innerHTML = '<div class="log-entry log-info">Loading plugin list...</div>';
         pluginMarketUpdateCandidates = [];
         pluginMarketItems = [];
         updatePluginMarketToolbar();
@@ -5221,13 +5221,13 @@ async function refreshPluginMarket() {
                 console.warn('插件更新检查失败:', error);
             });
         } else if (data.success) {
-            listElement.innerHTML = '<div class="log-entry log-info">暂无插件</div>';
+            listElement.innerHTML = '<div class="log-entry log-info">No plugins yet</div>';
         } else {
-            listElement.innerHTML = '<div class="log-entry log-error">' + (data.error || '加载失败') + '</div>';
+            listElement.innerHTML = '<div class="log-entry log-error">' + (data.error || 'Failed to load') + '</div>';
         }
     } catch (error) {
         document.getElementById('plugin-market-list').innerHTML =
-            '<div class="log-entry log-error">加载出错：' + error.message + '</div>';
+            '<div class="log-entry log-error">Load error: ' + error.message + '</div>';
     }
 }
 
@@ -5258,10 +5258,10 @@ function createPluginMarketCard(plugin) {
     card.className = 'market-card';
     card.dataset.pluginName = plugin.name;  // 存储插件名用于后续更新
 
-    const pluginName = plugin.name || plugin.display_name || '未命名插件';
+    const pluginName = plugin.name || plugin.display_name || 'Untitled plugin';
     const displayName = plugin.display_name || pluginName;
-    const desc = plugin.description || plugin.desc || '无描述';
-    const author = plugin.author || '未知作者';
+    const desc = plugin.description || plugin.desc || 'No description';
+    const author = plugin.author || 'Unknown author';
     const repo = plugin.repo || '';
     const downloadUrl = plugin.download_url || repo;
     const installed = plugin.installed || false;
@@ -5276,21 +5276,21 @@ function createPluginMarketCard(plugin) {
     // 根据状态设置按钮文本和样式（installed 优先于 installing）
     let btnText, btnDisabled, buttonAction;
     if (hasUpdate) {
-        btnText = `⬆ 更新到 ${latestVersion}`;
+        btnText = `⬆ Update to ${latestVersion}`;
         btnDisabled = '';
         buttonAction = `updatePlugin('${escapeJsString(pluginName)}', '${escapeJsString(repo)}')`;
     } else if (installed) {
-        btnText = localVersion ? `✓ 已安装 ${localVersion}` : '✓ 已安装';
+        btnText = localVersion ? `✓ Installed ${localVersion}` : '✓ Installed';
         btnDisabled = 'disabled';
         buttonAction = '';
     } else if (installing) {
         // 正在安装
-        btnText = plugin.status === 'updating' ? '⏳ 更新中...' : '⏳ 安装中...';
+        btnText = plugin.status === 'updating' ? '⏳ Updating...' : '⏳ Installing...';
         btnDisabled = 'disabled';
         buttonAction = '';
     } else {
         // 未安装
-        btnText = '⬇ 安装';
+        btnText = '⬇ Install';
         btnDisabled = '';
         buttonAction = `installPlugin('${escapeJsString(pluginName)}', '${escapeJsString(downloadUrl)}')`;
     }
@@ -5298,26 +5298,26 @@ function createPluginMarketCard(plugin) {
     const authorLine = escapeHtml(author);
     const repoHref = repo ? escapeHtml(repo) : '';
     const versionBlock = `<div class="market-card-versions">
-            ${localVersion ? `<span class="version-badge">当前 ${escapeHtml(localVersion)}</span>` : ''}
-            ${latestVersion ? `<span class="version-badge ${hasUpdate ? 'update-badge' : ''}">最新 ${escapeHtml(latestVersion)}</span>` : ''}
-            ${plugin.update_error ? `<span class="version-badge muted-badge" title="${escapeAttribute(plugin.update_error)}">更新检查失败</span>` : ''}
+            ${localVersion ? `<span class="version-badge">Current ${escapeHtml(localVersion)}</span>` : ''}
+            ${latestVersion ? `<span class="version-badge ${hasUpdate ? 'update-badge' : ''}">Latest ${escapeHtml(latestVersion)}</span>` : ''}
+            ${plugin.update_error ? `<span class="version-badge muted-badge" title="${escapeAttribute(plugin.update_error)}">Update check failed</span>` : ''}
            </div>`;
     const statsBlock = `<div class="market-card-stats">
-            <span class="market-stat" title="${escapeAttribute(`${downloads} 次安装下载`)}">⬇ ${escapeHtml(formatCount(downloads))} 次下载</span>
+            <span class="market-stat" title="${escapeAttribute(`${downloads} installs`)}">⬇ ${escapeHtml(formatCount(downloads))} downloads</span>
             <button type="button"
                 class="star-btn ${starred ? 'starred' : ''}"
                 data-plugin-name="${escapeAttribute(pluginName)}"
                 data-stars="${stars}"
                 aria-pressed="${starred ? 'true' : 'false'}"
-                title="${starred ? '取消 Star' : '点亮 Star'}"
+                title="${starred ? 'Remove Star' : 'Give a Star'}"
                 onclick="togglePluginStar('${escapeJsString(pluginName)}', this)">★ <span class="star-count">${escapeHtml(formatCount(stars))}</span></button>
            </div>`;
     const metaBlock = repo
         ? `<div class="market-card-meta">
-            <span class="market-card-author">👤 作者：${authorLine}</span>
-            <a class="market-card-source-link" href="${repoHref}" target="_blank" rel="noopener noreferrer">📎 查看来源</a>
+            <span class="market-card-author">👤 Author: ${authorLine}</span>
+            <a class="market-card-source-link" href="${repoHref}" target="_blank" rel="noopener noreferrer">📎 View source</a>
            </div>`
-        : `<p class="market-card-author">👤 作者：${authorLine}</p>`;
+        : `<p class="market-card-author">👤 Author: ${authorLine}</p>`;
 
     const html = `<div class="market-card-header">
         <h4 class="market-card-title">🧩 ${escapeHtml(displayName)}</h4>
@@ -5327,7 +5327,7 @@ function createPluginMarketCard(plugin) {
         <p class="market-card-summary">${escapeHtml(desc)}</p>
         <div class="install-progress" id="progress-${escapeAttribute(pluginName)}" style="display: none;">
             <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
-            <span class="progress-text">准备中...</span>
+            <span class="progress-text">Preparing...</span>
         </div>
     </div>
     <button ${buttonAction ? `onclick="${escapeAttribute(buttonAction)}"` : ''}
@@ -5351,8 +5351,8 @@ async function togglePluginStar(pluginName, btnEl) {
 
         if (!response.ok || !result.success) {
             const message = result.error === 'stats_disabled'
-                ? '插件统计功能未启用'
-                : 'Star 操作失败';
+                ? 'Plugin stats are not enabled'
+                : 'Star failed';
             showError(message);
             return;
         }
@@ -5361,7 +5361,7 @@ async function togglePluginStar(pluginName, btnEl) {
         btnEl.dataset.stars = String(stars);
         btnEl.classList.toggle('starred', !!result.starred);
         btnEl.setAttribute('aria-pressed', result.starred ? 'true' : 'false');
-        btnEl.setAttribute('title', result.starred ? '取消 Star' : '点亮 Star');
+        btnEl.setAttribute('title', result.starred ? 'Remove Star' : 'Give a Star');
 
         const countEl = btnEl.querySelector('.star-count');
         if (countEl) {
@@ -5373,7 +5373,7 @@ async function togglePluginStar(pluginName, btnEl) {
             return { ...plugin, stars, starred: !!result.starred };
         });
     } catch (error) {
-        showError('Star 操作出错：' + error.message);
+        showError('Star error: ' + error.message);
     } finally {
         btnEl.disabled = false;
     }
@@ -5388,7 +5388,7 @@ async function installPlugin(pluginName, downloadUrl) {
         if (card) {
             const btn = card.querySelector('.market-action-btn');
             btn.disabled = true;
-            btn.textContent = '⏳ 安装中...';
+            btn.textContent = '⏳ Installing...';
             btn.classList.add('btn-installing');
             
             // 显示进度条
@@ -5409,13 +5409,13 @@ async function installPlugin(pluginName, downloadUrl) {
             // 开始轮询检测插件目录
             pollPluginInstalled(pluginName);
         } else {
-            showError('安装失败：' + (res.error || '未知错误'));
+            showError('Install failed: ' + (res.error || 'Unknown error'));
             // 恢复按钮状态
-            restoreInstallButton(pluginName, '⬇ 安装');
+            restoreInstallButton(pluginName, '⬇ Install');
         }
     } catch (error) {
-        showError('安装时出错：' + error.message);
-        restoreInstallButton(pluginName, '⬇ 安装');
+        showError('Error while installing: ' + error.message);
+        restoreInstallButton(pluginName, '⬇ Install');
     }
 }
 
@@ -5427,14 +5427,14 @@ async function updatePlugin(pluginName, repo) {
         if (card) {
             const btn = card.querySelector('.market-action-btn');
             btn.disabled = true;
-            btn.textContent = '⏳ 更新中...';
+            btn.textContent = '⏳ Updating...';
             btn.classList.add('btn-installing');
 
             const progressDiv = document.getElementById(`progress-${pluginName}`);
             const progressText = progressDiv ? progressDiv.querySelector('.progress-text') : null;
             const progressFill = progressDiv ? progressDiv.querySelector('.progress-fill') : null;
             if (progressDiv) progressDiv.style.display = 'block';
-            if (progressText) progressText.textContent = '正在下载并更新...';
+            if (progressText) progressText.textContent = 'Downloading and updating...';
             if (progressFill) progressFill.style.width = '50%';
         }
 
@@ -5446,22 +5446,22 @@ async function updatePlugin(pluginName, repo) {
         const result = await response.json();
 
         if (response.ok && result.success) {
-            showSuccess(`插件 ${pluginName} 已更新`);
+            showSuccess(`Plugin ${pluginName} updated`);
             setTimeout(() => refreshPluginMarket(), 500);
         } else {
-            showError('更新失败：' + (result.error || '未知错误'));
-            restoreInstallButton(pluginName, '⬆ 重试更新');
+            showError('Update failed: ' + (result.error || 'Unknown error'));
+            restoreInstallButton(pluginName, '⬆ Retry update');
         }
     } catch (error) {
-        showError('更新时出错：' + error.message);
-        restoreInstallButton(pluginName, '⬆ 重试更新');
+        showError('Error while updating: ' + error.message);
+        restoreInstallButton(pluginName, '⬆ Retry update');
     }
 }
 
 // 批量更新插件
 async function updateAllPlugins() {
     if (!pluginMarketUpdateCandidates.length) {
-        showSuccess('当前没有可更新插件');
+        showSuccess('No plugins need updates');
         return;
     }
 
@@ -5470,7 +5470,7 @@ async function updateAllPlugins() {
     const updateAllBtn = document.getElementById('plugin-market-update-all-btn');
     if (updateAllBtn) {
         updateAllBtn.disabled = true;
-        updateAllBtn.textContent = '⏳ 批量更新中...';
+        updateAllBtn.textContent = '⏳ Updating all...';
     }
 
     try {
@@ -5481,17 +5481,17 @@ async function updateAllPlugins() {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            showSuccess(result.message || '插件已全部更新');
+            showSuccess(result.message || 'All plugins updated');
         } else {
-            showError(result.message || result.error || '部分插件更新失败');
+            showError(result.message || result.error || 'Some plugins failed to update');
         }
         setTimeout(() => refreshPluginMarket(), 500);
     } catch (error) {
-        showError('批量更新时出错：' + error.message);
+        showError('Error while updating all: ' + error.message);
     } finally {
         if (updateAllBtn) {
             updateAllBtn.disabled = false;
-            updateAllBtn.textContent = '⬆ 全部更新';
+            updateAllBtn.textContent = '⬆ Update all';
         }
     }
 }
@@ -5510,30 +5510,30 @@ function restoreInstallButton(pluginName, text) {
 }
 
 const PLUGIN_INSTALL_STAGE_LABELS = {
-    queued: '等待安装...',
-    downloading: '正在下载插件包...',
-    validating: '正在校验插件包...',
-    extracting: '正在解压...',
-    installing_deps: '正在安装 Python 依赖...',
-    installing_node_deps: '正在安装 Node 依赖...',
-    enabling: '正在启用插件...',
-    updating: '正在更新...'
+    queued: 'Waiting to install...',
+    downloading: 'Downloading plugin package...',
+    validating: 'Checking plugin package...',
+    extracting: 'Unpacking...',
+    installing_deps: 'Installing Python dependencies...',
+    installing_node_deps: 'Installing Node dependencies...',
+    enabling: 'Enabling plugin...',
+    updating: 'Updating...'
 };
 
 // 安装完成后的提示：是否已启用、桌宠是否会立刻加载、是否有警告
 function describePluginInstallResult(data) {
-    let text = data.enabled ? '✓ 已安装并启用' : '✓ 已安装（未自动启用）';
+    let text = data.enabled ? '✓ Installed and enabled' : '✓ Installed (not enabled automatically)';
     if (data.enabled) {
         if (data.live2d_running === true) {
-            text += '，桌宠运行中，已自动加载';
+            text += '. The pet is running, so it was loaded.';
         } else if (data.live2d_running === false) {
-            text += '，下次启动桌宠时生效';
+            text += '. It applies the next time the pet starts.';
         } else {
-            text += '，若桌宠正在运行会自动加载';
+            text += '. If the pet is running, it loads automatically.';
         }
     }
     if (data.source_used && data.source_used !== 'direct' && data.source_used !== 'upload') {
-        text += `（经 ${data.source_used} 镜像）`;
+        text += `(via ${data.source_used} mirror)`;
     }
     return text;
 }
@@ -5545,12 +5545,12 @@ function handlePluginInstallCompleted(pluginName, data, progressFill, progressTe
     const warnings = Array.isArray(data.warnings) ? data.warnings : [];
     warnings.forEach((warning) => showWarning(warning, 9000));
     if (data.enabled) {
-        showSuccess(`插件 ${pluginName} 已安装并启用`);
+        showSuccess(`Plugin ${pluginName} Installed and enabled`);
     } else if (!warnings.length) {
-        showWarning(`插件 ${pluginName} 已安装，但未能自动启用，请到「插件管理」手动开启`, 9000);
+        showWarning(`Plugin ${pluginName} was installed but could not be enabled automatically. Turn it on in "Plugins".`, 9000);
     }
     if (data.enabled && data.live2d_running === true) {
-        showInfo('若桌宠日志出现该插件的加载错误，请到「插件管理」关闭它', 8000);
+        showInfo('If the pet log shows load errors for this plugin, turn it off in "Plugins".', 8000);
     }
 
     setTimeout(() => refreshPluginMarket(), 500);
@@ -5566,7 +5566,7 @@ async function pollPluginInstalled(pluginName, options = {}) {
     // pip 与 npm 各有 600 秒超时，轮询上限放到 15 分钟
     const maxAttempts = 900;
     let attempts = 0;
-    const onFail = options.onFail || (() => restoreInstallButton(pluginName, '⬇ 安装'));
+    const onFail = options.onFail || (() => restoreInstallButton(pluginName, '⬇ Install'));
 
     const poll = async () => {
         try {
@@ -5580,13 +5580,13 @@ async function pollPluginInstalled(pluginName, options = {}) {
             const progressText = progressDiv ? progressDiv.querySelector('.progress-text') : null;
 
             if (!response.ok || data.success === false) {
-                throw new Error(data.error || '无法读取安装状态');
+                throw new Error(data.error || 'Could not read the install status');
             }
 
             if (data.status === 'failed') {
-                const errorMessage = data.error || '未知错误';
-                if (progressText) progressText.textContent = '安装失败：' + errorMessage;
-                showError('安装失败：' + errorMessage, 12000);
+                const errorMessage = data.error || 'Unknown error';
+                if (progressText) progressText.textContent = 'Install failed: ' + errorMessage;
+                showError('Install failed: ' + errorMessage, 12000);
                 onFail();
                 return;
             }
@@ -5603,11 +5603,11 @@ async function pollPluginInstalled(pluginName, options = {}) {
                 ) + '%';
             }
             if (progressText) {
-                progressText.textContent = PLUGIN_INSTALL_STAGE_LABELS[data.status] || '正在安装...';
+                progressText.textContent = PLUGIN_INSTALL_STAGE_LABELS[data.status] || 'Installing...';
             }
 
             if (!data.installing && !data.status) {
-                showError('安装任务已丢失，请重试');
+                showError('The install task was lost. Please try again.');
                 onFail();
                 return;
             }
@@ -5616,7 +5616,7 @@ async function pollPluginInstalled(pluginName, options = {}) {
             if (attempts < maxAttempts) {
                 setTimeout(poll, 1000);
             } else {
-                if (progressText) progressText.textContent = '安装超时，请重试';
+                if (progressText) progressText.textContent = 'Install timed out. Please try again.';
                 onFail();
             }
         } catch (error) {
@@ -5625,7 +5625,7 @@ async function pollPluginInstalled(pluginName, options = {}) {
             if (attempts < maxAttempts) {
                 setTimeout(poll, 1000);
             } else {
-                showError('读取安装状态失败：' + error.message);
+                showError('Failed to read the install status: ' + error.message);
                 onFail();
             }
         }
@@ -5660,7 +5660,7 @@ function renderPluginMarketMirrorOptions(mirrors) {
         option.dataset.mirror = mirror;
         let host = mirror;
         try { host = new URL(mirror).host; } catch (_error) { /* 保持原样 */ }
-        option.textContent = `固定使用镜像 ${host}`;
+        option.textContent = `Always use mirror ${host}`;
         select.insertBefore(option, customOption);
     });
 }
@@ -5694,9 +5694,9 @@ function renderPluginMarketTools(tools) {
     const el = document.getElementById('plugin-market-tools');
     if (!el) return;
     const npmText = tools.npm
-        ? `npm：已找到（${escapeHtml(tools.npm_path || '')}）`
-        : 'npm：未找到，含 Node 依赖且未自带 node_modules 的插件将无法自动补齐依赖，请安装 Node.js';
-    const pyText = `Python：${escapeHtml(tools.python_path || '未知')}`;
+        ? `npm: found (${escapeHtml(tools.npm_path || '')})`
+        : 'npm: not found. Plugins with Node dependencies and no bundled node_modules cannot get their dependencies. Please install Node.js';
+    const pyText = `Python: ${escapeHtml(tools.python_path || 'unknown')}`;
     el.innerHTML = `${npmText}<br>${pyText}`;
     el.classList.toggle('warn', !tools.npm);
 }
@@ -5706,7 +5706,7 @@ async function loadPluginMarketSettings() {
         const response = await fetch('/api/market/settings');
         const data = await response.json();
         if (!response.ok || !data.success) {
-            throw new Error(data.error || '读取设置失败');
+            throw new Error(data.error || 'Failed to read settings');
         }
         pluginMarketBuiltinMirrors = Array.isArray(data.builtin_mirrors) ? data.builtin_mirrors : [];
         renderPluginMarketMirrorOptions(pluginMarketBuiltinMirrors);
@@ -5714,7 +5714,7 @@ async function loadPluginMarketSettings() {
         renderPluginMarketTools(data.tools || {});
         pluginMarketSettingsLoaded = true;
     } catch (error) {
-        showError('读取下载设置失败：' + error.message);
+        showError('Failed to read download settings: ' + error.message);
     }
 }
 
@@ -5749,13 +5749,13 @@ async function savePluginMarketSettings() {
         });
         const data = await response.json();
         if (!response.ok || !data.success) {
-            showError('保存设置失败：' + (data.error || '未知错误'));
+            showError('Failed to save settings: ' + (data.error || 'Unknown error'));
             return;
         }
         applyPluginMarketSettingsToForm(data.settings || {});
-        showSuccess('下载设置已保存，之后的安装与更新都会按新设置走');
+        showSuccess('Download settings saved. Future installs and updates will use them.');
     } catch (error) {
-        showError('保存设置出错：' + error.message);
+        showError('Error while saving settings: ' + error.message);
     }
 }
 
@@ -5767,11 +5767,11 @@ function renderPluginPreviewCard(info) {
     const meta = info.metadata || {};
     const name = meta.name || info.dir_name || '';
     const badges = [
-        meta.version ? `<span class="version-badge">版本 ${escapeHtml(meta.version)}</span>` : '',
-        `<span class="version-badge">${escapeHtml(meta.lang === 'python' ? 'Python 插件' : 'JS 插件')}</span>`,
-        info.source_used ? `<span class="version-badge market-source-badge">来源 ${escapeHtml(info.source_used)}</span>` : '',
+        meta.version ? `<span class="version-badge">Version ${escapeHtml(meta.version)}</span>` : '',
+        `<span class="version-badge">${escapeHtml(meta.lang === 'python' ? 'Python Plugin' : 'JS Plugin')}</span>`,
+        info.source_used ? `<span class="version-badge market-source-badge">Source ${escapeHtml(info.source_used)}</span>` : '',
         info.compatible === false
-            ? `<span class="version-badge market-incompatible-badge" title="${escapeAttribute(info.compatibility_message || '')}">与当前框架版本不兼容</span>`
+            ? `<span class="version-badge market-incompatible-badge" title="${escapeAttribute(info.compatibility_message || '')}">Not compatible with this app version</span>`
             : ''
     ].join('');
 
@@ -5779,24 +5779,24 @@ function renderPluginPreviewCard(info) {
     if (info.conflict) {
         buttonHtml = `<button class="btn-sm market-action-btn" style="margin-top: 10px;" disabled>${escapeHtml(info.conflict)}</button>`;
     } else if (info.compatible === false) {
-        buttonHtml = `<button class="btn-sm market-action-btn" style="margin-top: 10px;" onclick="installPluginFromUrl('${escapeJsString(info.repo)}', true)">⚠ 无视兼容性警告继续安装</button>`;
+        buttonHtml = `<button class="btn-sm market-action-btn" style="margin-top: 10px;" onclick="installPluginFromUrl('${escapeJsString(info.repo)}', true)">⚠ Install anyway (ignore the compatibility warning)</button>`;
     } else {
-        buttonHtml = `<button class="btn-sm market-action-btn" style="margin-top: 10px;" onclick="installPluginFromUrl('${escapeJsString(info.repo)}', false)">⬇ 安装并启用</button>`;
+        buttonHtml = `<button class="btn-sm market-action-btn" style="margin-top: 10px;" onclick="installPluginFromUrl('${escapeJsString(info.repo)}', false)">⬇ Install and enable</button>`;
     }
 
     container.innerHTML = `<div class="market-card market-preview-card" data-preview-plugin="${escapeAttribute(name)}">
         <div class="market-card-header">
             <h4 class="market-card-title">🧩 ${escapeHtml(meta.displayName || name)}</h4>
             <div class="market-card-meta">
-                <span class="market-card-author">👤 作者：${escapeHtml(meta.author || '未知作者')}</span>
-                <a class="market-card-source-link" href="${escapeAttribute(info.repo || '')}" target="_blank" rel="noopener noreferrer">📎 查看来源</a>
+                <span class="market-card-author">👤 Author: ${escapeHtml(meta.author || 'Unknown author')}</span>
+                <a class="market-card-source-link" href="${escapeAttribute(info.repo || '')}" target="_blank" rel="noopener noreferrer">📎 View source</a>
             </div>
             <div class="market-card-versions">${badges}</div>
-            <p class="market-card-summary">${escapeHtml(meta.description || '无描述')}</p>
+            <p class="market-card-summary">${escapeHtml(meta.description || 'No description')}</p>
             ${info.compatible === false && info.compatibility_message ? `<p class="market-card-summary">${escapeHtml(info.compatibility_message)}</p>` : ''}
             <div class="install-progress" style="display: none;">
                 <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
-                <span class="progress-text">准备中...</span>
+                <span class="progress-text">Preparing...</span>
             </div>
         </div>
         ${buttonHtml}
@@ -5809,12 +5809,12 @@ async function previewPluginFromUrl() {
     const input = document.getElementById('pm-repo-url');
     const repo = input ? input.value.trim() : '';
     if (!repo) {
-        showError('请先粘贴 GitHub 仓库地址');
+        showError('Please paste a GitHub repository URL first');
         return;
     }
     const container = document.getElementById('pm-url-preview');
     if (container) {
-        container.innerHTML = '<div class="log-entry log-info">正在读取仓库里的 metadata.json...</div>';
+        container.innerHTML = '<div class="log-entry log-info">Reading the repository\'s metadata.json...</div>';
         container.classList.remove('is-hidden');
     }
     try {
@@ -5825,14 +5825,14 @@ async function previewPluginFromUrl() {
         });
         const data = await response.json();
         if (!response.ok || !data.success) {
-            throw new Error(data.error || '读取仓库信息失败');
+            throw new Error(data.error || 'Failed to read the repository info');
         }
         renderPluginPreviewCard(data);
     } catch (error) {
         if (container) {
             container.innerHTML = `<div class="log-entry log-error">${escapeHtml(error.message)}</div>`;
         }
-        showError('预览失败：' + error.message);
+        showError('Preview failed: ' + error.message);
     }
 }
 
@@ -5843,7 +5843,7 @@ async function installPluginFromUrl(repo, ignoreCompat) {
     const progressEl = card ? card.querySelector('.install-progress') : null;
     if (btn) {
         btn.disabled = true;
-        btn.textContent = '⏳ 安装中...';
+        btn.textContent = '⏳ Installing...';
         btn.classList.add('btn-installing');
     }
     if (progressEl) progressEl.style.display = 'block';
@@ -5851,7 +5851,7 @@ async function installPluginFromUrl(repo, ignoreCompat) {
     const restore = () => {
         if (btn) {
             btn.disabled = false;
-            btn.textContent = ignoreCompat ? '⚠ 无视兼容性警告继续安装' : '⬇ 安装并启用';
+            btn.textContent = ignoreCompat ? '⚠ Install anyway (ignore the compatibility warning)' : '⬇ Install and enable';
             btn.classList.remove('btn-installing');
         }
     };
@@ -5864,7 +5864,7 @@ async function installPluginFromUrl(repo, ignoreCompat) {
         });
         const data = await response.json();
         if (!response.ok || !data.success) {
-            showError('安装失败：' + (data.error || '未知错误'), 10000);
+            showError('Install failed: ' + (data.error || 'Unknown error'), 10000);
             restore();
             return;
         }
@@ -5874,7 +5874,7 @@ async function installPluginFromUrl(repo, ignoreCompat) {
             onFail: restore
         });
     } catch (error) {
-        showError('安装时出错：' + error.message);
+        showError('Error while installing: ' + error.message);
         restore();
     }
 }
@@ -5890,7 +5890,7 @@ function renderPluginUploadStatus(html, showProgress) {
         <div>${html}</div>
         <div class="install-progress" style="display: ${showProgress ? 'block' : 'none'};">
             <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
-            <span class="progress-text">准备中...</span>
+            <span class="progress-text">Preparing...</span>
         </div>
     </div>`;
     box.classList.remove('is-hidden');
@@ -5903,11 +5903,11 @@ async function uploadPluginZip(input) {
     input.value = '';
 
     if (file.size > PLUGIN_UPLOAD_MAX_BYTES) {
-        showError(`文件 ${file.name} 有 ${(file.size / 1024 / 1024).toFixed(1)} MB，超过 300 MB 上限`);
+        showError(`File ${file.name} is ${(file.size / 1024 / 1024).toFixed(1)} MB, over the 300 MB limit`);
         return;
     }
 
-    const progressEl = renderPluginUploadStatus(`📦 正在上传 ${escapeHtml(file.name)}（${(file.size / 1024 / 1024).toFixed(1)} MB）...`, true);
+    const progressEl = renderPluginUploadStatus(`📦 Uploading ${escapeHtml(file.name)} (${(file.size / 1024 / 1024).toFixed(1)} MB)...`, true);
     const formData = new FormData();
     formData.append('file', file, file.name);
 
@@ -5920,15 +5920,15 @@ async function uploadPluginZip(input) {
         try {
             data = await response.json();
         } catch (_error) {
-            data = { success: false, error: `服务器返回 ${response.status}` };
+            data = { success: false, error: `Server returned ${response.status}` };
         }
         if (!response.ok || !data.success) {
-            renderPluginUploadStatus(`<span class="log-error">✗ ${escapeHtml(data.error || '上传失败')}</span>`, false);
-            showError('上传安装失败：' + (data.error || '未知错误'), 10000);
+            renderPluginUploadStatus(`<span class="log-error">✗ ${escapeHtml(data.error || 'Upload failed')}</span>`, false);
+            showError('Upload install failed: ' + (data.error || 'Unknown error'), 10000);
             return;
         }
         const label = data.display_name || data.plugin_name;
-        const progress = renderPluginUploadStatus(`🧩 ${escapeHtml(label)}${data.version ? ` v${escapeHtml(data.version)}` : ''} 正在安装...`, true);
+        const progress = renderPluginUploadStatus(`🧩 ${escapeHtml(label)}${data.version ? ` v${escapeHtml(data.version)}` : ''} Installing...`, true);
         pluginMarketRefreshSeq++;
         pollPluginInstalled(data.plugin_name, {
             progressEl: progress || progressEl,
@@ -5936,7 +5936,7 @@ async function uploadPluginZip(input) {
         });
     } catch (error) {
         renderPluginUploadStatus(`<span class="log-error">✗ ${escapeHtml(error.message)}</span>`, false);
-        showError('上传时出错：' + error.message);
+        showError('Error while uploading: ' + error.message);
     }
 }
 
@@ -6124,8 +6124,8 @@ async function ensureLive2dPreviewInfo(force = false) {
 function renderLive2dPreviewMeta(info) {
     const meta = document.getElementById('live2d-preview-meta');
     if (meta) {
-        const source = info.using_sidecar ? '独立配置' : '旧版兼容';
-        meta.textContent = `当前模型：${info.model_name || '-'}（${source}）`;
+        const source = info.using_sidecar ? 'own config file' : 'legacy config';
+        meta.textContent = `Current model: ${info.model_name || '-'} (${source})`;
     }
 
     const select = document.getElementById('live2d-idle-group-select');
@@ -6134,7 +6134,7 @@ function renderLive2dPreviewMeta(info) {
         select.innerHTML = '';
         const noneOption = document.createElement('option');
         noneOption.value = '';
-        noneOption.textContent = '无（仅模型呼吸）';
+        noneOption.textContent = 'None (breathing only)';
         select.appendChild(noneOption);
         groups.forEach(group => {
             const option = document.createElement('option');
@@ -6150,7 +6150,7 @@ function renderLive2dPreviewMeta(info) {
         expressionSelect.innerHTML = '';
         const noneOption = document.createElement('option');
         noneOption.value = '';
-        noneOption.textContent = '无';
+        noneOption.textContent = 'None';
         expressionSelect.appendChild(noneOption);
         (info.expressions || []).forEach(item => {
             const option = document.createElement('option');
@@ -6163,10 +6163,10 @@ function renderLive2dPreviewMeta(info) {
 
     const hint = document.getElementById('live2d-preview-hint');
     if (hint) {
-        const idleFile = info.idle?.file || '无';
-        const idleExpression = info.idle?.expression || '无';
-        const idleGroup = info.idle?.group || '无';
-        hint.textContent = `待机动作：${idleGroup} / ${idleFile}。待机表情：${idleExpression}。同一个情绪可以同时绑定动作和表情。`;
+        const idleFile = info.idle?.file || 'None';
+        const idleExpression = info.idle?.expression || 'None';
+        const idleGroup = info.idle?.group || 'None';
+        hint.textContent = `Idle motion: ${idleGroup} / ${idleFile}. Idle expression: ${idleExpression}. One emotion can have both a motion and an expression.`;
     }
 }
 
@@ -6175,9 +6175,9 @@ async function ensureLive2dPreviewModel(force = false) {
 
     live2dPreviewState.loading = (async () => {
         const info = await ensureLive2dPreviewInfo(force);
-        if (!info.model_path) throw new Error('当前 Live2D 模型缺少 model3.json');
+        if (!info.model_path) throw new Error('The current Live2D model has no model3.json');
         if (!window.PIXI?.live2d?.Live2DModel) {
-            throw new Error('Live2D 预览运行时不可用');
+            throw new Error('Live2D preview runtime is not available');
         }
 
         const modelUrl = live2dAssetUrl(info.model_path);
@@ -6206,7 +6206,7 @@ async function ensureLive2dPreviewModel(force = false) {
             return live2dPreviewState.model;
         }
 
-        setLive2dPreviewStatus('正在加载预览模型...');
+        setLive2dPreviewStatus('Loading preview model...');
         if (live2dPreviewState.model) {
             try {
                 live2dPreviewState.app.stage.removeChild(live2dPreviewState.model);
@@ -6224,7 +6224,7 @@ async function ensureLive2dPreviewModel(force = false) {
         live2dPreviewState.model = model;
         live2dPreviewState.loadedPath = modelUrl;
         fitLive2dPreviewModel();
-        setLive2dPreviewStatus(`预览已就绪：${info.model_name || ''}`);
+        setLive2dPreviewStatus(`Preview ready: ${info.model_name || ''}`);
         renderLive2dPreviewFrame();
         return model;
     })();
@@ -6254,16 +6254,16 @@ async function playPreviewMotionFile(filePath, preferredGroup) {
     try {
         const model = await ensureLive2dPreviewModel();
         const ref = findLive2dMotionRef(filePath, preferredGroup);
-        if (!ref) throw new Error(`模型中找不到动作文件：${filePath}`);
+        if (!ref) throw new Error(`Motion file not found in the model: ${filePath}`);
         if (model.internalModel?.motionManager) {
             model.internalModel.motionManager.stopAllMotions();
         }
         model.motion(ref.group, ref.index);
-        setLive2dPreviewStatus(`动作：${ref.group}[${ref.index}] ${filePath}`);
+        setLive2dPreviewStatus(`Motion: ${ref.group}[${ref.index}] ${filePath}`);
         renderLive2dPreviewFrame();
     } catch (error) {
         setLive2dPreviewStatus(error.message);
-        showError('预览失败：' + error.message);
+        showError('Preview failed: ' + error.message);
     }
 }
 
@@ -6272,13 +6272,13 @@ async function playPreviewExpressionFile(filePath) {
         const model = await ensureLive2dPreviewModel();
         const fileName = String(filePath || '').split('/').pop() || '';
         const expressionName = fileName.replace(/\.exp3\.json$/i, '');
-        if (!expressionName) throw new Error('表情文件为空');
+        if (!expressionName) throw new Error('Expression file is empty');
         model.expression(expressionName);
-        setLive2dPreviewStatus(`表情：${expressionName}`);
+        setLive2dPreviewStatus(`Expression: ${expressionName}`);
         renderLive2dPreviewFrame();
     } catch (error) {
         setLive2dPreviewStatus(error.message);
-        showError('预览失败：' + error.message);
+        showError('Preview failed: ' + error.message);
     }
 }
 
@@ -6324,22 +6324,22 @@ async function previewSelectedIdleMotion() {
         const expression = expressionSelect?.value || '';
         const item = (info.motion_groups?.[group] || [])[0];
         if (group) {
-            if (!item) throw new Error(`待机动作组没有可预览动作：${group}`);
+            if (!item) throw new Error(`The idle motion group has no motion to preview: ${group}`);
             await playPreviewMotionFile(item.file, group);
         } else {
             const model = await ensureLive2dPreviewModel();
             model.internalModel?.motionManager?.stopAllMotions?.();
-            setLive2dPreviewStatus('待机动作：无（仅模型呼吸）');
+            setLive2dPreviewStatus('Idle motion: none (breathing only)');
             renderLive2dPreviewFrame();
         }
         if (expression) {
             await playPreviewExpressionFile(expression);
-            setLive2dPreviewStatus(`待机：${group || '无'} / ${item?.file || '仅模型呼吸'} + ${live2dExpressionNameFromFile(expression)}`);
+            setLive2dPreviewStatus(`Idle: ${group || 'None'} / ${item?.file || 'breathing only'} + ${live2dExpressionNameFromFile(expression)}`);
         } else {
             resetLive2dPreviewExpression();
         }
     } catch (error) {
-        showError('待机预览失败：' + error.message);
+        showError('Idle preview failed: ' + error.message);
     }
 }
 
@@ -6356,12 +6356,12 @@ async function saveIdleMotionGroup() {
         });
         const result = await response.json();
         if (!(response.ok && result.success)) {
-            throw new Error(result.error || '保存待机设置失败');
+            throw new Error(result.error || 'Failed to save idle settings');
         }
         await ensureLive2dPreviewInfo(true);
-        showSuccess('待机设置已保存');
+        showSuccess('Idle settings saved');
     } catch (error) {
-        showError('保存待机设置失败：' + error.message);
+        showError('Failed to save idle settings: ' + error.message);
     }
 }
 
@@ -6370,12 +6370,12 @@ async function startSinging() {
         const response = await fetch('/api/live2d/singing/start', { method: 'POST' });
         const result = await response.json();
         if (!(response.ok && result.success)) {
-            showError('启动失败：' + (result.error || '未知错误'));
+            showError('Failed to start: ' + (result.error || 'Unknown error'));
         } else {
-            showSuccess('开始唱歌');
+            showSuccess('Started singing');
         }
     } catch (error) {
-        showError('启动时出错：' + error.message);
+        showError('Error while starting: ' + error.message);
     }
 }
 
@@ -6385,12 +6385,12 @@ async function stopSinging() {
         const response = await fetch('/api/live2d/singing/stop', { method: 'POST' });
         const result = await response.json();
         if (!(response.ok && result.success)) {
-            showError('停止失败：' + (result.error || '未知错误'));
+            showError('Stop failed: ' + (result.error || 'Unknown error'));
         } else {
-            showSuccess('停止唱歌');
+            showSuccess('Stopped singing');
         }
     } catch (error) {
-        showError('停止时出错：' + error.message);
+        showError('Error while stopping: ' + error.message);
     }
 }
 
@@ -6404,19 +6404,19 @@ async function resetMotion() {
         if (!contentType || !contentType.includes('application/json')) {
             // 返回的不是 JSON，可能是 HTML 错误页面
             const text = await response.text();
-            throw new Error('服务器返回了非 JSON 响应，可能是路由冲突或服务器错误');
+            throw new Error('The server returned a non-JSON response (maybe a route conflict or a server error)');
         }
         
         const result = await response.json();
         if (response.ok && result.success) {
-            showSuccess('动作配置已还原');
+            showSuccess('Motion config restored');
             // 重新加载配置
             await loadAllMotions();
         } else {
-            showError('复位失败：' + (result.error || '未知错误'));
+            showError('Reset failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        showError('复位时出错：' + error.message);
+        showError('Error while resetting: ' + error.message);
     }
 }
 
@@ -6439,8 +6439,8 @@ function addMotionToCategory(btn) {
             motionItem.innerHTML = `
                 <span>${file.name}</span>
                 <div>
-                    <button onclick="previewMotion(this)" class="btn-sm">预览</button>
-                    <button onclick="removeMotion(this)" class="btn-sm">删除</button>
+                    <button onclick="previewMotion(this)" class="btn-sm">Preview</button>
+                    <button onclick="removeMotion(this)" class="btn-sm">Delete</button>
                 </div>
             `;
             actionsContainer.appendChild(motionItem);
@@ -6463,7 +6463,7 @@ function removeMotion(btn) {
     motionItem.remove();
     
     if (actionsContainer.children.length === 0) {
-        actionsContainer.innerHTML = '<div class="empty-tip">点击"+添加动作"选择动作文件</div>';
+        actionsContainer.innerHTML = '<div class="empty-tip">Click "+Add Motion" to choose a motion file</div>';
     }
 }
 
@@ -6490,7 +6490,7 @@ function renderAvailableMotions(motionMap) {
 
     const motionKeys = Object.keys(motionMap);
     if (motionKeys.length === 0) {
-        container.innerHTML = '<div class="empty-tip">暂无可用动作</div>';
+        container.innerHTML = '<div class="empty-tip">No motions available</div>';
         return;
     }
 
@@ -6524,6 +6524,8 @@ let motionPathToKey = {};
 let motionConfig = {};
 // 情绪分类列表
 const EMOTION_CATEGORIES = ['开心', '生气', '难过', '惊讶', '害羞', '俏皮'];
+// data-emotion id -> the Chinese emotion name that the server uses as the motion key
+const MOTION_EMOTION_KEYS = { happy: '开心', angry: '生气', sad: '难过', surprised: '惊讶', shy: '害羞', playful: '俏皮' };
 
 // 加载已分类动作到情绪分类区域 - 显示键名而不是文件路径
 async function loadCategorizedMotions() {
@@ -6605,7 +6607,7 @@ async function loadCategorizedMotions() {
                         container.appendChild(item);
                     });
                 } else {
-                    container.innerHTML = '<div class="empty-tip">拖拽动作到此绑定</div>';
+                    container.innerHTML = '<div class="empty-tip">Drag a motion here to bind it</div>';
                 }
             }
         }
@@ -6647,8 +6649,8 @@ function createMotionBindingItem(emotion, filePath, displayName) {
     item.innerHTML = `
         <span data-file-path="${escapedFilePath}">${displayName}</span>
         <div>
-            <button onclick="previewMotionByPath('${escapedFilePath}')" class="btn-sm" style="padding: 2px 6px; font-size: 11px;">预览</button>
-            <button onclick="removeMotionBinding('${escapedEmotion}', '${escapedFilePath}')" class="btn-sm" style="padding: 2px 6px; font-size: 11px;">删除</button>
+            <button onclick="previewMotionByPath('${escapedFilePath}')" class="btn-sm" style="padding: 2px 6px; font-size: 11px;">Preview</button>
+            <button onclick="removeMotionBinding('${escapedEmotion}', '${escapedFilePath}')" class="btn-sm" style="padding: 2px 6px; font-size: 11px;">Delete</button>
         </div>
     `;
     return item;
@@ -6715,7 +6717,7 @@ async function bindMotionToEmotion(emotion, motionKey, filePath) {
 
     // 检查是否已存在（检查文件路径）
     if (motionConfig[chineseEmotion].includes(filePath)) {
-        showWarning('该动作已绑定到此情绪');
+        showWarning('This motion is already bound to this emotion');
         return;
     }
 
@@ -6737,7 +6739,7 @@ async function bindMotionToEmotion(emotion, motionKey, filePath) {
     // 自动保存配置
     await saveMotionConfigSilent();
 
-    addLog(`已将动作 "${motionKey}" 绑定到 ${chineseEmotion}`, 'success', 'system');
+    addLog(`Bound motion "${motionKey}" to ${emotion}`, 'success', 'system');
 }
 
 // 根据键名获取文件路径
@@ -6756,12 +6758,12 @@ function getMotionFilePathByKey(motionKey) {
 async function removeMotionBinding(emotion, filePath) {
     // 情绪名称映射（英文到中文）
     const emotionMapReverse = {
-        'happy': '开心',
-        'angry': '生气',
-        'sad': '难过',
-        'surprised': '惊讶',
-        'shy': '害羞',
-        'playful': '俏皮'
+        'happy': 'Happy',
+        'angry': 'Angry',
+        'sad': 'Sad',
+        'surprised': 'Surprised',
+        'shy': 'Shy',
+        'playful': 'Playful'
     };
     
     const chineseEmotion = emotionMapReverse[emotion] || emotion;
@@ -6783,14 +6785,14 @@ async function removeMotionBinding(emotion, filePath) {
                 
                 // 如果没有动作了，显示空提示
                 if (container.children.length === 0) {
-                    container.innerHTML = '<div class="empty-tip">拖拽动作到此绑定</div>';
+                    container.innerHTML = '<div class="empty-tip">Drag a motion here to bind it</div>';
                 }
             }
 
             // 自动保存配置
             await saveMotionConfigSilent();
             
-            addLog(`已移除动作 "${filePath}" 从 ${chineseEmotion}`, 'info', 'system');
+            addLog(`Removed motion "${filePath}" from ${emotion}`, 'info', 'system');
         }
     }
 }
@@ -6821,7 +6823,7 @@ async function previewMotionFromList(motionKey) {
 
         await playPreviewMotionFile(filePath);
     } catch (error) {
-        showError('预览时出错：' + error.message);
+        showError('Error while previewing: ' + error.message);
     }
 }
 
@@ -6832,7 +6834,7 @@ async function previewMotionByKey(motionKey) {
         const filePath = getMotionFilePathByKey(motionKey);
         await playPreviewMotionFile(filePath);
     } catch (error) {
-        showError('预览时出错：' + error.message);
+        showError('Error while previewing: ' + error.message);
     }
 }
 
@@ -6841,11 +6843,13 @@ async function saveMotionConfig() {
     try {
         const categories = [];
         document.querySelectorAll('#emotion-categories-grid .emotion-category').forEach(category => {
-            const nameEl = category.querySelector('.emotion-category-header span');
-            const name = nameEl ? nameEl.textContent.replace(/[😊😠😢😲😳😜]\s*/, '') : '未命名';
-
             const actionsEl = category.querySelector('.emotion-category-actions');
             const emotion = actionsEl ? actionsEl.dataset.emotion : 'unknown';
+
+            // The server keys motions by the Chinese emotion name. The header text is
+            // translated, so take the key from data-emotion.
+            const nameEl = category.querySelector('.emotion-category-header span');
+            const name = MOTION_EMOTION_KEYS[emotion] || (nameEl ? nameEl.textContent.replace(/[😊😠😢😲😳😜]\s*/, '') : 'Untitled');
 
             const motions = [];
             actionsEl.querySelectorAll('.motion-item').forEach(item => {
@@ -6863,14 +6867,14 @@ async function saveMotionConfig() {
 
         const result = await response.json();
         if (response.ok && result.success) {
-            addLog('动作配置已保存', 'success', 'system');
-            showSuccess('动作配置已保存');
+            addLog('Motion config saved', 'success', 'system');
+            showSuccess('Motion config saved');
             await ensureLive2dPreviewInfo(true);
         } else {
-            showError('保存失败：' + (result.error || '未知错误'));
+            showError('Save failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        showError('保存时出错：' + error.message);
+        showError('Error while saving: ' + error.message);
     }
 }
 
@@ -6948,7 +6952,7 @@ async function loadExpressionConfig() {
     } catch (error) {
         console.error('加载表情配置失败:', error);
         document.getElementById('available-expressions').innerHTML =
-            '<div class="empty-tip">加载表情失败</div>';
+            '<div class="empty-tip">Failed to load expressions</div>';
     }
 }
 
@@ -6983,7 +6987,7 @@ function renderExpressionConfigWithMapping(config) {
                 container.appendChild(item);
             });
         } else {
-            container.innerHTML = '<div class="empty-tip">拖拽表情到此绑定</div>';
+            container.innerHTML = '<div class="empty-tip">Drag an expression here to bind it</div>';
         }
     });
 }
@@ -7001,7 +7005,7 @@ function getExpressionDisplayName(filePath) {
     if (name.startsWith('expression')) {
         const num = name.replace('expression', '');
         if (!isNaN(parseInt(num))) {
-            name = '表情' + num;
+            name = 'Expression ' + num;
         }
     }
     return name;
@@ -7019,8 +7023,8 @@ function createExpressionBindingItem(emotion, filePath, displayName) {
     item.innerHTML = `
         <span data-file-path="${escapedFilePath}">${displayName}</span>
         <div>
-            <button onclick="previewExpressionFromBinding('${escapedFilePath}')" class="btn-sm" style="padding: 2px 6px; font-size: 11px;">预览</button>
-            <button onclick="removeExpressionBinding('${escapedEmotion}', '${escapedFilePath}')" class="btn-sm" style="padding: 2px 6px; font-size: 11px;">删除</button>
+            <button onclick="previewExpressionFromBinding('${escapedFilePath}')" class="btn-sm" style="padding: 2px 6px; font-size: 11px;">Preview</button>
+            <button onclick="removeExpressionBinding('${escapedEmotion}', '${escapedFilePath}')" class="btn-sm" style="padding: 2px 6px; font-size: 11px;">Delete</button>
         </div>
     `;
     return item;
@@ -7040,7 +7044,7 @@ function renderAvailableExpressions(expressionMap) {
 
     const exprKeys = Object.keys(expressionMap);
     if (exprKeys.length === 0) {
-        container.innerHTML = '<div class="empty-tip">暂无可用表情</div>';
+        container.innerHTML = '<div class="empty-tip">No expressions available</div>';
         return;
     }
 
@@ -7119,7 +7123,7 @@ async function bindExpressionToEmotion(emotion, expressionKey, filePath) {
 
     // 检查是否已存在（检查文件路径）
     if (expressionConfig[emotion].includes(filePath)) {
-        showWarning('该表情已绑定到此情绪');
+        showWarning('This expression is already bound to this emotion');
         return;
     }
 
@@ -7141,7 +7145,7 @@ async function bindExpressionToEmotion(emotion, expressionKey, filePath) {
     // 自动保存配置
     await saveExpressionConfigSilent();
 
-    addLog(`已将表情 "${expressionKey}" 绑定到 ${emotion}`, 'success', 'system');
+    addLog(`Bound expression "${expressionKey}" to ${emotion}`, 'success', 'system');
 }
 
 // 根据键名获取文件路径
@@ -7176,7 +7180,7 @@ async function removeExpressionBinding(emotion, filePath) {
                 
                 // 如果没有表情了，显示空提示
                 if (container.children.length === 0) {
-                    container.innerHTML = '<div class="empty-tip">拖拽表情到此绑定</div>';
+                    container.innerHTML = '<div class="empty-tip">Drag an expression here to bind it</div>';
                 }
             }
 
@@ -7185,7 +7189,7 @@ async function removeExpressionBinding(emotion, filePath) {
 
             // 从键名获取显示名用于日志
             const exprKey = expressionPathToKey[filePath] || getExpressionDisplayName(filePath);
-            addLog(`已移除表情 "${exprKey}" 从 ${emotion}`, 'info', 'system');
+            addLog(`Removed expression "${exprKey}" from ${emotion}`, 'info', 'system');
         }
     }
 }
@@ -7200,7 +7204,7 @@ async function previewExpression(expressionName) {
         }
         await playPreviewExpressionFile(fullExpressionName);
     } catch (error) {
-        showError('预览时出错：' + error.message);
+        showError('Error while previewing: ' + error.message);
     }
 }
 
@@ -7210,7 +7214,7 @@ async function previewExpressionByKey(expressionKey) {
         const filePath = expressionKeyToPath[expressionKey] || getExpressionFilePathByKey(expressionKey);
         await playPreviewExpressionFile(filePath);
     } catch (error) {
-        showError('预览时出错：' + error.message);
+        showError('Error while previewing: ' + error.message);
     }
 }
 
@@ -7222,14 +7226,14 @@ async function resetExpression() {
         });
         const result = await response.json();
         if (response.ok && result.success) {
-            addLog('表情配置已还原', 'success', 'system');
+            addLog('Expression config restored', 'success', 'system');
             // 重新加载配置
             await loadExpressionConfig();
         } else {
-            addLog('还原失败：' + (result.error || '未知错误'), 'error', 'system');
+            addLog('Restore failed: ' + (result.error || 'Unknown error'), 'error', 'system');
         }
     } catch (error) {
-        addLog('还原时出错：' + error.message, 'error', 'system');
+        addLog('Error while restoring: ' + error.message, 'error', 'system');
     }
 }
 
@@ -7244,14 +7248,14 @@ async function saveExpressionConfig() {
 
         const result = await response.json();
         if (response.ok && result.success) {
-            addLog('表情配置已保存', 'success', 'system');
-            showSuccess('表情配置已保存');
+            addLog('Expression config saved', 'success', 'system');
+            showSuccess('Expression config saved');
             await ensureLive2dPreviewInfo(true);
         } else {
-            showError('保存失败：' + (result.error || '未知错误'));
+            showError('Save failed: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
-        showError('保存时出错：' + error.message);
+        showError('Error while saving: ' + error.message);
     }
 }
 
@@ -7285,13 +7289,13 @@ function toggleHeaderCollapse() {
         // 折叠状态
         body.classList.add('header-collapsed');
         if (collapseBtn) {
-            collapseBtn.querySelector('.collapse-text').textContent = '展开';
+            collapseBtn.querySelector('.collapse-text').textContent = 'Expand';
         }
     } else {
         // 展开状态
         body.classList.remove('header-collapsed');
         if (collapseBtn) {
-            collapseBtn.querySelector('.collapse-text').textContent = '折叠';
+            collapseBtn.querySelector('.collapse-text').textContent = 'Collapse';
         }
     }
 }
