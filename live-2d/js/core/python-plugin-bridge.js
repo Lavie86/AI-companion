@@ -242,7 +242,7 @@ class PythonPluginBridge extends Plugin {
 
     async executeTool(name, params) {
         const res = await this._call('executeTool', { name, params }).catch(() => null);
-        return res?.result ?? '工具执行失败';
+        return res?.result ?? 'Tool failed';
     }
 }
 

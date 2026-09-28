@@ -30,7 +30,7 @@ class ScreenshotManager {
         }
 
         // 检查文本中是否包含截图标记
-        if (text.includes('[需要截图]')) {
+        if (text.includes('[Screenshot needed]') || text.includes('[需要截图]')) {
             console.log('检测到截图标记，将进行截图');
             return true;
         }

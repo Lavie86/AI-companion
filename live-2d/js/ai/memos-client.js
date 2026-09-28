@@ -210,7 +210,7 @@ class MemosClient {
             // 如果有更新时间，添加标记
             let updateMark = '';
             if (updatedAt && updatedAt !== timestamp) {
-                updateMark = '（已更新）';
+                updateMark = ' (updated)';
             }
             
             // 返回格式：- 内容 【时间】（已更新）

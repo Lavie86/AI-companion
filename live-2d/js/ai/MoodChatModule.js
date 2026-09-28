@@ -41,7 +41,7 @@ class MoodChatModule {
         this.responseTimeout = moodConfig.response_timeout || 10000;
 
         // 主动对话提示词配置（统一提示词）
-        this.prompt = moodConfig.prompt || "请主动根据上下文说些什么。";
+        this.prompt = moodConfig.prompt || "Say something on your own, based on the context.";
 
         // 当前状态
         this.moodScore = this.moodChanges.regressionTarget; // 初始心情=回归目标
@@ -55,7 +55,7 @@ class MoodChatModule {
 
         // 心情评估配置
         this.moodEvaluationPrompt = moodConfig.evaluation_prompt ||
-            "请根据以下内容，评估fake neuro（肥牛）今天的心情分数（0-100分）。只返回一个数字，不要其他内容。";
+            "Based on the text below, rate fake neuro's (Feiniu's) mood today from 0 to 100. Reply with only a number, nothing else.";
     }
 
     /**
@@ -134,7 +134,7 @@ class MoodChatModule {
                     const trimmedContent = diaryContent.trim();
                     if (trimmedContent.length > 0) {
                         const lines = trimmedContent.split('\n').slice(-20).join('\n');
-                        contextContent += `最近的日记：\n${lines}\n\n`;
+                        contextContent += `Recent diary:\n${lines}\n\n`;
                         hasDiary = true;
                     }
                 } catch (err) {
@@ -149,7 +149,7 @@ class MoodChatModule {
                     const trimmedContent = memoryContent.trim();
                     if (trimmedContent.length > 0) {
                         const lines = trimmedContent.split('\n').slice(-20).join('\n');
-                        contextContent += `最近的记忆：\n${lines}`;
+                        contextContent += `Recent memories:\n${lines}`;
                         hasMemory = true;
                     }
                 } catch (err) {
@@ -183,7 +183,7 @@ class MoodChatModule {
             // 情况3：有历史记录，开始智能评估
             logToTerminal('info', `🔍 Found history (diary:${hasDiary ? '✓' : '✗'} memory:${hasMemory ? '✓' : '✗'}), checking the mood...`);
 
-            const prompt = `请根据以下内容，评估fake neuro（肥牛）的心情分数（0-100分）。只返回一个数字。\n\n${contextContent}`;
+            const prompt = `Based on the text below, rate fake neuro's (Feiniu's) mood from 0 to 100. Reply with only a number.\n\n${contextContent}`;
 
             const response = await fetch(`${voiceChat.API_URL}/chat/completions`, {
                 method: 'POST',

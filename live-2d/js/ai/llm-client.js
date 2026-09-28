@@ -207,7 +207,7 @@ class LLMClient {
                 // 🔥 确保字符串长度不超过限制(避免超大响应)
                 const MAX_CONTENT_LENGTH = 8000;
                 if (content.length > MAX_CONTENT_LENGTH) {
-                    content = content.substring(0, MAX_CONTENT_LENGTH) + '...(内容过长已截断)';
+                    content = content.substring(0, MAX_CONTENT_LENGTH) + '...(cut off, too long)';
                 }
 
                 // 返回清理后的tool消息

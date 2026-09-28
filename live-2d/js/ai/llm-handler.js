@@ -127,7 +127,7 @@ class LLMHandler {
                     } else {
                         return {
                             ...msg,
-                            content: '(图片内容)'
+                            content: '(image)'
                         };
                     }
                 }
@@ -281,7 +281,7 @@ class LLMHandler {
 
                     // 模型不支持图片时，在最后一条用户消息后追加一条说明，让 AI 用自己的语气告知用户
                     if (hasRetriedWithoutImage && iteration === 0) {
-                        messagesForAPI.push({ role: 'user', content: '（系统提示：当前模型不支持识图，请用你自己的语气告诉用户需要换成支持多模态视觉的模型才能使用截图功能）' });
+                        messagesForAPI.push({ role: 'user', content: '(System note: the current model cannot see images. In your own words, tell the user they need a model with image input (multimodal) to use screenshots.)' });
                     }
 
                     // 如果是第一轮且需要截图,添加截图到最后一条用户消息
@@ -343,7 +343,7 @@ class LLMHandler {
                                     const hasImage = msg.content.some(item => item.type === 'image_url');
                                     if (hasImage) {
                                         const textItems = msg.content.filter(item => item.type === 'text');
-                                        msg.content = textItems.length > 0 ? textItems.map(item => item.text).join(' ') : '(图片内容)';
+                                        msg.content = textItems.length > 0 ? textItems.map(item => item.text).join(' ') : '(image)';
                                         console.log('  ✂️ 清理了一条包含图片的消息');
                                     }
                                 }
@@ -497,7 +497,7 @@ class LLMHandler {
                                                 msg.content = textItems.map(item => item.text).join(' ');
                                             } else {
                                                 // 如果没有文本，设置为默认文本
-                                                msg.content = '(截图已清除)';
+                                                msg.content = '(screenshot removed)';
                                             }
                                             console.log('  ✂️ 清除了一条旧截图消息');
                                         }
@@ -640,7 +640,7 @@ class LLMHandler {
                                                     const hasImage = msg.content.some(item => item.type === 'image_url');
                                                     if (hasImage) {
                                                         const textItems = msg.content.filter(item => item.type === 'text');
-                                                        msg.content = textItems.length > 0 ? textItems.map(item => item.text).join(' ') : '(截图已清除)';
+                                                        msg.content = textItems.length > 0 ? textItems.map(item => item.text).join(' ') : '(screenshot removed)';
                                                         console.log('  ✂️ 清除了一条旧截图消息');
                                                     }
                                                 }
@@ -690,7 +690,7 @@ class LLMHandler {
                                             voiceChat.messages.push({
                                                 'role': 'tool',
                                                 'name': toolCall.function.name,
-                                                'content': `工具 ${toolCall.function.name} 执行失败`,
+                                                'content': `Tool ${toolCall.function.name} failed`,
                                                 'tool_call_id': toolCall.id
                                             });
                                         });
@@ -770,7 +770,7 @@ class LLMHandler {
                         logToTerminal('warn', '⚠️ Empty response, adding a message that asks the model to reply');
                         voiceChat.messages.push({
                             role: 'user',
-                            content: '请根据工具执行结果，回复用户。'
+                            content: 'Reply to the user based on the tool results.'
                         });
                     } else {
                         // 连续多次空响应，模型无法恢复，直接退出

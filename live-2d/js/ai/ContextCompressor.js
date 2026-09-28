@@ -1,6 +1,11 @@
 // ContextCompressor.js - 异步上下文压缩模块
 const { logToTerminal } = require('../api-utils.js');
 
+// The summary message starts with this marker. The Chinese one is from before the
+// translation and is still recognised in saved conversations.
+const SUMMARY_MARKERS = ['[Conversation summary]', '[历史对话总结]'];
+const SUMMARY_PREFIX = /^\[(?:Conversation summary|历史对话总结)\] /;
+
 class ContextCompressor {
     constructor(voiceChatInterface, config) {
         this.voiceChat = voiceChatInterface;
@@ -24,7 +29,7 @@ class ContextCompressor {
         this.enabled = this.compressionConfig.enabled || false;
         this.triggerThreshold = this.compressionConfig.trigger_threshold || 15;
         this.keepRecent = this.compressionConfig.keep_recent || 4;
-        this.compressionPrompt = this.compressionConfig.prompt || '请将以下历史对话总结为简洁的要点，保留关键信息和上下文。';
+        this.compressionPrompt = this.compressionConfig.prompt || 'Summarize the conversation below as short key points. Keep the important information and context.';
 
         // 压缩状态
         this.isCompressing = false; // 防止并发压缩
@@ -93,12 +98,12 @@ class ContextCompressor {
             // 🔧 修复：区分初始 system 和历史总结 system
             // 初始 system: 不包含 "[历史对话总结]" 标记的
             const initialSystemMessages = systemMessages.filter(msg =>
-                !msg.content.includes('[历史对话总结]')
+                !SUMMARY_MARKERS.some(marker => msg.content.includes(marker))
             );
 
             // 历史总结 system: 包含 "[历史对话总结]" 标记的
             const historySummaryMessages = systemMessages.filter(msg =>
-                msg.content.includes('[历史对话总结]')
+                SUMMARY_MARKERS.some(marker => msg.content.includes(marker))
             );
 
             console.log(`📦 初始system消息: ${initialSystemMessages.length}条, 历史总结: ${historySummaryMessages.length}条`);
@@ -119,7 +124,7 @@ class ContextCompressor {
 
             // 2. 调用LLM压缩旧消息（如果存在历史总结，一并传入做累积总结）
             const previousSummary = historySummaryMessages.length > 0
-                ? historySummaryMessages[0].content.replace('[历史对话总结] ', '')
+                ? historySummaryMessages[0].content.replace(SUMMARY_PREFIX, '')
                 : null;
 
             const compressedSummary = await this.compressMessages(oldMessages, previousSummary);
@@ -135,7 +140,7 @@ class ContextCompressor {
                 ...initialSystemMessages,  // 只保留初始 system 消息
                 {
                     role: 'system',
-                    content: `[历史对话总结] ${compressedSummary.trim()}`
+                    content: `${SUMMARY_MARKERS[0]} ${compressedSummary.trim()}`
                 },
                 ...recentMessages
             ];
@@ -170,11 +175,11 @@ class ContextCompressor {
             // 构建对话文本
             const conversationText = messages.map(msg => {
                 if (msg.role === 'user') {
-                    return `用户: ${this.extractTextContent(msg.content)}`;
+                    return `User: ${this.extractTextContent(msg.content)}`;
                 } else if (msg.role === 'assistant') {
                     return `AI: ${this.extractTextContent(msg.content)}`;
                 } else if (msg.role === 'system') {
-                    return `系统: ${this.extractTextContent(msg.content)}`;
+                    return `System: ${this.extractTextContent(msg.content)}`;
                 }
                 return '';
             }).filter(text => text).join('\n');
@@ -184,20 +189,20 @@ class ContextCompressor {
             if (previousSummary) {
                 compressPrompt = `${this.compressionPrompt}
 
-【之前的历史总结】：
+[Previous summary]:
 ${previousSummary}
 
-【本次新增的对话内容】：
+[New conversation]:
 ${conversationText}
 
-请将之前的历史总结与本次新对话合并，生成一个完整的累积总结：`;
+Merge the previous summary and the new conversation into one complete summary:`;
             } else {
                 compressPrompt = `${this.compressionPrompt}
 
-对话内容：
+Conversation:
 ${conversationText}
 
-总结：`;
+Summary:`;
             }
 
             console.log('🤖 调用LLM进行上下文压缩...');

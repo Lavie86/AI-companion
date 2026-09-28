@@ -335,7 +335,7 @@ class MCPManager {
                 console.error(`MCP工具 ${functionName} 执行失败:`, error);
                 results.push({
                     tool_call_id: toolCall.id,
-                    content: `工具执行失败: ${error.message}`
+                    content: `Tool failed: ${error.message}`
                 });
             }
         }

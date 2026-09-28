@@ -95,10 +95,10 @@ class DiaryManager {
             // 构建日记生成的prompt
             const diaryPrompt = `${this.aiDiaryPrompt}
 
-今天的对话记录：
+Today's conversations:
 ${todayInteractions}
 
-请写一篇日记：`;
+Write a diary entry:`;
 
             // 调用LLM生成日记
             const response = await fetch(`${this.voiceChat.API_URL}/chat/completions`, {
@@ -170,7 +170,7 @@ ${todayInteractions}
                 fs.mkdirSync(diaryDir, { recursive: true });
             }
 
-            const diaryEntry = `------------------------------------\n[${dateStr}] 肥牛的日记\n\n${diaryContent}\n\n`;
+            const diaryEntry = `------------------------------------\n[${dateStr}] Feiniu's diary\n\n${diaryContent}\n\n`;
 
             fs.appendFileSync(diaryPath, diaryEntry, 'utf8');
             console.log('AI日记已保存到文件');

@@ -165,7 +165,7 @@ class ToolExecutor {
                 // 工具未找到或执行失败
                 results.push({
                     tool_call_id: toolCall.id,
-                    content: `工具 ${functionName} 执行失败或未找到`
+                    content: `Tool ${functionName} failed or was not found`
                 });
                 logToolAction('error', `Tool ${functionName} was not found or failed`);
             }

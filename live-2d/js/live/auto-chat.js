@@ -89,13 +89,13 @@ class AutoChatModule {
                return;
            }
 
-           let prompt = `[自动触发] ${this.pluginConfig.prompt || ''}`;
+           let prompt = `[Auto-triggered] ${this.pluginConfig.prompt || ''}`;
 
            // 🎯 核心简化：检查是否需要截图，如果需要则修改prompt让sendToLLM处理
            if (this.screenshotEnabled && this.autoScreenshot) {
                console.log('自动截图模式已开启，主动对话将包含截图');
                // 添加特殊标记，让sendToLLM知道需要截图
-               prompt = `${prompt} [需要截图]`;
+               prompt = `${prompt} [Screenshot needed]`;
 
                // 临时设置标志，让sendToLLM知道要截图
                voiceChat._autoScreenshotFlag = true;

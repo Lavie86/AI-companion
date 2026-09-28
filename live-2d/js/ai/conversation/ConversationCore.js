@@ -96,8 +96,8 @@ class ConversationCore {
         if (this.messages && this.messages.length > 0 && this.messages[0].role === 'system') {
             const originalPrompt = this.messages[0].content;
 
-            if (!originalPrompt.includes('你可能会收到直播弹幕')) {
-                const enhancedPrompt = originalPrompt + "\n\n你可能会收到直播弹幕消息，这些消息会被标记为[弹幕]，表示这是来自直播间观众的消息，而不是主人直接对你说的话。当你看到[弹幕]标记时，你应该知道这是其他人发送的，但你仍然可以回应，就像在直播间与观众互动一样。";
+            if (!originalPrompt.includes('You may receive live stream chat messages') && !originalPrompt.includes('你可能会收到直播弹幕')) {
+                const enhancedPrompt = originalPrompt + "\n\nYou may receive live stream chat messages. They are marked with [Live chat message], which means a viewer in the live stream sent them, not your owner talking to you directly. When you see [Live chat message], you know someone else sent it, but you can still reply, just like talking with viewers in a live stream.";
                 this.messages[0].content = enhancedPrompt;
                 console.log('系统提示已增强，添加了直播弹幕相关说明');
             }
