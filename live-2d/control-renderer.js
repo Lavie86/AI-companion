@@ -529,7 +529,7 @@ function consumeServiceDownloadProgress(service, text) {
       if (line.includes('morelle/my-neuro-vad')) serviceDownloadStage.asr = { index: 0, name: 'VAD \u6a21\u578b' };
       else if (line.includes('speech_seaco_paraformer')) serviceDownloadStage.asr = { index: 1, name: 'ASR \u4e3b\u6a21\u578b' };
       else if (line.includes('punc_ct-transformer')) serviceDownloadStage.asr = { index: 2, name: '\u6807\u70b9\u6a21\u578b' };
-      if (/ASR\u6a21\u578b\u4e0b\u8f7d\u5b8c\u6210/.test(line)) {
+      if (/ASR\u6a21\u578b\u4e0b\u8f7d\u5b8c\u6210|ASR models downloaded/.test(line)) {
         serviceDownloadProgress.asr = { percent: 100, stage: '\u5168\u90e8\u6a21\u578b\u4e0b\u8f7d\u5b8c\u6210', detail: '' };
       }
     }
