@@ -43,7 +43,7 @@ Each change is its own commit, and each commit message explains the details.
    ```bat
    git clone https://github.com/Lavie86/AI-companion D:\ai-companion
    cd /d D:\ai-companion
-   git checkout claude/ai-pc-companion-research-iqohyz
+   git checkout main
    ```
 
 2. **Run the installer.** It downloads a ready Python environment into `env\` (about 3.6 GB) and the models.
