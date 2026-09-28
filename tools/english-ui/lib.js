@@ -153,7 +153,10 @@ function pairLines(oLines, aLines, hunks) {
 
 // Character diff of one Chinese line against its English version, as the list of
 // replaced regions {del, ins}. Returns null for lines too long to diff.
-function diffRegions(oLine, aLine) {
+// With mergeFragments, a region that only inserts or only deletes is joined to the
+// next or previous region when at most 2 characters separate them. English word order
+// can split one translation in two, for example "OpenAI 格式的" -> "OpenAI-compatible".
+function diffRegions(oLine, aLine, mergeFragments = false) {
     if (oLine.length > MAX_CHAR_DIFF || aLine.length > MAX_CHAR_DIFF) return null;
     // \uXXXX escapes are compared as one unit, so their hex digits never match letters
     const o = oLine.match(/\\u[0-9a-fA-F]{4}|[\s\S]/g) || [];
@@ -168,25 +171,33 @@ function diffRegions(oLine, aLine) {
                 : Math.max(table[(i + 1) * w + j], table[i * w + j + 1]);
         }
     }
-    const regions = [];
-    let del = '', ins = '';
-    const flush = () => {
-        if (del || ins) regions.push({ del, ins });
-        del = ''; ins = '';
-    };
+    // alternating parts: {same} for matched text, {del, ins} for a replaced region
+    const parts = [];
+    let del = '', ins = '', same = '';
+    const flushRegion = () => { if (del || ins) parts.push({ del, ins }); del = ''; ins = ''; };
+    const flushSame = () => { if (same) parts.push({ same }); same = ''; };
     let i = 0, j = 0;
     while (i < n || j < m) {
-        if (i < n && j < m && o[i] === a[j]) { flush(); i++; j++; }
-        else if (j < m && (i >= n || table[i * w + j + 1] >= table[(i + 1) * w + j])) { ins += a[j]; j++; }
+        if (i < n && j < m && o[i] === a[j]) { flushRegion(); same += o[i]; i++; j++; continue; }
+        flushSame();
+        if (j < m && (i >= n || table[i * w + j + 1] >= table[(i + 1) * w + j])) { ins += a[j]; j++; }
         else { del += o[i]; i++; }
     }
-    flush();
-    return regions;
+    flushRegion();
+    flushSame();
+    for (let k = 0; mergeFragments && k + 2 < parts.length;) {
+        const [x, gap, y] = [parts[k], parts[k + 1], parts[k + 2]];
+        const joinable = x.same === undefined && y.same === undefined && gap.same.length <= 2
+            && (!x.del || !x.ins || !y.del || !y.ins);
+        if (joinable) parts.splice(k, 3, { del: x.del + gap.same + y.del, ins: x.ins + gap.same + y.ins });
+        else k++;
+    }
+    return parts.filter(part => part.same === undefined);
 }
 
 // [chinese phrase, english phrase] for each translated region of a line pair.
-function phrasePairs(oLine, aLine) {
-    return (diffRegions(oLine, aLine) || [])
+function phrasePairs(oLine, aLine, mergeFragments = false) {
+    return (diffRegions(oLine, aLine, mergeFragments) || [])
         .filter(r => hasCJK(r.del) && r.ins.trim())
         .map(r => [r.del, r.ins]);
 }
@@ -266,9 +277,11 @@ function learn(oText, aText, hunks, file = '') {
     for (const [i, j] of pairLines(oLines, aLines, hunks)) {
         const o = oLines[i], a = aLines[j];
         if (!hasCJK(o)) continue;
-        if (o === a || isTranslationOnly(o, a, html)) countInto(lineCounts, keyOf(o), keyOf(a));
+        const translationOnly = o === a || isTranslationOnly(o, a, html);
+        if (translationOnly) countInto(lineCounts, keyOf(o), keyOf(a));
         if (o === a) continue;
-        for (const [zh, en] of phrasePairs(o, a)) countInto(phraseCounts, zh, en);
+        // Joining fragments is only safe when the line has no code change to join into.
+        for (const [zh, en] of phrasePairs(o, a, translationOnly)) countInto(phraseCounts, zh, en);
     }
     const lines = new Map();
     for (const [k, counts] of lineCounts) lines.set(k, majority(counts));

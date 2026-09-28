@@ -19,6 +19,17 @@ describe('phrases', () => {
         );
     });
 
+    test('joins a translation that English word order split in two', () => {
+        const o = '<p>连接兼容 OpenAI 格式的模型接口。</p>';
+        const a = '<p>Connect an OpenAI-compatible model API.</p>';
+        assert.deepEqual(lib.phrasePairs(o, a, true), [['连接兼容', 'Connect an'], [' 格式的模型接口。', '-compatible model API.']]);
+    });
+
+    test('never joins code into a phrase', () => {
+        // our change added ", x": a phrase must not carry it into other lines
+        assert.deepEqual(lib.phrasePairs("foo('保存')", "foo('Save', x)", false), [['保存', 'Save']]);
+    });
+
     test('treats \\u escapes as whole characters', () => {
         assert.deepEqual(
             lib.phrasePairs("const t = '\\u5f55\\u97f3\\u4e2d...';", "const t = 'Recording...';"),
