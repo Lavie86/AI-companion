@@ -22,7 +22,7 @@ class MinecraftPlugin extends Plugin {
             this.socket = io(serverUrl);
 
             this.socket.on('connect', () => {
-                this.context.log('info', `已连接到 Mindcraft 服务器: ${serverUrl}`);
+                this.context.log('info', `Connected to the Mindcraft server: ${serverUrl}`);
                 this.socket.emit('listen-to-agents');
 
                 const { Events } = require('../../../js/core/events.js');
@@ -38,16 +38,16 @@ class MinecraftPlugin extends Plugin {
             });
 
             this.socket.on('connect_error', (error) => {
-                this.context.log('error', `Mindcraft 连接失败: ${error.message}`);
+                this.context.log('error', `Mindcraft connection failed: ${error.message}`);
             });
 
             this.socket.on('bot-output', (agentName, message) => {
-                this.context.log('info', `[MC机器人] ${agentName}: ${message}`);
+                this.context.log('info', `[MC bot] ${agentName}: ${message}`);
                 this.context.speakText(message);
             });
 
         } catch (error) {
-            this.context.log('error', `Minecraft 插件启动失败: ${error.message}`);
+            this.context.log('error', `Minecraft plugin failed to start: ${error.message}`);
         }
     }
 
@@ -65,7 +65,7 @@ class MinecraftPlugin extends Plugin {
                 if (cfg.model_url) andy.model.url = cfg.model_url;
                 if (cfg.conversing) andy.conversing = cfg.conversing;
                 fs.writeFileSync(andyPath, JSON.stringify(andy, null, 4), 'utf8');
-                this.context.log('info', '已同步配置到 andy.json');
+                this.context.log('info', 'Synced the settings to andy.json');
             }
 
             // 更新 keys.json
@@ -76,10 +76,10 @@ class MinecraftPlugin extends Plugin {
                 }
                 keys.OPENAI_API_KEY = cfg.api_key;
                 fs.writeFileSync(keysPath, JSON.stringify(keys, null, 4), 'utf8');
-                this.context.log('info', '已同步 API KEY 到 keys.json');
+                this.context.log('info', 'Synced the API KEY to keys.json');
             }
         } catch (error) {
-            this.context.log('error', `同步配置文件失败: ${error.message}`);
+            this.context.log('error', `Failed to sync the config files: ${error.message}`);
         }
     }
 
@@ -90,7 +90,7 @@ class MinecraftPlugin extends Plugin {
             from: 'VOICE_INPUT',
             message: event.text
         });
-        this.context.log('info', `语音输入已发送到 Minecraft: ${event.text}`);
+        this.context.log('info', `Voice input sent to Minecraft: ${event.text}`);
         event.preventDefault();
     }
 

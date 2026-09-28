@@ -59,7 +59,7 @@ class UserProfilePlugin extends Plugin {
     async onStart() {
         this._cfg = this.context.getPluginFileConfig();
         if (this._cfg.enabled === false) {
-            this.context.log('warn', '用户画像插件已禁用');
+            this.context.log('warn', 'User profile plugin is disabled');
             return;
         }
 
@@ -79,11 +79,11 @@ class UserProfilePlugin extends Plugin {
 
         if (this._cfg.bootstrap_on_first_run !== false && !this._profile.bootstrapped) {
             this._bootstrap().catch(err => {
-                this.context.log('warn', `首次画像诊断失败（下次启动会重试）: ${err.message}`);
+                this.context.log('warn', `The first profile diagnosis failed (it will retry on the next start): ${err.message}`);
             });
         }
 
-        this.context.log('info', `用户画像插件已启动，画像文件: ${this._profilePath}`);
+        this.context.log('info', `User profile plugin started, profile file: ${this._profilePath}`);
     }
 
     async onStop() {
@@ -101,7 +101,7 @@ class UserProfilePlugin extends Plugin {
             try {
                 await this._withTimeout(this._distill('stop'), 30000);
             } catch (err) {
-                this.context.log('warn', `退出前画像更新未完成: ${err.message}`);
+                this.context.log('warn', `The profile update did not finish before exit: ${err.message}`);
             }
         }
     }
@@ -134,7 +134,7 @@ class UserProfilePlugin extends Plugin {
                 type: 'function',
                 function: {
                     name: 'profile_view',
-                    description: '查看当前自动用户画像（只包含已晋升的长期画像，不包含候选池）。',
+                    description: 'Show the current automatic user profile (only promoted long-term entries, not the candidate pool).',
                     parameters: { type: 'object', properties: {}, required: [] }
                 }
             },
@@ -142,16 +142,16 @@ class UserProfilePlugin extends Plugin {
                 type: 'function',
                 function: {
                     name: 'profile_update',
-                    description: '手动修正自动用户画像。适合用户明确要求修改画像时使用。',
+                    description: 'Manually correct the automatic user profile. Use it when the user explicitly asks to change their profile.',
                     parameters: {
                         type: 'object',
                         properties: {
                             action: {
                                 type: 'string',
                                 enum: ['add_trait', 'add_habit', 'add_like', 'add_dislike', 'add_fact', 'add_relationship', 'set_name', 'set_nickname', 'remove'],
-                                description: '操作类型'
+                                description: 'What to do'
                             },
-                            value: { type: 'string', description: '要写入或移除的内容' }
+                            value: { type: 'string', description: 'The content to add or remove' }
                         },
                         required: ['action', 'value']
                     }
@@ -161,7 +161,7 @@ class UserProfilePlugin extends Plugin {
                 type: 'function',
                 function: {
                     name: 'profile_rebuild',
-                    description: '重新从 MemOS 长期记忆诊断用户画像。会保留当前文件备份，由后台重新生成画像。',
+                    description: 'Re-diagnose the user profile from the MemOS long-term memory. The current file is backed up, and the profile is rebuilt in the background.',
                     parameters: { type: 'object', properties: {}, required: [] }
                 }
             }
@@ -191,7 +191,7 @@ class UserProfilePlugin extends Plugin {
             const apiUrl = this._trimTrailingSlash(this._cfg.memos_api_url || 'http://127.0.0.1:8003');
             const ok = await this._memosHealth(apiUrl);
             if (!ok) {
-                this.context.log('warn', 'MemOS 不可用，跳过首次用户画像诊断');
+                this.context.log('warn', 'MemOS is unavailable, skipping the first user profile diagnosis');
                 return;
             }
 
@@ -203,7 +203,7 @@ class UserProfilePlugin extends Plugin {
 
             const selectedMemories = this._selectBootstrapMemories(memories);
             if (selectedMemories.length === 0 && preferences.length === 0) {
-                this.context.log('warn', 'MemOS 中暂无可用于首次诊断的长期记忆');
+                this.context.log('warn', 'MemOS has no long-term memories yet for the first diagnosis');
                 return;
             }
 
@@ -222,7 +222,7 @@ class UserProfilePlugin extends Plugin {
             this._profile = nextProfile;
             this._saveProfile();
             this._refreshRenderedProfile();
-            this.context.log('info', `首次用户画像诊断完成：使用 ${selectedMemories.length} 条记忆、${preferences.length} 条偏好`);
+            this.context.log('info', `First user profile diagnosis done: used ${selectedMemories.length} memories and ${preferences.length} preferences`);
         } finally {
             this._bootstrapRunning = false;
         }
@@ -266,9 +266,9 @@ class UserProfilePlugin extends Plugin {
 
             this._dirty = false;
             this._lastProcessedMessageCount = messages.length;
-            this.context.log('info', `画像后台分析完成 (${reason})：候选 ${observations.length} 条，晋升 ${promoted} 条`);
+            this.context.log('info', `Background profile analysis finished (${reason}): ${observations.length} candidates, ${promoted} promoted`);
         } catch (err) {
-            this.context.log('error', `画像后台分析失败: ${err.message}`);
+            this.context.log('error', `Background profile analysis failed: ${err.message}`);
         } finally {
             this._distilling = false;
         }
@@ -399,7 +399,7 @@ class UserProfilePlugin extends Plugin {
         const apiUrl = this._trimTrailingSlash(this._cfg.memos_api_url || 'http://127.0.0.1:8003');
         try {
             const { data } = await axios.post(`${apiUrl}/search`, {
-                query: `关于主人的长期习惯、偏好或特点：${candidate.text}`,
+                query: `Long-term habits, preferences or traits of the owner: ${candidate.text}`,
                 top_k: 8,
                 user_id: USER_ID,
                 similarity_threshold: 0.45
@@ -439,15 +439,15 @@ class UserProfilePlugin extends Plugin {
 
     async _refinePromotionTexts(candidates) {
         const result = new Map();
-        const prompt = `你是用户画像编辑器。请把以下已达晋升条件的候选观察润色为简洁、稳定、长期的画像条目。
+        const prompt = `You edit a user profile. Polish the candidate observations below, which have met the promotion criteria, into short, stable, long-term profile entries.
 
-要求：
-- 只输出 JSON，不要解释。
-- 保留候选 id。
-- text 用一句自然中文，不要带"可能"、"今天"、"刚才"等一次性表述。
-- category 只能是 habit、trait、like、dislike、fact、relationship。
+Rules:
+- Output only JSON, no explanation.
+- Keep the candidate id.
+- text is one natural English sentence, without one-off words such as "maybe", "today", "just now".
+- category must be one of habit, trait, like, dislike, fact, relationship.
 
-候选：
+Candidates:
 ${JSON.stringify(candidates.map(c => ({
     id: c.id,
     category: c.category,
@@ -459,7 +459,7 @@ ${JSON.stringify(candidates.map(c => ({
     memos_support: c.memos_support
 })), null, 2)}
 
-输出格式：
+Output format:
 {"items":[{"id":"...","category":"habit","text":"..."}]}`;
 
         try {
@@ -475,7 +475,7 @@ ${JSON.stringify(candidates.map(c => ({
                 }
             }
         } catch (err) {
-            this.context.log('warn', `画像晋升润色失败，使用候选原文: ${err.message}`);
+            this.context.log('warn', `Polishing the promoted entries failed, using the candidate text as is: ${err.message}`);
         }
 
         return result;
@@ -523,12 +523,12 @@ ${JSON.stringify(candidates.map(c => ({
                     return data.choices?.[0]?.message?.content || '';
                 } catch (err) {
                     lastError = err;
-                    this.context.log('warn', `画像模型调用失败 (${cfg.model}, ${timeoutSeconds}s): ${err.message}`);
+                    this.context.log('warn', `Profile model call failed (${cfg.model}, ${timeoutSeconds}s): ${err.message}`);
                 }
             }
         }
 
-        throw lastError || new Error('画像模型调用失败');
+        throw lastError || new Error('Profile model call failed');
     }
 
     _buildChatPayload(cfg, prompt, options) {
@@ -579,7 +579,7 @@ ${JSON.stringify(candidates.map(c => ({
             if (!raw) return this._clone(fallback);
             return JSON.parse(raw);
         } catch (err) {
-            this.context.log('warn', `读取 JSON 失败 (${filePath}): ${err.message}`);
+            this.context.log('warn', `Failed to read JSON (${filePath}): ${err.message}`);
             return this._clone(fallback);
         }
     }
@@ -678,21 +678,21 @@ ${JSON.stringify(candidates.map(c => ({
 
     _refreshRenderedProfile() {
         const parts = [];
-        if (this._profile.name) parts.push(`姓名: ${this._profile.name}`);
-        if (this._profile.nickname) parts.push(`称呼/昵称: ${this._profile.nickname}`);
-        if (this._profile.traits.length) parts.push(`性格/做派:\n${this._profile.traits.map(x => `- ${x}`).join('\n')}`);
-        if (this._profile.habits.length) parts.push(`长期习惯/行为模式:\n${this._profile.habits.map(x => `- ${x}`).join('\n')}`);
+        if (this._profile.name) parts.push(`Name: ${this._profile.name}`);
+        if (this._profile.nickname) parts.push(`What to call them / nickname: ${this._profile.nickname}`);
+        if (this._profile.traits.length) parts.push(`Personality and manner:\n${this._profile.traits.map(x => `- ${x}`).join('\n')}`);
+        if (this._profile.habits.length) parts.push(`Long-term habits and behavior patterns:\n${this._profile.habits.map(x => `- ${x}`).join('\n')}`);
         if (this._profile.preferences.likes.length || this._profile.preferences.dislikes.length) {
             const prefs = [];
-            if (this._profile.preferences.likes.length) prefs.push(`喜欢: ${this._profile.preferences.likes.join('；')}`);
-            if (this._profile.preferences.dislikes.length) prefs.push(`不喜欢: ${this._profile.preferences.dislikes.join('；')}`);
-            parts.push(`稳定偏好:\n${prefs.map(x => `- ${x}`).join('\n')}`);
+            if (this._profile.preferences.likes.length) prefs.push(`Likes: ${this._profile.preferences.likes.join('; ')}`);
+            if (this._profile.preferences.dislikes.length) prefs.push(`Dislikes: ${this._profile.preferences.dislikes.join('; ')}`);
+            parts.push(`Stable preferences:\n${prefs.map(x => `- ${x}`).join('\n')}`);
         }
-        if (this._profile.facts.length) parts.push(`稳定事实:\n${this._profile.facts.map(x => `- ${x}`).join('\n')}`);
-        if (this._profile.relationships.length) parts.push(`重要关系:\n${this._profile.relationships.map(x => `- ${x}`).join('\n')}`);
+        if (this._profile.facts.length) parts.push(`Stable facts:\n${this._profile.facts.map(x => `- ${x}`).join('\n')}`);
+        if (this._profile.relationships.length) parts.push(`Important relationships:\n${this._profile.relationships.map(x => `- ${x}`).join('\n')}`);
 
         this._renderedProfile = parts.length
-            ? `【用户画像 - 主人长期以来的习惯/性格/偏好，自然融入对话，勿照搬原文】\n${parts.join('\n')}`
+            ? `[User profile - your owner's long-term habits, personality and preferences. Work them into the conversation naturally and do not quote them word for word]\n${parts.join('\n')}`
             : '';
     }
 
@@ -710,12 +710,12 @@ ${JSON.stringify(candidates.map(c => ({
                         this._loadProfile();
                         this._loadCandidates();
                         this._refreshRenderedProfile();
-                        this.context.log('info', '用户画像文件已变更，已重新加载');
+                        this.context.log('info', 'The user profile file changed, reloaded');
                     }, 500);
                 });
                 this._watchers.push(watcher);
             } catch (err) {
-                this.context.log('warn', `无法监听画像文件: ${err.message}`);
+                this.context.log('warn', `Cannot watch the profile file: ${err.message}`);
             }
         }
     }
@@ -730,15 +730,15 @@ ${JSON.stringify(candidates.map(c => ({
     // ===== Prompts =====
 
     _buildBootstrapPrompt(memories, preferences, graph) {
-        return `你是用户画像诊断器。请基于肥牛的长期记忆，为"主人"生成一份长期稳定用户画像。
+        return `You build user profiles. From the AI's long-term memory, write a stable, long-term profile of the user, called "owner" here.
 
-原则：
-- 只提炼长期稳定的习惯、行为模式、性格做派、稳定偏好、稳定事实和重要关系。
-- 忽略当天/一次性/偶发事件。
-- 如果证据不足，宁可留空，不要猜测。
-- 只输出 JSON，不要 markdown，不要解释。
+Principles:
+- Only extract long-term, stable habits, behavior patterns, personality and manner, stable preferences, stable facts and important relationships.
+- Ignore same-day, one-off or occasional events.
+- If the evidence is thin, leave it empty rather than guess.
+- Output only JSON, no markdown, no explanation.
 
-输出 JSON 结构：
+Output JSON structure:
 {
   "name": "",
   "nickname": "",
@@ -749,13 +749,13 @@ ${JSON.stringify(candidates.map(c => ({
   "relationships": []
 }
 
-长期记忆（已按 importance、merge_count、时间跨度筛选）：
+Long-term memories (already filtered by importance, merge_count and time span):
 ${JSON.stringify(memories, null, 2)}
 
-结构化偏好：
+Structured preferences:
 ${JSON.stringify(preferences, null, 2)}
 
-关系图谱摘要（可为空）：
+Relationship graph summary (may be empty):
 ${JSON.stringify(graph, null, 2)}`;
     }
 
@@ -773,33 +773,33 @@ ${JSON.stringify(graph, null, 2)}`;
                 self_declared: c.self_declared
             }));
 
-        return `你是用户画像观察器。请从最近对话中提取"可能值得长期跟踪"的用户观察，输出候选观察，不要直接判断它已是长期画像。
+        return `You observe the user for their profile. From the recent conversation, extract observations about the user that "may be worth tracking long term". Output them as candidate observations, and do not decide that they are already part of the long-term profile.
 
-重要原则：
-- 只提取与主人长期画像有关的观察：habit(习惯/行为模式)、trait(性格/做派)、like、dislike、fact(稳定事实)、relationship。
-- 一次性事件也可以作为候选，但必须标注 one_off=true；不要把"今天/刚才/这次"说成长期。
-- 如果主人明确说"我一直/经常/习惯/每天/通常/基本都..."，self_declared=true。
-- 如果观察与已有候选相同，请填写 match_id；否则 match_id=null。
-- 如发现某个正式画像项已被明确否定/取代，可填写 obsolete_profile_text。
-- 只输出 JSON，不要 markdown，不要解释。
+Key principles:
+- Only extract observations relevant to the owner's long-term profile: habit (habits, behavior patterns), trait (personality, manner), like, dislike, fact (stable facts), relationship.
+- One-off events can be candidates too, but must be marked one_off=true; do not describe "today / just now / this time" as long term.
+- If the owner clearly says "I always / often / usually / every day / mostly...", self_declared=true.
+- If an observation matches an existing candidate, fill in match_id; otherwise match_id=null.
+- If you find that an entry of the formal profile was clearly denied or replaced, you can fill in obsolete_profile_text.
+- Output only JSON, no markdown, no explanation.
 
-已有正式画像：
+Current formal profile:
 ${JSON.stringify(this._profile, null, 2)}
 
-已有候选池摘要：
+Current candidate pool summary:
 ${JSON.stringify(candidateSummary, null, 2)}
 
-最近对话：
+Recent conversation:
 ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content })), null, 2)}
 
-输出格式：
+Output format:
 {
   "observations": [
     {
-      "match_id": "已有候选id或null",
+      "match_id": "an existing candidate id or null",
       "category": "habit|trait|like|dislike|fact|relationship",
-      "text": "简洁观察",
-      "evidence": "触发该观察的短证据",
+      "text": "short observation",
+      "evidence": "short evidence that led to this observation",
       "one_off": false,
       "self_declared": false,
       "obsolete_profile_text": ""
@@ -827,7 +827,7 @@ ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content }))
             });
             return Array.isArray(data.memories) ? data.memories : [];
         } catch (err) {
-            this.context.log('warn', `拉取 MemOS 记忆失败: ${err.message}`);
+            this.context.log('warn', `Failed to fetch MemOS memories: ${err.message}`);
             return [];
         }
     }
@@ -840,7 +840,7 @@ ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content }))
             });
             return Array.isArray(data.preferences) ? data.preferences : [];
         } catch (err) {
-            this.context.log('warn', `拉取 MemOS 偏好失败: ${err.message}`);
+            this.context.log('warn', `Failed to fetch MemOS preferences: ${err.message}`);
             return [];
         }
     }
@@ -941,7 +941,7 @@ ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content }))
                     last_counted_day: today,
                     self_declared: false,
                     status: 'candidate',
-                    evidence: [{ date: today, text: '正式画像长期未复现后软降级回候选池' }]
+                    evidence: [{ date: today, text: 'Moved back to the candidate pool after not showing up for a long time' }]
                 });
                 delete meta[key];
                 changed = true;
@@ -1017,7 +1017,7 @@ ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content }))
         for (const field of ['traits', 'habits', 'relationships', 'preferences.likes', 'preferences.dislikes']) {
             const removed = this._removeProfileText(field, obsolete);
             if (removed) {
-                this.context.log('info', `画像项被新观察取代，已移除: ${obsolete}`);
+                this.context.log('info', `Profile entry replaced by a new observation, removed: ${obsolete}`);
                 this._profile.updated_at = this._nowIso();
                 break;
             }
@@ -1044,7 +1044,7 @@ ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content }))
 
     _manualUpdate(action, value) {
         const text = this._cleanText(value);
-        if (!text) return '错误：未提供有效内容。';
+        if (!text) return 'Error: no valid content was given.';
 
         switch (action) {
             case 'set_name':
@@ -1077,13 +1077,13 @@ ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content }))
                 }
                 break;
             default:
-                return `错误：不支持的操作 ${action}`;
+                return `Error: unsupported action ${action}`;
         }
 
         this._profile.updated_at = this._nowIso();
         this._saveProfile();
         this._refreshRenderedProfile();
-        return `用户画像已更新：${action} ${text}`;
+        return `User profile updated: ${action} ${text}`;
     }
 
     async _rebuildProfile() {
@@ -1093,13 +1093,13 @@ ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content }))
         });
         this._saveProfile();
         this._refreshRenderedProfile();
-        this._bootstrap().catch(err => this.context.log('warn', `重新诊断失败: ${err.message}`));
-        return '已开始重新诊断用户画像；完成后会写入用户画像.json。';
+        this._bootstrap().catch(err => this.context.log('warn', `Re-diagnosis failed: ${err.message}`));
+        return 'Started re-diagnosing the user profile. When it is done, it is written to 用户画像.json.';
     }
 
     _renderProfileForTool() {
-        if (!this._renderedProfile) return '当前没有已晋升的用户画像。';
-        return `${this._renderedProfile}\n\n画像文件: ${this._profilePath}\n候选池文件: ${this._candidatePath}`;
+        if (!this._renderedProfile) return 'There is no promoted user profile yet.';
+        return `${this._renderedProfile}\n\nProfile file: ${this._profilePath}\nCandidate pool file: ${this._candidatePath}`;
     }
 
     // ===== Helpers =====
@@ -1109,7 +1109,7 @@ ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content }))
         const idleMs = this._numberCfg('idle_time', 180000);
         this._idleTimer = setTimeout(() => {
             this._distill('idle').catch(err => {
-                this.context.log('error', `空闲画像分析失败: ${err.message}`);
+                this.context.log('error', `Idle profile analysis failed: ${err.message}`);
             });
         }, idleMs);
     }
@@ -1179,7 +1179,7 @@ ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content }))
     }
 
     _parseJsonObject(response) {
-        if (!response) throw new Error('LLM 返回为空');
+        if (!response) throw new Error('LLM returned nothing');
         let text = String(response).trim();
 
         if (text.startsWith('```')) {
@@ -1197,7 +1197,7 @@ ${JSON.stringify(recentMessages.map(m => ({ role: m.role, content: m.content }))
         } catch (err) {
             const fixed = this._tryFixJson(text);
             if (fixed) return fixed;
-            throw new Error(`JSON 解析失败: ${err.message}`);
+            throw new Error(`JSON parse failed: ${err.message}`);
         }
     }
 

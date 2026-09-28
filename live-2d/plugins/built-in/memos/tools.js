@@ -8,153 +8,153 @@ const path = require('path');
 const TOOL_DEFINITIONS = [
     {
         name: 'memos_search_memory',
-        description: "从AI的长期记忆系统中深度搜索相关的历史信息和对话。当用户询问'你还记得吗'、'之前说过'、'上次'、'以前'、'有没有'、'记不记得'等涉及过去事件的问题时必须使用此工具！也可用于主动搜索用户的偏好、经历、约定等。",
+        description: "Search your long-term memory in depth for related past information and conversations. You must use this tool when the user asks about past events, with phrases like 'do you remember', 'you said before', 'last time', 'back then', 'did we ever', 'remember when' and so on! You can also use it on your own to look up the user's preferences, experiences, plans you agreed on and so on.",
         parameters: {
             type: 'object',
             properties: {
-                query: { type: 'string', description: "搜索查询语句。【重要】必须使用完整的自然语言句子，不要只用单个词！例如：'用户喜欢吃什么'、'用户玩过什么游戏'、'关于炸串的记忆'。" },
-                top_k: { type: 'integer', description: '返回最相关的记忆数量，默认5条' }
+                query: { type: 'string', description: "The search query. [Important] Use a full natural-language sentence, not a single word! For example: 'what food does the user like', 'which games has the user played', 'memories about fried skewers'." },
+                top_k: { type: 'integer', description: 'How many of the most relevant memories to return. Default: 5' }
             },
             required: ['query']
         }
     },
     {
         name: 'memos_add_memory',
-        description: "手动添加重要信息到AI的长期记忆系统。当用户明确说'记住这个'、'别忘了'、'帮我记一下'、'以后记得'等时使用。也可用于主动记录用户透露的重要信息（如生日、喜好、重要事件等）。",
+        description: "Add important information to your long-term memory. Use it when the user explicitly says 'remember this', 'don't forget', 'make a note of this', 'keep this in mind' and so on. You can also use it on your own to record important things the user tells you (such as birthdays, likes and dislikes, important events).",
         parameters: {
             type: 'object',
             properties: {
-                content: { type: 'string', description: '要记住的内容，应该简洁明了' }
+                content: { type: 'string', description: 'What to remember. Keep it short and clear' }
             },
             required: ['content']
         }
     },
     {
         name: 'memos_upload_image',
-        description: "将图片保存到AI的长期记忆系统。当用户说'帮我记住这张图'、'保存这张图片'等时使用。",
+        description: "Save an image to your long-term memory. Use it when the user says 'remember this picture', 'save this image' and so on.",
         parameters: {
             type: 'object',
             properties: {
-                image_base64: { type: 'string', description: '图片的 base64 编码数据（不含 data:image/xxx;base64, 前缀）' },
-                description: { type: 'string', description: '图片的描述或标题，用于后续搜索' },
-                image_type: { type: 'string', description: '图片类型：screenshot、photo、artwork、document、other', enum: ['screenshot', 'photo', 'artwork', 'document', 'other'] },
-                tags: { type: 'array', items: { type: 'string' }, description: '图片的标签，用于分类和搜索' }
+                image_base64: { type: 'string', description: 'The image as base64 data (without the data:image/xxx;base64, prefix)' },
+                description: { type: 'string', description: 'A description or title of the image, used to find it later' },
+                image_type: { type: 'string', description: 'Image type: screenshot, photo, artwork, document or other', enum: ['screenshot', 'photo', 'artwork', 'document', 'other'] },
+                tags: { type: 'array', items: { type: 'string' }, description: 'Tags for the image, used to sort and search' }
             },
             required: ['image_base64', 'description']
         }
     },
     {
         name: 'memos_search_images',
-        description: "从AI的图片记忆中搜索相关图片。当用户问'之前那张图呢'、'找一下猫的图片'等时使用。",
+        description: "Search your image memory for related images. Use it when the user asks things like 'where's that picture from before', 'find the cat pictures' and so on.",
         parameters: {
             type: 'object',
             properties: {
-                query: { type: 'string', description: '搜索查询，描述想要找的图片内容' },
-                image_type: { type: 'string', description: '可选，限定图片类型', enum: ['screenshot', 'photo', 'artwork', 'document', 'other'] },
-                top_k: { type: 'integer', description: '返回数量，默认5' }
+                query: { type: 'string', description: 'The search query: describe what is in the image you want' },
+                image_type: { type: 'string', description: 'Optional. Only this image type', enum: ['screenshot', 'photo', 'artwork', 'document', 'other'] },
+                top_k: { type: 'integer', description: 'How many to return. Default: 5' }
             },
             required: ['query']
         }
     },
     {
         name: 'memos_save_screenshot',
-        description: "截取当前屏幕并保存到AI的长期记忆系统。当用户说'帮我记住当前屏幕'、'保存这个截图'等时使用。此工具会自动截图并保存。",
+        description: "Take a screenshot and save it to your long-term memory. Use it when the user says 'remember what's on my screen', 'save this screenshot' and so on. The tool takes the screenshot and saves it by itself.",
         parameters: {
             type: 'object',
             properties: {
-                description: { type: 'string', description: '【必填】截图的描述或标题，用于后续搜索和识别' },
-                tags: { type: 'array', items: { type: 'string' }, description: '截图的标签，用于分类和搜索' }
+                description: { type: 'string', description: '[Required] A description or title of the screenshot, used to find and recognize it later' },
+                tags: { type: 'array', items: { type: 'string' }, description: 'Tags for the screenshot, used to sort and search' }
             },
             required: ['description']
         }
     },
     {
         name: 'memos_save_image_from_file',
-        description: "将电脑上的图片文件保存到AI的长期记忆系统。支持 JPG、PNG、GIF、WEBP 等常见图片格式。",
+        description: "Save an image file from the computer to your long-term memory. Supports common image formats such as JPG, PNG, GIF and WEBP.",
         parameters: {
             type: 'object',
             properties: {
-                file_path: { type: 'string', description: '【必填】图片文件的完整路径' },
-                description: { type: 'string', description: '【必填】图片的描述或标题' },
-                image_type: { type: 'string', description: '图片类型', enum: ['photo', 'artwork', 'document', 'screenshot', 'other'] },
-                tags: { type: 'array', items: { type: 'string' }, description: '图片的标签' }
+                file_path: { type: 'string', description: '[Required] The full path of the image file' },
+                description: { type: 'string', description: '[Required] A description or title of the image' },
+                image_type: { type: 'string', description: 'Image type', enum: ['photo', 'artwork', 'document', 'screenshot', 'other'] },
+                tags: { type: 'array', items: { type: 'string' }, description: 'Tags for the image' }
             },
             required: ['file_path', 'description']
         }
     },
     {
         name: 'memos_record_tool_usage',
-        description: '记录工具使用情况到记忆系统。在执行重要的工具调用后自动调用，以便后续回顾。',
+        description: 'Record a tool use in the memory system. Call it on your own after important tool calls so you can look back on them later.',
         parameters: {
             type: 'object',
             properties: {
-                tool_name: { type: 'string', description: '工具名称' },
-                parameters: { type: 'object', description: '调用工具时使用的参数' },
-                result_summary: { type: 'string', description: '工具执行结果的简短摘要' },
-                category: { type: 'string', description: '工具类别', enum: ['search', 'media', 'utility', 'game', 'other'] }
+                tool_name: { type: 'string', description: 'Tool name' },
+                parameters: { type: 'object', description: 'The parameters used for the tool call' },
+                result_summary: { type: 'string', description: 'A short summary of the tool\'s result' },
+                category: { type: 'string', description: 'Tool category', enum: ['search', 'media', 'utility', 'game', 'other'] }
             },
             required: ['tool_name', 'result_summary']
         }
     },
     {
         name: 'memos_search_tool_usage',
-        description: "搜索之前的工具使用记录。当用户问'之前搜过什么'、'上次播放的音乐'等时使用。",
+        description: "Search the records of earlier tool use. Use it when the user asks things like 'what did you search for before', 'the song you played last time' and so on.",
         parameters: {
             type: 'object',
             properties: {
-                tool_name: { type: 'string', description: '可选，限定工具名称' },
-                keyword: { type: 'string', description: '可选，搜索关键词' },
-                limit: { type: 'integer', description: '返回数量，默认10' }
+                tool_name: { type: 'string', description: 'Optional. Only this tool name' },
+                keyword: { type: 'string', description: 'Optional. A search keyword' },
+                limit: { type: 'integer', description: 'How many to return. Default: 10' }
             },
             required: []
         }
     },
     {
         name: 'memos_import_url',
-        description: "将网页内容导入到AI的长期记忆系统。当用户说'帮我记住这个网页'、'把这个链接保存下来'等时使用。",
+        description: "Import a web page into your long-term memory. Use it when the user says 'remember this web page', 'save this link' and so on.",
         parameters: {
             type: 'object',
             properties: {
-                url: { type: 'string', description: '要导入的网页 URL（http 或 https 开头）' },
-                tags: { type: 'array', items: { type: 'string' }, description: '可选标签，用于分类和后续搜索' }
+                url: { type: 'string', description: 'The URL of the web page to import (starts with http or https)' },
+                tags: { type: 'array', items: { type: 'string' }, description: 'Optional tags, used to sort and search later' }
             },
             required: ['url']
         }
     },
     {
         name: 'memos_import_document',
-        description: "将文档导入到AI的长期记忆系统。支持 txt、pdf、md 格式。",
+        description: "Import a document into your long-term memory. Supports txt, pdf and md.",
         parameters: {
             type: 'object',
             properties: {
-                file_path: { type: 'string', description: '文档的本地路径，支持 .txt、.pdf、.md 格式' },
-                tags: { type: 'array', items: { type: 'string' }, description: '可选标签，用于分类' }
+                file_path: { type: 'string', description: 'Local path of the document (.txt, .pdf or .md)' },
+                tags: { type: 'array', items: { type: 'string' }, description: 'Optional tags, used to sort' }
             },
             required: ['file_path']
         }
     },
     {
         name: 'memos_correct_memory',
-        description: "修正、补充或删除已有的记忆。需要先用 memos_search_memory 找到记忆ID。",
+        description: "Correct, add to or delete an existing memory. First find the memory ID with memos_search_memory.",
         parameters: {
             type: 'object',
             properties: {
-                memory_id: { type: 'string', description: '要修正的记忆 ID（通过搜索获取）' },
-                action: { type: 'string', description: '操作类型', enum: ['correct', 'supplement', 'delete'] },
-                new_content: { type: 'string', description: '修正后的内容或要补充的内容（删除时不需要）' },
-                reason: { type: 'string', description: '可选，修正或删除的原因' }
+                memory_id: { type: 'string', description: 'ID of the memory to change (get it from a search)' },
+                action: { type: 'string', description: 'What to do', enum: ['correct', 'supplement', 'delete'] },
+                new_content: { type: 'string', description: 'The corrected content, or the content to add (not needed for delete)' },
+                reason: { type: 'string', description: 'Optional. Why you are changing or deleting it' }
             },
             required: ['memory_id', 'action']
         }
     },
     {
         name: 'memos_get_preferences',
-        description: "获取用户的偏好摘要和详细列表。推荐食物、音乐等时使用，也可回答'我喜欢什么'等问题。",
+        description: "Get a summary and a detailed list of the user's preferences. Use it when recommending food, music and so on. It also answers questions like 'what do I like'.",
         parameters: {
             type: 'object',
             properties: {
-                category: { type: 'string', description: '可选，只查看特定类别的偏好', enum: ['food', 'music', 'game', 'movie', 'hobby', 'style', 'schedule', 'general'] },
-                include_details: { type: 'boolean', description: '是否包含详细偏好列表，默认 true' }
+                category: { type: 'string', description: 'Optional. Only show preferences in this category', enum: ['food', 'music', 'game', 'movie', 'hobby', 'style', 'schedule', 'general'] },
+                include_details: { type: 'boolean', description: 'Whether to include the detailed list of preferences. Default: true' }
             },
             required: []
         }
@@ -182,7 +182,7 @@ class MemosTools {
 
     async execute(name, params) {
         const handler = this._handlers[name];
-        if (!handler) throw new Error(`[MemOS] 不支持此功能: ${name}`);
+        if (!handler) throw new Error(`[MemOS] Unsupported function: ${name}`);
         return handler.call(this, params);
     }
 
@@ -225,20 +225,20 @@ class MemosTools {
     }
 
     _connRefused(error) {
-        return error.code === 'ECONNREFUSED' ? '记忆系统服务未启动。' : null;
+        return error.code === 'ECONNREFUSED' ? 'The memory service is not running.' : null;
     }
 
     // ---------- 基础记忆 ----------
 
     async _searchMemory({ query, top_k = 5 }) {
-        if (!query) return '错误：未提供搜索查询 (query)。';
+        if (!query) return 'Error: no search query (query) was given.';
         try {
             const { data } = await axios.post(`${this.apiUrl}/search`, {
                 query, top_k, user_id: 'feiniu_default',
                 similarity_threshold: this.similarityThreshold
             }, { timeout: 5000 });
             const memories = data.memories || [];
-            if (memories.length === 0) return `在记忆中没有找到关于"${query}"的相关信息。`;
+            if (memories.length === 0) return `Found nothing in memory about "${query}".`;
 
             const lines = memories.map((mem, i) => {
                 const content = typeof mem === 'string' ? mem : mem.content;
@@ -246,85 +246,85 @@ class MemosTools {
                 const rawCreated = mem.created_at || mem.timestamp || (pl && (pl.created_at || pl.timestamp));
                 const rawUpdated = mem.updated_at || (pl && pl.updated_at);
                 const timeStr = this._formatTime(rawCreated);
-                const updateMark = (rawUpdated && rawUpdated !== rawCreated) ? '（已更新）' : '';
+                const updateMark = (rawUpdated && rawUpdated !== rawCreated) ? ' (updated)' : '';
                 const idTag = mem.id ? ` [ID: ${mem.id}]` : '';
-                return timeStr ? `${i + 1}. ${content} 【${timeStr}】${updateMark}${idTag}` : `${i + 1}. ${content}${idTag}`;
+                return timeStr ? `${i + 1}. ${content} [${timeStr}]${updateMark}${idTag}` : `${i + 1}. ${content}${idTag}`;
             });
-            return `找到 ${memories.length} 条相关记忆：\n${lines.join('\n')}`;
+            return `Found ${memories.length} related memories:\n${lines.join('\n')}`;
         } catch (error) {
-            return this._connRefused(error) || `搜索记忆时出错: ${error.message}`;
+            return this._connRefused(error) || `Error while searching memories: ${error.message}`;
         }
     }
 
     async _addMemory({ content }) {
-        if (!content) return '错误：未提供要记住的内容 (content)。';
+        if (!content) return 'Error: nothing to remember (content) was given.';
         try {
             await axios.post(`${this.apiUrl}/add`, { messages: [{ role: 'user', content }], user_id: 'feiniu_default' }, { timeout: 60000 });
-            return `已成功记住: ${content}`;
+            return `Remembered: ${content}`;
         } catch (error) {
-            return this._connRefused(error) || `添加记忆时出错: ${error.message}`;
+            return this._connRefused(error) || `Error while adding the memory: ${error.message}`;
         }
     }
 
     // ---------- 图片记忆 ----------
 
     async _uploadImage({ image_base64, description, image_type = 'other', tags = [] }) {
-        if (!image_base64) return '错误：未提供图片数据 (image_base64)。';
-        if (!description) return '错误：未提供图片描述 (description)。';
+        if (!image_base64) return 'Error: no image data (image_base64) was given.';
+        if (!description) return 'Error: no image description (description) was given.';
         try {
             const { data } = await axios.post(`${this.apiUrl}/images/upload`, { image_base64, description, image_type, tags, user_id: 'feiniu_default' }, { timeout: 30000 });
-            return `已成功保存图片「${description}」，图片ID: ${data.image_id || '已生成'}`;
+            return `Saved the image “${description}”, image ID: ${data.image_id || 'created'}`;
         } catch (error) {
-            return this._connRefused(error) || `保存图片时出错: ${error.message}`;
+            return this._connRefused(error) || `Error while saving the image: ${error.message}`;
         }
     }
 
     async _searchImages({ query, image_type, top_k = 5 }) {
-        if (!query) return '错误：未提供搜索查询 (query)。';
+        if (!query) return 'Error: no search query (query) was given.';
         try {
             const reqData = { query, top_k, user_id: 'feiniu_default' };
             if (image_type) reqData.image_type = image_type;
             const { data } = await axios.post(`${this.apiUrl}/images/search`, reqData, { timeout: 10000 });
             const images = data.images || [];
-            if (images.length === 0) return `没有找到关于「${query}」的图片记忆。`;
+            if (images.length === 0) return `No image memories found for “${query}”.`;
 
             const lines = images.map((img, i) => {
-                const desc = img.description || '无描述';
+                const desc = img.description || 'no description';
                 const type = img.image_type || 'unknown';
                 const time = img.created_at ? new Date(img.created_at).toLocaleDateString('zh-CN') : '';
                 const t = img.tags?.length > 0 ? `[${img.tags.join(', ')}]` : '';
-                return `${i + 1}. 【${type}】${desc} ${t}${time ? ` (${time})` : ''}`;
+                return `${i + 1}. [${type}] ${desc} ${t}${time ? ` (${time})` : ''}`;
             });
-            return `找到 ${images.length} 张相关图片：\n${lines.join('\n')}`;
+            return `Found ${images.length} related images:\n${lines.join('\n')}`;
         } catch (error) {
-            return this._connRefused(error) || `搜索图片时出错: ${error.message}`;
+            return this._connRefused(error) || `Error while searching images: ${error.message}`;
         }
     }
 
     async _saveScreenshot({ description, tags = [] }) {
-        if (!description) return '错误：未提供截图描述 (description)。';
+        if (!description) return 'Error: no screenshot description (description) was given.';
         try {
             const base64Image = await ipcRenderer.invoke('take-screenshot');
-            if (!base64Image) return '错误：截图失败，未能获取屏幕图像。';
+            if (!base64Image) return 'Error: the screenshot failed, could not capture the screen.';
 
             const { data } = await axios.post(`${this.apiUrl}/images/upload`, {
                 image_base64: base64Image, description, image_type: 'screenshot', tags, user_id: 'feiniu_default'
             }, { timeout: 30000 });
-            return `已成功截取屏幕并保存到记忆！\n描述：${description}\n图片ID：${data.image_id || '已生成'}`;
+            return `Took a screenshot and saved it to memory!\nDescription: ${description}\nImage ID: ${data.image_id || 'created'}`;
         } catch (error) {
-            if (error.message?.includes('invoke')) return '截图功能不可用，可能是 Electron 环境问题。';
-            return this._connRefused(error) || `保存截图时出错: ${error.message}`;
+            if (error.message?.includes('invoke')) return 'Screenshots are not available, possibly a problem with the Electron environment.';
+            return this._connRefused(error) || `Error while saving the screenshot: ${error.message}`;
         }
     }
 
     async _saveImageFromFile({ file_path, description, image_type = 'photo', tags = [] }) {
-        if (!file_path) return '错误：未提供图片文件路径 (file_path)。';
-        if (!description) return '错误：未提供图片描述 (description)。';
+        if (!file_path) return 'Error: no image file path (file_path) was given.';
+        if (!description) return 'Error: no image description (description) was given.';
         try {
-            if (!fs.existsSync(file_path)) return `错误：文件不存在: ${file_path}`;
+            if (!fs.existsSync(file_path)) return `Error: file not found: ${file_path}`;
             const ext = path.extname(file_path).toLowerCase();
             const supported = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-            if (!supported.includes(ext)) return `错误：不支持的图片格式 (${ext})。支持：${supported.join(', ')}`;
+            if (!supported.includes(ext)) return `Error: unsupported image format (${ext}). Supported: ${supported.join(', ')}`;
 
             const imageBuffer = fs.readFileSync(file_path);
             const base64Image = imageBuffer.toString('base64');
@@ -333,23 +333,23 @@ class MemosTools {
             const { data } = await axios.post(`${this.apiUrl}/images/upload`, {
                 image_base64: base64Image, filename, description, image_type, tags, user_id: 'feiniu_default'
             }, { timeout: 30000 });
-            return `已成功保存图片到记忆！\n文件：${filename}\n描述：${description}\n图片ID：${data.image_id || '已生成'}`;
+            return `Saved the image to memory!\nFile: ${filename}\nDescription: ${description}\nImage ID: ${data.image_id || 'created'}`;
         } catch (error) {
-            if (error.code === 'ENOENT') return `错误：无法读取文件: ${file_path}`;
-            return this._connRefused(error) || `保存图片时出错: ${error.message}`;
+            if (error.code === 'ENOENT') return `Error: cannot read the file: ${file_path}`;
+            return this._connRefused(error) || `Error while saving the image: ${error.message}`;
         }
     }
 
     // ---------- 工具使用记录 ----------
 
     async _recordToolUsage({ tool_name, parameters: toolParams = {}, result_summary, category = 'other' }) {
-        if (!tool_name) return '错误：未提供工具名称 (tool_name)。';
-        if (!result_summary) return '错误：未提供结果摘要 (result_summary)。';
+        if (!tool_name) return 'Error: no tool name (tool_name) was given.';
+        if (!result_summary) return 'Error: no result summary (result_summary) was given.';
         try {
             await axios.post(`${this.apiUrl}/tools/record`, { tool_name, parameters: toolParams, result_summary, category, user_id: 'feiniu_default' }, { timeout: 5000 });
-            return `已记录工具「${tool_name}」的使用`;
+            return `Recorded the use of tool “${tool_name}”`;
         } catch (error) {
-            return this._connRefused(error) || `记录工具使用时出错: ${error.message}`;
+            return this._connRefused(error) || `Error while recording the tool use: ${error.message}`;
         }
     }
 
@@ -366,67 +366,67 @@ class MemosTools {
                 );
             }
             if (records.length === 0) {
-                const hints = [tool_name && `工具「${tool_name}」`, keyword && `关键词「${keyword}」`].filter(Boolean);
-                return hints.length > 0 ? `没有找到匹配 ${hints.join('、')} 的工具使用记录。` : '没有找到工具使用记录。';
+                const hints = [tool_name && `tool “${tool_name}”`, keyword && `keyword “${keyword}”`].filter(Boolean);
+                return hints.length > 0 ? `No tool use records match ${hints.join(', ')}.` : 'No tool use records found.';
             }
 
             const lines = records.map((r, i) => {
                 const name = r.tool_name || 'unknown';
-                const summary = r.result_summary || '无摘要';
+                const summary = r.result_summary || 'no summary';
                 const time = r.timestamp ? new Date(r.timestamp).toLocaleString('zh-CN') : '';
                 let p = '';
                 if (r.parameters) {
                     const paramStr = JSON.stringify(r.parameters);
-                    p = paramStr.length > 50 ? ` (参数: ${paramStr.substring(0, 50)}...)` : ` (参数: ${paramStr})`;
+                    p = paramStr.length > 50 ? ` (parameters: ${paramStr.substring(0, 50)}...)` : ` (parameters: ${paramStr})`;
                 }
-                return `${i + 1}. 【${name}】${summary}${p}${time ? ` - ${time}` : ''}`;
+                return `${i + 1}. [${name}] ${summary}${p}${time ? ` - ${time}` : ''}`;
             });
-            return `找到 ${records.length} 条工具使用记录：\n${lines.join('\n')}`;
+            return `Found ${records.length} tool use records:\n${lines.join('\n')}`;
         } catch (error) {
-            return this._connRefused(error) || `搜索工具记录时出错: ${error.message}`;
+            return this._connRefused(error) || `Error while searching the tool records: ${error.message}`;
         }
     }
 
     // ---------- 知识库导入 ----------
 
     async _importUrl({ url, tags = [] }) {
-        if (!url) return '错误：未提供网页 URL。';
-        if (!url.startsWith('http://') && !url.startsWith('https://')) return '错误：URL 必须以 http:// 或 https:// 开头。';
+        if (!url) return 'Error: no web page URL was given.';
+        if (!url.startsWith('http://') && !url.startsWith('https://')) return 'Error: the URL must start with http:// or https://.';
         try {
             const { data } = await axios.post(`${this.apiUrl}/kb/import`, { source: url, tags: ['web', ...tags], user_id: 'feiniu_default' }, { timeout: 60000 });
-            if (data.status === 'success') return `已成功导入网页内容！\n- URL: ${url}\n- 分块数: ${data.chunks_count || 0}\n- 导入记忆: ${data.imported_count || 0} 条`;
-            return `导入失败: ${data.message || '未知错误'}`;
+            if (data.status === 'success') return `Imported the web page!\n- URL: ${url}\n- Chunks: ${data.chunks_count || 0}\n- Memories imported: ${data.imported_count || 0}`;
+            return `Import failed: ${data.message || 'unknown error'}`;
         } catch (error) {
-            if (error.response?.status === 503) return '文档加载器未初始化，无法导入网页。';
-            return this._connRefused(error) || `导入网页时出错: ${error.message}`;
+            if (error.response?.status === 503) return 'The document loader is not initialized, so the web page cannot be imported.';
+            return this._connRefused(error) || `Error while importing the web page: ${error.message}`;
         }
     }
 
     async _importDocument({ file_path, tags = [] }) {
-        if (!file_path) return '错误：未提供文档路径。';
+        if (!file_path) return 'Error: no document path was given.';
         try {
             if (!file_path.startsWith('http://') && !file_path.startsWith('https://')) {
-                if (!fs.existsSync(file_path)) return `错误：文件不存在: ${file_path}`;
+                if (!fs.existsSync(file_path)) return `Error: file not found: ${file_path}`;
                 const ext = path.extname(file_path).toLowerCase();
                 const supported = ['.txt', '.pdf', '.md'];
-                if (!supported.includes(ext)) return `错误：不支持的文档格式 (${ext})。支持：${supported.join(', ')}`;
+                if (!supported.includes(ext)) return `Error: unsupported document format (${ext}). Supported: ${supported.join(', ')}`;
             }
             const { data } = await axios.post(`${this.apiUrl}/kb/import`, { source: file_path, tags: ['document', ...tags], user_id: 'feiniu_default' }, { timeout: 120000 });
-            if (data.status === 'success') return `已成功导入文档！\n- 路径: ${file_path}\n- 分块数: ${data.chunks_count || 0}\n- 导入记忆: ${data.imported_count || 0} 条`;
-            return `导入失败: ${data.message || '未知错误'}`;
+            if (data.status === 'success') return `Imported the document!\n- Path: ${file_path}\n- Chunks: ${data.chunks_count || 0}\n- Memories imported: ${data.imported_count || 0}`;
+            return `Import failed: ${data.message || 'unknown error'}`;
         } catch (error) {
-            if (error.response?.status === 503) return '文档加载器未初始化，无法导入文档。';
-            return this._connRefused(error) || `导入文档时出错: ${error.message}`;
+            if (error.response?.status === 503) return 'The document loader is not initialized, so the document cannot be imported.';
+            return this._connRefused(error) || `Error while importing the document: ${error.message}`;
         }
     }
 
     // ---------- 记忆修正 ----------
 
     async _correctMemory({ memory_id, action, new_content, reason }) {
-        if (!memory_id) return '错误：未提供记忆 ID。请先使用 memos_search_memory 搜索并获取记忆 ID。';
-        if (!action) return '错误：未指定操作类型。可选：correct、supplement、delete';
+        if (!memory_id) return 'Error: no memory ID was given. Search with memos_search_memory first to get the memory ID.';
+        if (!action) return 'Error: no action was given. Choose correct, supplement or delete';
         if ((action === 'correct' || action === 'supplement') && !new_content) {
-            return `错误：${action === 'correct' ? '修正' : '补充'}操作需要提供 new_content。`;
+            return `Error: the ${action === 'correct' ? 'correct' : 'supplement'} action needs new_content.`;
         }
         try {
             const reqData = { memory_id, feedback_type: action, reason: reason || '', user_id: 'feiniu_default' };
@@ -434,14 +434,14 @@ class MemosTools {
 
             const { data } = await axios.post(`${this.apiUrl}/memory/feedback`, reqData, { timeout: 10000 });
             if (data.status === 'success') {
-                const actionName = { correct: '修正', supplement: '补充', delete: '删除' }[action] || action;
-                if (action === 'delete') return `已成功删除记忆 (ID: ${memory_id})`;
-                return `已成功${actionName}记忆！\n- ID: ${memory_id}\n- 新内容: ${data.new_content || new_content}`;
+                const actionName = { correct: 'corrected', supplement: 'added to', delete: 'deleted' }[action] || action;
+                if (action === 'delete') return `Deleted the memory (ID: ${memory_id})`;
+                return `Successfully ${actionName} the memory!\n- ID: ${memory_id}\n- New content: ${data.new_content || new_content}`;
             }
-            return `操作失败: ${data.message || '未知错误'}`;
+            return `Action failed: ${data.message || 'unknown error'}`;
         } catch (error) {
-            if (error.response?.status === 404) return `记忆 ID「${memory_id}」不存在，请确认 ID 是否正确。`;
-            return this._connRefused(error) || `修正记忆时出错: ${error.message}`;
+            if (error.response?.status === 404) return `Memory ID “${memory_id}” does not exist. Check that the ID is right.`;
+            return this._connRefused(error) || `Error while changing the memory: ${error.message}`;
         }
     }
 
@@ -463,42 +463,42 @@ class MemosTools {
             }
 
             const totalCount = summary.total_count || 0;
-            if (totalCount === 0) return '目前没有记录用户的偏好信息。';
+            if (totalCount === 0) return 'No preferences of the user are recorded yet.';
 
-            const result = [`用户偏好摘要：共 ${totalCount} 个偏好，涉及 ${summary.category_count || 0} 个类别`];
+            const result = [`User preferences: ${totalCount} preferences in ${summary.category_count || 0} categories`];
 
             const categories = summary.categories || {};
             if (Object.keys(categories).length > 0) {
-                const catLabels = { food: '食物', music: '音乐', game: '游戏', movie: '电影', hobby: '爱好', style: '风格', schedule: '日程', general: '一般' };
-                result.push('类别分布: ' + Object.entries(categories).map(([c, n]) => `${catLabels[c] || c}: ${n}`).join(', '));
+                const catLabels = { food: 'Food', music: 'Music', game: 'Games', movie: 'Movies', hobby: 'Hobbies', style: 'Style', schedule: 'Schedule', general: 'General' };
+                result.push('By category: ' + Object.entries(categories).map(([c, n]) => `${catLabels[c] || c}: ${n}`).join(', '));
             }
 
             if (include_details && preferences.length > 0) {
-                result.push('\n偏好详情:');
+                result.push('\nDetails:');
                 const likes = preferences.filter(p => (p.preference_type || p.type) === 'like');
                 const dislikes = preferences.filter(p => (p.preference_type || p.type) === 'dislike');
 
                 if (likes.length > 0) {
-                    result.push('喜欢:');
+                    result.push('Likes:');
                     likes.slice(0, 10).forEach((p, i) => {
                         const conf = ((p.confidence || p.strength || 0.8) * 100).toFixed(0);
-                        result.push(`  ${i + 1}. ${p.item || p.name || '未知'} [${p.category || 'general'}] (置信度: ${conf}%)`);
+                        result.push(`  ${i + 1}. ${p.item || p.name || 'unknown'} [${p.category || 'general'}] (confidence: ${conf}%)`);
                     });
-                    if (likes.length > 10) result.push(`  ... 还有 ${likes.length - 10} 个`);
+                    if (likes.length > 10) result.push(`  ... and ${likes.length - 10} more`);
                 }
                 if (dislikes.length > 0) {
-                    result.push('不喜欢:');
+                    result.push('Dislikes:');
                     dislikes.slice(0, 10).forEach((p, i) => {
                         const conf = ((p.confidence || p.strength || 0.8) * 100).toFixed(0);
-                        result.push(`  ${i + 1}. ${p.item || p.name || '未知'} [${p.category || 'general'}] (置信度: ${conf}%)`);
+                        result.push(`  ${i + 1}. ${p.item || p.name || 'unknown'} [${p.category || 'general'}] (confidence: ${conf}%)`);
                     });
-                    if (dislikes.length > 10) result.push(`  ... 还有 ${dislikes.length - 10} 个`);
+                    if (dislikes.length > 10) result.push(`  ... and ${dislikes.length - 10} more`);
                 }
             }
 
             return result.join('\n');
         } catch (error) {
-            return this._connRefused(error) || `获取偏好时出错: ${error.message}`;
+            return this._connRefused(error) || `Error while getting preferences: ${error.message}`;
         }
     }
 }

@@ -28,7 +28,7 @@ scr.save(buf, format='JPEG')
 image_data = base64.b64encode(buf.getvalue()).decode('utf-8')
 
 messages = [
-    {'role': 'system', 'content': '你是PC屏幕视觉分析助手。根据描述在截图中定位目标元素，以JSON格式返回 {"bbox_2d": [x1, y1, x2, y2]}。不要输出其他文字。'},
+    {'role': 'system', 'content': 'You are a vision assistant for PC screens. Find the element the user describes in the screenshot and return it as JSON {"bbox_2d": [x1, y1, x2, y2]}. Output nothing else.'},
     {'role': 'user', 'content': [{'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{image_data}'}}, {'type': 'text', 'text': target}]}
 ]
 
@@ -39,9 +39,9 @@ try:
     cx, cy = (bbox[0]+bbox[2])//2, (bbox[1]+bbox[3])//2
     pyautogui.moveTo(cx, cy, duration=0.25)
     pyautogui.doubleClick()
-    print(json.dumps({"result": f"成功点击了: {target}"}, ensure_ascii=False))
+    print(json.dumps({"result": f"Clicked: {target}"}, ensure_ascii=False))
 except Exception as e:
-    print(json.dumps({"result": f"点击失败: {str(e)}"}, ensure_ascii=False))
+    print(json.dumps({"result": f"Click failed: {str(e)}"}, ensure_ascii=False))
 `;
 
 class PcControlPlugin extends Plugin {
@@ -59,11 +59,11 @@ class PcControlPlugin extends Plugin {
             type: 'function',
             function: {
                 name: 'pc_screen_click',
-                description: '基于屏幕截图和AI视觉识别，点击指定的屏幕元素',
+                description: 'Click a screen element, found with a screenshot and AI vision',
                 parameters: {
                     type: 'object',
                     properties: {
-                        element_description: { type: 'string', description: "要点击的屏幕元素的描述，如'确定按钮'、'搜索框'" }
+                        element_description: { type: 'string', description: "Description of the screen element to click, for example 'the OK button', 'the search box'" }
                     },
                     required: ['element_description']
                 }
@@ -73,11 +73,11 @@ class PcControlPlugin extends Plugin {
 
     async executeTool(name, params) {
         if (name === 'pc_screen_click') return await this._pcScreenClick(params);
-        throw new Error(`[pc-control] 不支持的工具: ${name}`);
+        throw new Error(`[pc-control] Unsupported tool: ${name}`);
     }
 
     async _pcScreenClick({ element_description }) {
-        if (!element_description) throw new Error('缺少元素描述参数');
+        if (!element_description) throw new Error('The element_description parameter is missing');
 
         return new Promise((resolve, reject) => {
             const tempScriptPath = path.join(__dirname, 'temp_pc_control.py');
@@ -97,11 +97,11 @@ class PcControlPlugin extends Plugin {
                 MYNEURO_PC_TARGET: String(element_description)
             } }, (error, stdout) => {
                 try { fs.unlinkSync(tempScriptPath); } catch (e) {}
-                if (error) return reject(new Error(`执行失败: ${error.message}`));
+                if (error) return reject(new Error(`Failed to run: ${error.message}`));
                 try {
                     const result = JSON.parse(stdout);
                     resolve(result.result || result.error);
-                } catch { resolve(stdout || '操作完成'); }
+                } catch { resolve(stdout || 'Done'); }
             });
         });
     }

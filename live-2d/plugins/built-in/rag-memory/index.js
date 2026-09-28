@@ -13,12 +13,12 @@ class RagMemoryPlugin extends Plugin {
             type: 'function',
             function: {
                 name: 'search_memory',
-                description: '从LLM的记忆系统中搜索相关的历史对话和信息',
+                description: 'Search your memory system for related past conversations and information',
                 parameters: {
                     type: 'object',
                     properties: {
-                        question: { type: 'string', description: '要搜索的问题或关键词' },
-                        top_k: { type: 'integer', description: '返回最相关的记忆数量，默认1', default: 1 }
+                        question: { type: 'string', description: 'The question or keywords to search for' },
+                        top_k: { type: 'integer', description: 'How many of the most relevant memories to return. Default: 1', default: 1 }
                     },
                     required: ['question']
                 }
@@ -28,7 +28,7 @@ class RagMemoryPlugin extends Plugin {
 
     async executeTool(name, params) {
         if (name === 'search_memory') return await this._searchMemory(params);
-        throw new Error(`[rag-memory] 不支持的工具: ${name}`);
+        throw new Error(`[rag-memory] Unsupported tool: ${name}`);
     }
 
     async _searchMemory({ question, top_k = 1 }) {

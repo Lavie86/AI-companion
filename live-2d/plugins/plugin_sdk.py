@@ -69,7 +69,7 @@ class PluginContext:
             return await asyncio.wait_for(future, timeout=10.0)
         except asyncio.TimeoutError:
             self._pending_requests.pop(req_id, None)
-            raise TimeoutError(f'JS 请求超时: {method}')
+            raise TimeoutError(f'JS request timed out: {method}')
 
     # ===== 日志 / 消息 =====
 

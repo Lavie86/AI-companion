@@ -10,19 +10,19 @@ class CodeExecutorPlugin extends Plugin {
 
     getTools() {
         return [
-            { type: 'function', function: { name: 'execute_code', description: '执行AI生成的Python代码，支持各种编程任务如数据处理、文件操作、网络请求、计算等', parameters: { type: 'object', properties: { code: { type: 'string', description: '要执行的Python代码' }, description: { type: 'string', description: '代码功能描述（可选）' } }, required: ['code'] } } },
-            { type: 'function', function: { name: 'install_packages', description: '安装Python包到conda环境中', parameters: { type: 'object', properties: { packages: { type: 'string', description: "要安装的包名，多个包用空格分隔，如: 'requests pandas numpy'" } }, required: ['packages'] } } }
+            { type: 'function', function: { name: 'execute_code', description: 'Run Python code that you write. Good for all kinds of programming tasks, such as data processing, file operations, network requests and calculations', parameters: { type: 'object', properties: { code: { type: 'string', description: 'The Python code to run' }, description: { type: 'string', description: 'What the code does (optional)' } }, required: ['code'] } } },
+            { type: 'function', function: { name: 'install_packages', description: 'Install Python packages into the conda environment', parameters: { type: 'object', properties: { packages: { type: 'string', description: "Package names to install, separated by spaces, for example: 'requests pandas numpy'" } }, required: ['packages'] } } }
         ];
     }
 
     async executeTool(name, params) {
         if (name === 'execute_code') return await this._executeCode(params);
         if (name === 'install_packages') return await this._installPackages(params);
-        throw new Error(`[code-executor] 不支持的工具: ${name}`);
+        throw new Error(`[code-executor] Unsupported tool: ${name}`);
     }
 
-    async _executeCode({ code, description = '执行AI生成的代码' }) {
-        if (!code?.trim()) throw new Error('代码内容不能为空');
+    async _executeCode({ code, description = 'Run AI-generated code' }) {
+        if (!code?.trim()) throw new Error('The code must not be empty');
 
         return new Promise((resolve, reject) => {
             const timestamp = Date.now();
@@ -37,7 +37,7 @@ def start_detached(command):
         subprocess.Popen(command, shell=True, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
     else:
         subprocess.Popen(command, shell=True, start_new_session=True)
-    print(f"已启动程序: {command}")
+    print(f"Started program: {command}")
 
 def main():
 ${code.split('\n').map(line => `    ${line}`).join('\n')}
@@ -60,24 +60,24 @@ if __name__ == '__main__':
 
             exec(command, { timeout: 60000, shell: isWindows ? 'cmd.exe' : '/bin/bash', env: { ...process.env, CONDA_DLL_SEARCH_MODIFICATION_ENABLE: '1', MYNEURO_CODE_DESCRIPTION: String(description) } }, (error, stdout, stderr) => {
                 try { fs.unlinkSync(tempScriptPath); } catch (e) {}
-                if (error) return reject(new Error(`代码执行失败: ${error.message}`));
+                if (error) return reject(new Error(`Code execution failed: ${error.message}`));
                 try {
                     const result = JSON.parse(stdout);
                     if (result.success) {
                         let output = `✅ ${result.description}\n`;
-                        if (result.stdout) output += `\n📄 输出内容:\n${result.stdout}`;
-                        if (result.stderr) output += `\n⚠️ 警告信息:\n${result.stderr}`;
+                        if (result.stdout) output += `\n📄 Output:\n${result.stdout}`;
+                        if (result.stderr) output += `\n⚠️ Warnings:\n${result.stderr}`;
                         resolve(output);
                     } else {
-                        resolve(`❌ 代码执行出错: ${result.error}\n\n🔍 错误详情:\n${result.traceback}`);
+                        resolve(`❌ The code raised an error: ${result.error}\n\n🔍 Error details:\n${result.traceback}`);
                     }
-                } catch { resolve(`✅ 代码执行完成\n\n📄 原始输出:\n${stdout}`); }
+                } catch { resolve(`✅ Code finished\n\n📄 Raw output:\n${stdout}`); }
             });
         });
     }
 
     async _installPackages({ packages }) {
-        if (!packages?.trim()) throw new Error('包名不能为空');
+        if (!packages?.trim()) throw new Error('The package names must not be empty');
 
         // The package list goes into a shell command, so accept only plain pip requirements
         // ("requests", "numpy>=1.26", "uvicorn[standard]") and quote each one.
@@ -96,8 +96,8 @@ if __name__ == '__main__':
                 : `source activate my-neuro && pip install ${quoted}`;
 
             exec(command, { timeout: 300000, shell: isWindows ? 'cmd.exe' : '/bin/bash', env: { ...process.env, CONDA_DLL_SEARCH_MODIFICATION_ENABLE: '1' } }, (error, stdout, stderr) => {
-                if (error) return reject(new Error(`安装包失败: ${error.message}`));
-                resolve(`✅ 成功安装包: ${packages}\n\n📄 安装日志:\n${stdout}${stderr}`);
+                if (error) return reject(new Error(`Failed to install the packages: ${error.message}`));
+                resolve(`✅ Installed packages: ${packages}\n\n📄 Install log:\n${stdout}${stderr}`);
             });
         });
     }

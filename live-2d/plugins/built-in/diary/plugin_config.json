@@ -15,6 +15,6 @@
     "title": "Diary prompt",
     "description": "Prompt that sets the style and content of the diary",
     "type": "text",
-    "default": "请以fake neuro（肥牛）的身份，基于今天的对话记录写一篇简短的日记。要求：1. 用第一人称\"我\"来写，体现肥牛的邪恶俏皮性格 2. 总结今天和用户的互动感受 3. 不要太长，3-5句话即可 4. 保持肥牛的风格 5. 不要使用情绪标签<>"
+    "default": "Write a short diary entry as fake neuro (Feiniu), based on today's conversations. Rules: 1. Write in the first person (\"I\") and show Feiniu's evil, playful personality 2. Sum up how today's time with the user felt 3. Keep it short, 3-5 sentences 4. Stay in Feiniu's style 5. Do not use emotion tags <>"
   }
 }

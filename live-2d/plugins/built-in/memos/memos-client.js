@@ -85,7 +85,7 @@ class MemosClient {
             const savedRounds = this.roundCount;
             this.conversationBuffer = [];
             this.roundCount = 0;
-            return { status: 'flushed', message: `已保存 ${savedRounds} 轮对话`, result };
+            return { status: 'flushed', message: `Saved ${savedRounds} conversation rounds`, result };
         } catch (error) {
             console.error('MemOS 强制保存失败:', error.message);
             return { status: 'error', message: error.message };
@@ -124,8 +124,8 @@ class MemosClient {
             const updatedAt = mem.updated_at || (pl && pl.updated_at);
 
             const timeStr = this._formatMemoryTimeForPrompt(timestamp);
-            const updateMark = (updatedAt && updatedAt !== timestamp) ? '（已更新）' : '';
-            return timeStr ? `- ${content} 【${timeStr}】${updateMark}` : `- ${content}`;
+            const updateMark = (updatedAt && updatedAt !== timestamp) ? ' (updated)' : '';
+            return timeStr ? `- ${content} [${timeStr}]${updateMark}` : `- ${content}`;
         }).join('\n');
     }
 

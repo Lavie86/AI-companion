@@ -22,7 +22,7 @@ class ContextCompressorPlugin extends Plugin {
         if (voiceChat.messages.length < threshold) return;
 
         this._compress(voiceChat, cfg).catch(e => {
-            this.context.log('warn', `上下文压缩失败: ${e.message}`);
+            this.context.log('warn', `Context compression failed: ${e.message}`);
         });
     }
 
@@ -69,7 +69,7 @@ class ContextCompressorPlugin extends Plugin {
                 ...recent
             );
 
-            this.context.log('info', `上下文压缩完成: ${total}条 → ${voiceChat.messages.length}条`);
+            this.context.log('info', `Context compressed: ${total} messages → ${voiceChat.messages.length} messages`);
         } finally {
             this._compressing = false;
         }

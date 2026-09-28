@@ -8,7 +8,7 @@
   },
   "injectEnvironmentPerception": {
     "title": "Add environment awareness to the LLM",
-    "description": "Before the last user message of every LLM call, adds [sent at: … | weekday, workday/holiday/make-up day, time of day], so the model knows the situation like LLMPerception",
+    "description": "Before the last user message of every LLM call, adds [Sent at: … | weekday, workday/holiday/make-up workday, time of day], so the model knows the situation like LLMPerception",
     "type": "bool",
     "default": true,
     "value": true

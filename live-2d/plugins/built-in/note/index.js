@@ -12,10 +12,10 @@ class NotePlugin extends Plugin {
 
     getTools() {
         return [
-            { type: 'function', function: { name: 'record_memory', description: '记录用户的核心记忆，包括个人信息（年龄、经历、偏好等）和日程安排', parameters: { type: 'object', properties: { content: { type: 'string', description: '要记录的内容' } }, required: ['content'] } } },
-            { type: 'function', function: { name: 'read_memory', description: '读取用户记忆记录，会显示带ID的列表', parameters: { type: 'object', properties: { count: { type: 'number', description: '读取最近的N条记录，不传或传0则读取全部' } }, required: [] } } },
-            { type: 'function', function: { name: 'delete_memory', description: '删除指定ID的记录', parameters: { type: 'object', properties: { id: { type: 'number', description: '要删除的记录ID' } }, required: ['id'] } } },
-            { type: 'function', function: { name: 'search_memory', description: '搜索包含指定关键词的记忆记录', parameters: { type: 'object', properties: { keyword: { type: 'string', description: '搜索关键词' } }, required: ['keyword'] } } }
+            { type: 'function', function: { name: 'record_memory', description: 'Record core memories about the user, such as personal information (age, experiences, preferences) and plans', parameters: { type: 'object', properties: { content: { type: 'string', description: 'What to record' } }, required: ['content'] } } },
+            { type: 'function', function: { name: 'read_memory', description: 'Read the recorded memories about the user, shown as a list with IDs', parameters: { type: 'object', properties: { count: { type: 'number', description: 'Read the latest N records. Leave it out or pass 0 to read all of them' } }, required: [] } } },
+            { type: 'function', function: { name: 'delete_memory', description: 'Delete the record with the given ID', parameters: { type: 'object', properties: { id: { type: 'number', description: 'Which record to delete, by ID' } }, required: ['id'] } } },
+            { type: 'function', function: { name: 'search_memory', description: 'Search the memory records for a keyword', parameters: { type: 'object', properties: { keyword: { type: 'string', description: 'Search keyword' } }, required: ['keyword'] } } }
         ];
     }
 
@@ -25,7 +25,7 @@ class NotePlugin extends Plugin {
             case 'read_memory':   return await this._readMemory(params);
             case 'delete_memory': return await this._deleteMemory(params);
             case 'search_memory': return await this._searchMemory(params);
-            default: throw new Error(`[note] 不支持的工具: ${name}`);
+            default: throw new Error(`[note] Unsupported tool: ${name}`);
         }
     }
 
@@ -43,40 +43,40 @@ class NotePlugin extends Plugin {
 
     _date() {
         const d = new Date();
-        return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+        return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
     }
 
     async _recordMemory({ content }) {
-        if (!content?.trim()) return '⚠️ 记录内容不能为空';
+        if (!content?.trim()) return '⚠️ The content to record must not be empty';
         const memories = this._load();
         const newId = memories.length > 0 ? Math.max(...memories.map(m => m.id)) + 1 : 1;
         memories.push({ id: newId, date: this._date(), content });
         this._save(memories);
-        return `✅ 已记录 (ID: ${newId})`;
+        return `✅ Recorded (ID: ${newId})`;
     }
 
     async _readMemory({ count = 0 }) {
         const memories = this._load();
-        if (memories.length === 0) return '⚠️ 还没有任何记录';
+        if (memories.length === 0) return '⚠️ There are no records yet';
         const result = count > 0 && count < memories.length ? memories.slice(-count) : memories;
-        return `📝 用户记忆（共 ${memories.length} 条）：\n\n${result.map(m => `${m.id}. [${m.date}] ${m.content}`).join('\n\n')}`;
+        return `📝 Memories about the user (${memories.length} in total):\n\n${result.map(m => `${m.id}. [${m.date}] ${m.content}`).join('\n\n')}`;
     }
 
     async _deleteMemory({ id }) {
         const memories = this._load();
         const index = memories.findIndex(m => m.id === id);
-        if (index === -1) return `⚠️ 找不到 ID 为 ${id} 的记录`;
+        if (index === -1) return `⚠️ No record with ID ${id} exists`;
         const deleted = memories.splice(index, 1)[0];
         this._save(memories);
-        return `✅ 已删除记录 (ID: ${id})：\n[${deleted.date}] ${deleted.content}`;
+        return `✅ Deleted the record (ID: ${id}):\n[${deleted.date}] ${deleted.content}`;
     }
 
     async _searchMemory({ keyword }) {
-        if (!keyword?.trim()) return '⚠️ 关键词不能为空';
+        if (!keyword?.trim()) return '⚠️ The keyword must not be empty';
         const memories = this._load();
         const results = memories.filter(m => m.content.includes(keyword) || m.date.includes(keyword));
-        if (results.length === 0) return `⚠️ 没有找到包含 "${keyword}" 的记录`;
-        return `🔍 搜索结果（共找到 ${results.length} 条）：\n\n${results.map(m => `${m.id}. [${m.date}] ${m.content}`).join('\n\n')}`;
+        if (results.length === 0) return `⚠️ No records found with "${keyword}" in them`;
+        return `🔍 Search results (${results.length} found):\n\n${results.map(m => `${m.id}. [${m.date}] ${m.content}`).join('\n\n')}`;
     }
 }
 

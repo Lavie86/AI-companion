@@ -13,7 +13,7 @@ class BilibiliLivePlugin extends Plugin {
         const pluginConfig = this.context.getPluginFileConfig();
         const barrageManager = global.barrageManager;
         if (!barrageManager) {
-            this.context.log('warn', 'barrageManager 未就绪，跳过直播模块启动');
+            this.context.log('warn', 'barrageManager is not ready, skipping the live stream module');
             return;
         }
 
@@ -24,13 +24,13 @@ class BilibiliLivePlugin extends Plugin {
             },
             onEvent: (event) => {
                 if (event.type === 'danmaku') return;
-                logToTerminal('info', `收到直播事件[${event.type}]: ${event.nickname}: ${event.text}`);
+                logToTerminal('info', `Live event received [${event.type}]: ${event.nickname}: ${event.text}`);
                 barrageManager.addToQueue(event.nickname, `[${event.type}] ${event.text}`);
             },
             onStatus: (status) => {
-                const detail = status.realRoomId ? `，真实房间 ${status.realRoomId}` : '';
-                if (status.phase === 'connected') logToTerminal('info', `B站直播实时连接成功${detail}`);
-                else if (status.phase === 'retrying') logToTerminal('warning', `B站直播连接中断，正在重连：${status.error}`);
+                const detail = status.realRoomId ? `, real room ${status.realRoomId}` : '';
+                if (status.phase === 'connected') logToTerminal('info', `Bilibili live connection established${detail}`);
+                else if (status.phase === 'retrying') logToTerminal('warning', `Bilibili live connection lost, reconnecting: ${status.error}`);
             }
         });
 

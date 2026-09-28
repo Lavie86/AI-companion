@@ -14,7 +14,7 @@ class CoreMemoryInjector extends Plugin {
     async onStart() {
         this._loadMemory();
         this._watchFile();
-        this.context.log('info', `核心记忆注入插件已启动，监听文件: ${MEMORY_FILE}`);
+        this.context.log('info', `Core memory injector started, watching the file: ${MEMORY_FILE}`);
     }
 
     async onStop() {
@@ -31,7 +31,7 @@ class CoreMemoryInjector extends Plugin {
 
         const sysMsg = request.messages.find(m => m.role === 'system');
         if (sysMsg) {
-            sysMsg.content += `\n\n【核心用户记忆 - 请务必牢记以下内容】\n${this._cachedMemory}`;
+            sysMsg.content += `\n\n[Core user memory - always remember the following]\n${this._cachedMemory}`;
         }
     }
 
@@ -43,11 +43,11 @@ class CoreMemoryInjector extends Plugin {
                 type: 'function',
                 function: {
                     name: 'core_memory_write',
-                    description: '将重要信息写入核心记忆。当用户说"写入核心记忆"、"记到核心记忆里"、"这个要永远记住"等时使用。核心记忆是最高优先级的永久记忆，每次对话都会加载。',
+                    description: 'Write important information to core memory. Use it when the user says "write this to core memory", "put it in your core memory", "remember this forever" and so on. Core memory is permanent memory with the highest priority. It is loaded in every conversation.',
                     parameters: {
                         type: 'object',
                         properties: {
-                            content: { type: 'string', description: '要写入核心记忆的内容，应简洁准确地概括要记住的信息' }
+                            content: { type: 'string', description: 'What to write to core memory. Sum up the information briefly and accurately' }
                         },
                         required: ['content']
                     }
@@ -57,7 +57,7 @@ class CoreMemoryInjector extends Plugin {
                 type: 'function',
                 function: {
                     name: 'core_memory_list',
-                    description: '查看当前所有核心记忆条目。在写入新记忆前可以先查看已有内容，避免重复。',
+                    description: 'List all current core memory entries. Check them before writing a new one, to avoid duplicates.',
                     parameters: {
                         type: 'object',
                         properties: {},
@@ -82,7 +82,7 @@ class CoreMemoryInjector extends Plugin {
     // ===== 工具执行 =====
 
     _writeMemory(content) {
-        if (!content) return '错误：未提供要写入的内容。';
+        if (!content) return 'Error: nothing to write was given.';
         try {
             const dir = path.dirname(MEMORY_FILE);
             if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -91,27 +91,27 @@ class CoreMemoryInjector extends Plugin {
             const entry = `[${timestamp}] ${content}\n`;
             fs.appendFileSync(MEMORY_FILE, entry, 'utf-8');
             this._loadMemory();
-            this.context.log('info', `核心记忆已写入: ${content}`);
-            return `已成功写入核心记忆: ${content}`;
+            this.context.log('info', `Written to core memory: ${content}`);
+            return `Saved to core memory: ${content}`;
         } catch (e) {
-            this.context.log('error', `写入核心记忆失败: ${e.message}`);
-            return `写入核心记忆失败: ${e.message}`;
+            this.context.log('error', `Failed to write core memory: ${e.message}`);
+            return `Failed to write core memory: ${e.message}`;
         }
     }
 
     _listMemories() {
         try {
-            if (!fs.existsSync(MEMORY_FILE)) return '当前没有核心记忆。';
+            if (!fs.existsSync(MEMORY_FILE)) return 'There is no core memory yet.';
             const raw = fs.readFileSync(MEMORY_FILE, 'utf-8').trim();
-            if (!raw) return '当前没有核心记忆。';
+            if (!raw) return 'There is no core memory yet.';
 
             const entries = raw.split(/\n+/).filter(line => line.trim());
-            if (entries.length === 0) return '当前没有核心记忆。';
+            if (entries.length === 0) return 'There is no core memory yet.';
 
             const list = entries.map((entry, i) => `${i + 1}. ${entry}`).join('\n');
-            return `当前共 ${entries.length} 条核心记忆：\n${list}`;
+            return `There are ${entries.length} core memory entries:\n${list}`;
         } catch (e) {
-            return `读取核心记忆失败: ${e.message}`;
+            return `Failed to read core memory: ${e.message}`;
         }
     }
 
@@ -126,20 +126,20 @@ class CoreMemoryInjector extends Plugin {
     _loadMemory() {
         try {
             if (!fs.existsSync(MEMORY_FILE)) {
-                this.context.log('warn', '核心用户记忆.txt 不存在，跳过加载');
+                this.context.log('warn', '核心用户记忆.txt does not exist, not loading it');
                 this._cachedMemory = null;
                 return;
             }
             const raw = fs.readFileSync(MEMORY_FILE, 'utf-8').trim();
             if (!raw) {
-                this.context.log('warn', '核心用户记忆.txt 为空，跳过加载');
+                this.context.log('warn', '核心用户记忆.txt is empty, not loading it');
                 this._cachedMemory = null;
                 return;
             }
             this._cachedMemory = raw;
-            this.context.log('info', `核心记忆已加载，长度: ${raw.length} 字符`);
+            this.context.log('info', `Core memory loaded, length: ${raw.length} characters`);
         } catch (e) {
-            this.context.log('error', `读取核心记忆失败: ${e.message}`);
+            this.context.log('error', `Failed to read core memory: ${e.message}`);
             this._cachedMemory = null;
         }
     }
@@ -152,13 +152,13 @@ class CoreMemoryInjector extends Plugin {
                 if (filename === base) {
                     clearTimeout(this._debounce);
                     this._debounce = setTimeout(() => {
-                        this.context.log('info', '核心记忆文件已变更，重新加载...');
+                        this.context.log('info', 'The core memory file changed, reloading...');
                         this._loadMemory();
                     }, 1000);
                 }
             });
         } catch (e) {
-            this.context.log('warn', `无法监听记忆文件变更: ${e.message}`);
+            this.context.log('warn', `Cannot watch the memory file for changes: ${e.message}`);
         }
     }
 

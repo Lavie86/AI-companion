@@ -15,6 +15,6 @@
     "title": "Compression prompt",
     "description": "Prompt that tells the LLM how to compress the chat history",
     "type": "text",
-    "default": "请将以下历史对话总结为简洁的要点，保留关键信息和上下文。要求：1. 总结为200字以内的关键要点 2. 保留重要的人名、事件、决定等 3. 使用简洁的语言 4. 只输出总结内容，不要额外说明"
+    "default": "Summarize the conversation below as short key points. Keep the important information and context. Rules: 1. At most about 150 words of key points 2. Keep important names, events, decisions and so on 3. Use plain, short language 4. Output only the summary, with no extra explanation"
   }
 }

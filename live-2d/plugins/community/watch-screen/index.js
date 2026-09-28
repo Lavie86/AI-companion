@@ -23,19 +23,19 @@ class WatchScreenPlugin extends Plugin {
         try {
             this._ipc = require('electron').ipcRenderer;
         } catch (e) {
-            this.context.log('error', '无法加载 ipcRenderer');
+            this.context.log('error', 'Cannot load ipcRenderer');
             return;
         }
 
         if (this._passiveMode) {
             this.context.addSystemPromptPatch(PATCH_ID_PASSIVE,
-                '用户和你说话时，消息里会附带他当前屏幕的截图，你可以结合画面内容来回应，就像你一直在旁边看着一样。'
+                'When the user talks to you, their message comes with a screenshot of their current screen. You can use what is on the screen in your reply, as if you had been watching next to them the whole time.'
             );
         }
 
         if (this._activeMode) {
             this.context.addSystemPromptPatch(PATCH_ID_ACTIVE,
-                '有时你会收到一组连续的屏幕截图，那是你在主动观察用户的屏幕。根据画面内容自然地做出反应，就像你真的在旁边一起看一样。如果画面很无聊或者是桌面就不用说话。'
+                'Sometimes you get a series of screenshots in a row. That is you watching the user\'s screen on your own. React naturally to what is on screen, as if you were really watching with them. If the screen is boring or just the desktop, you do not need to say anything.'
             );
         }
 
@@ -45,7 +45,7 @@ class WatchScreenPlugin extends Plugin {
             this._captureInterval
         );
 
-        this.context.log('info', `看视频插件已启动 | 截图间隔:${this._captureInterval}ms`);
+        this.context.log('info', `Watch-screen plugin started | screenshot interval:${this._captureInterval}ms`);
     }
 
     async onStop() {
@@ -91,9 +91,9 @@ class WatchScreenPlugin extends Plugin {
     async _tryReact(pictures) {
         this._isReacting = true;
         try {
-            this.context.log('info', `主动观察屏幕，发送 ${pictures.length} 张图片给 AI`);
+            this.context.log('info', `Watching the screen, sending ${pictures.length} images to the AI`);
             await this.context.sendMessage([
-                { type: 'text', text: '（屏幕截图）' },
+                { type: 'text', text: '(screenshots)' },
                 ...pictures.map(f => ({
                     type: 'image_url',
                     image_url: { url: `data:image/jpeg;base64,${f.base64}`, detail: 'low' }

@@ -10,7 +10,7 @@ class MouseClickPlugin extends Plugin {
             type: 'function',
             function: {
                 name: 'click_mouse',
-                description: '点击鼠标当前位置',
+                description: 'Click the mouse where it is now',
                 parameters: { type: 'object', properties: {}, required: [] }
             }
         }];
@@ -18,14 +18,14 @@ class MouseClickPlugin extends Plugin {
 
     async executeTool(name, params) {
         if (name === 'click_mouse') return await this._clickMouse();
-        throw new Error(`[mouse-click] 不支持的工具: ${name}`);
+        throw new Error(`[mouse-click] Unsupported tool: ${name}`);
     }
 
     async _clickMouse() {
         return new Promise((resolve, reject) => {
             const timestamp = Date.now();
             const tempScriptPath = path.join(__dirname, `temp_click_${timestamp}.py`);
-            const code = `# -*- coding: utf-8 -*-\nimport pyautogui\npyautogui.click()\nprint("点击完成")\n`;
+            const code = `# -*- coding: utf-8 -*-\nimport pyautogui\npyautogui.click()\nprint("Clicked")\n`;
             fs.writeFileSync(tempScriptPath, code);
 
             const isWindows = process.platform === 'win32';
@@ -35,8 +35,8 @@ class MouseClickPlugin extends Plugin {
 
             exec(command, { timeout: 10000, shell: isWindows ? 'cmd.exe' : '/bin/bash', env: { ...process.env, CONDA_DLL_SEARCH_MODIFICATION_ENABLE: '1' } }, (error, stdout) => {
                 try { fs.unlinkSync(tempScriptPath); } catch (e) {}
-                if (error) reject(new Error(`执行失败: ${error.message}`));
-                else resolve(stdout.trim() || '点击完成');
+                if (error) reject(new Error(`Failed to run: ${error.message}`));
+                else resolve(stdout.trim() || 'Clicked');
             });
         });
     }

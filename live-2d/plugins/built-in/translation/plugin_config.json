@@ -21,6 +21,6 @@
     "title": "Translation system prompt",
     "description": "Prompt that tells the LLM how to translate",
     "type": "text",
-    "default": "你是一个专业翻译助手，请将以下中文准确翻译成英语，保持原意和语调，只返回翻译结果，不要添加任何解释："
+    "default": "You are a professional translator. Translate the following text into natural English, keeping its meaning and tone. If it is already in English, return it unchanged. Return only the translation, with no explanation:"
   }
 }
