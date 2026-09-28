@@ -18,7 +18,7 @@ The upstream docs are mostly in Chinese. This file covers what you need in Engli
 | PC control with Windows-MCP | She can see windows, click, type, open apps and run PowerShell through [Windows-MCP](https://github.com/CursorTouch/Windows-MCP). | `live-2d/mcp/mcp_config.json` |
 | "Ask me first" approval gate | Upstream ran every tool at once, even AI-written Python. Now risky tools show a dialog first. | `live-2d/js/ai/tool-approval.js`, `live-2d/tool_safety.json` |
 | Security fixes in two plugins | `pc-control` and `code-executor` pasted AI text into Python code and shell commands, so text on a web page could run code. | `live-2d/plugins/built-in/` |
-| MCP client fixes | Screenshots from MCP tools were dropped. A slow server start left a stray process. The client skipped a required handshake message. | `live-2d/js/ai/mcp-*.js` |
+| MCP client fixes | Screenshots from MCP tools were dropped. On Windows, stopped servers kept running (after a slow start and after closing the app). The client skipped a required handshake message. | `live-2d/js/ai/mcp-*.js` |
 | The installer and updater keep your changes | Upstream's installer and `一键更新live-2d.bat` delete `live-2d` and unpack the release zip. In a git checkout they now skip that. | `full-hub/Batch_Download.py`, `update.py` |
 
 Each change is its own commit, and each commit message explains the details.
