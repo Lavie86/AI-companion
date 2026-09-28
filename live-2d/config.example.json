@@ -26,7 +26,7 @@
   "tts": {
     "enabled": true,
     "url": "http://127.0.0.1:5000",
-    "language": "zh"
+    "language": "en"
   },
   "asr": {
     "enabled": true,
@@ -281,7 +281,7 @@
     "port": 39539
   },
   "mcp": {
-    "enabled": false,
+    "enabled": true,
     "config_path": "./mcp/mcp_config.json",
     "startup_timeout": 30000,
     "auto_start_servers": true
