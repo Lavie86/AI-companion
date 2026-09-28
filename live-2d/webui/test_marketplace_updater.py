@@ -294,7 +294,7 @@ class MarketplaceUpdaterTests(unittest.TestCase):
         inspect = self.updater.inspect_plugin_archive_bytes
         with self.assertRaisesRegex(self.updater.PluginValidationError, "metadata.json"):
             inspect(make_archive({"demo-main/index.js": "x"}))
-        with self.assertRaisesRegex(self.updater.PluginValidationError, "入口文件"):
+        with self.assertRaisesRegex(self.updater.PluginValidationError, "entry file"):
             inspect(make_archive({"demo-main/metadata.json": json.dumps({"name": "demo", "version": "1"})}))
         with self.assertRaises(self.updater.PluginValidationError):
             inspect(b"not a zip at all")
@@ -457,7 +457,7 @@ class MarketplaceUpdaterTests(unittest.TestCase):
 
             warnings = self.updater.install_dependencies(plugin_dir, runner=lambda *a, **k: None, npm_prefix=[])
             self.assertEqual(len(warnings), 1)
-            self.assertIn("未找到 npm", warnings[0])
+            self.assertIn("npm was not found", warnings[0])
 
             def failing_runner(cmd, **kwargs):
                 return subprocess.CompletedProcess(cmd, 1, "", "npm ERR! network ECONNRESET")

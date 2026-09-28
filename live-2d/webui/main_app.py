@@ -30,7 +30,7 @@ def create_app():
     def _payload_too_large(_error):
         return jsonify({
             'success': False,
-            'error': '上传文件超过 320 MB 上限，请精简插件包（如去掉 node_modules 里的开发依赖）后重试',
+            'error': 'The upload is over the 320 MB limit. Make the plugin package smaller (for example remove dev dependencies from node_modules) and try again.',
         }), 413
 
     # 注册各个功能蓝图

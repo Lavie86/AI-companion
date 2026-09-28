@@ -158,7 +158,7 @@ class MarketplaceInstallFlowTests(unittest.TestCase):
             task = self._wait_for_task("demo")
         self.assertEqual(task["status"], "completed")
         self.assertFalse(task["enabled"])
-        self.assertTrue(any("自动启用失败" in item for item in task["warnings"]))
+        self.assertTrue(any("enabling it automatically failed" in item for item in task["warnings"]))
         self.assertTrue((self.community / "demo" / "metadata.json").is_file())
         self.assertNotIn("community/demo", self._enabled_list())
 
@@ -219,7 +219,7 @@ class MarketplaceInstallFlowTests(unittest.TestCase):
     def test_install_from_url_refuses_conflicts_with_installed_or_builtin(self):
         (self.community / "existing").mkdir()
         (self.community / "existing" / "metadata.json").write_text("{}", encoding="utf-8")
-        for name, expected in (("existing", "已安装"), ("sfx", "内置插件")):
+        for name, expected in (("existing", "already installed"), ("sfx", "built-in plugin")):
             with patch("webui.marketplace.fetch_remote_metadata_with_source",
                        lambda repo_url, settings=None, _n=name, **kw: ({"name": _n, "version": "1.0.0"}, "direct")):
                 response = self.client.post("/api/market/plugins/install-from-url", json={"repo": "https://github.com/example/repo"})

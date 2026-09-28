@@ -120,7 +120,7 @@ def avatar_models(avatar_type):
     t = (avatar_type or '').lower()
     scanner = _SCANNERS.get(t)
     if not scanner:
-        return jsonify({'success': False, 'error': f'未知形态: {avatar_type}', 'models': []}), 400
+        return jsonify({'success': False, 'error': f'Unknown avatar type: {avatar_type}', 'models': []}), 400
     try:
         return jsonify({'success': True, 'models': scanner()})
     except Exception as e:
@@ -135,14 +135,14 @@ def save_avatar_type():
         data = request.get_json() or {}
         t = (data.get('type') or '').lower()
         if t not in AVATAR_TYPES:
-            return jsonify({'success': False, 'error': f'未知形态: {t}'}), 400
+            return jsonify({'success': False, 'error': f'Unknown avatar type: {t}'}), 400
 
         result = _pet_post('/switch-avatar-type', {'type': t})
         if result is not None:
             if result.get('success'):
-                hint = '（跨渲染引擎切换会自动重载窗口，约 20 秒）'
-                return jsonify({'success': True, 'message': f'已切换到 {t} {hint}', 'hot': True})
-            return jsonify({'success': False, 'error': result.get('message', '桌宠返回失败')})
+                hint = '(switching render engines reloads the window, about 20 seconds)'
+                return jsonify({'success': True, 'message': f'Switched to {t} {hint}', 'hot': True})
+            return jsonify({'success': False, 'error': result.get('message', 'The pet returned an error')})
 
         # 桌宠未运行：写 config
         from .config_manager import load_config, save_config
@@ -151,8 +151,8 @@ def save_avatar_type():
             config['ui'] = {}
         config['ui']['model_type'] = t
         if save_config(config):
-            return jsonify({'success': True, 'message': f'已保存形态选择：{t}（启动桌宠后生效）', 'hot': False})
-        return jsonify({'success': False, 'error': '保存配置失败'}), 500
+            return jsonify({'success': True, 'message': f'Avatar type saved: {t} (applies when the pet starts)', 'hot': False})
+        return jsonify({'success': False, 'error': 'Failed to save config'}), 500
     except Exception as e:
         logger.error(f'切换形态失败：{e}')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -166,15 +166,15 @@ def save_avatar_model():
         t = (data.get('type') or '').lower()
         model = data.get('model') or ''
         if t not in AVATAR_TYPES:
-            return jsonify({'success': False, 'error': f'未知形态: {t}'}), 400
+            return jsonify({'success': False, 'error': f'Unknown avatar type: {t}'}), 400
         if not model:
-            return jsonify({'success': False, 'error': '未提供模型'}), 400
+            return jsonify({'success': False, 'error': 'No model given'}), 400
 
         result = _pet_post('/set-avatar-model', {'type': t, 'model_name': model})
         if result is not None:
             if result.get('success'):
-                return jsonify({'success': True, 'message': result.get('message', f'已应用模型：{model}'), 'hot': True})
-            return jsonify({'success': False, 'error': result.get('message', '桌宠返回失败')})
+                return jsonify({'success': True, 'message': result.get('message', f'Model applied: {model}'), 'hot': True})
+            return jsonify({'success': False, 'error': result.get('message', 'The pet returned an error')})
 
         # 桌宠未运行：写 config
         from .config_manager import load_config, save_config
@@ -183,8 +183,8 @@ def save_avatar_model():
             config['ui'] = {}
         config['ui'][TYPE_CONFIG_KEYS[t]] = model
         if save_config(config):
-            return jsonify({'success': True, 'message': f'已保存模型选择：{model}（启动桌宠后生效）', 'hot': False})
-        return jsonify({'success': False, 'error': '保存配置失败'}), 500
+            return jsonify({'success': True, 'message': f'Model choice saved: {model} (applies when the pet starts)', 'hot': False})
+        return jsonify({'success': False, 'error': 'Failed to save config'}), 500
     except Exception as e:
         logger.error(f'保存模型选择失败：{e}')
         return jsonify({'success': False, 'error': str(e)}), 500

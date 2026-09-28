@@ -133,7 +133,7 @@ def get_logs(log_type):
     try:
         log_file = PROJECT_ROOT / 'runtime.log'
         if not log_file.exists():
-            return jsonify({'logs': [], 'error': '日志文件不存在'})
+            return jsonify({'logs': [], 'error': 'Log file not found'})
 
         categories = _categorize_runtime_lines(_read_last_lines(log_file, 100))
         return jsonify({'logs': categories.get(log_type, [])})
@@ -147,7 +147,7 @@ def tail_logs(log_type):
     try:
         log_file = PROJECT_ROOT / 'runtime.log'
         if not log_file.exists():
-            return jsonify({'logs': [], 'error': '日志文件不存在'})
+            return jsonify({'logs': [], 'error': 'Log file not found'})
 
         categories = _categorize_runtime_lines(_read_last_lines(log_file, 10))
         return jsonify({'logs': categories.get(log_type, [])})
@@ -159,7 +159,7 @@ def tail_logs(log_type):
 def get_service_logs(service):
     """获取 ASR/TTS/记忆系统内嵌服务日志。"""
     if service not in SERVICE_LOG_SERVICES:
-        return jsonify({'logs': [], 'error': f'未知服务日志：{service}'}), 404
+        return jsonify({'logs': [], 'error': f'Unknown service log: {service}'}), 404
 
     try:
         log_file = PROJECT_ROOT.parent / 'logs' / f'{service}.log'
@@ -180,7 +180,7 @@ def get_service_logs(service):
 def clear_service_logs(service):
     """清空 ASR/TTS/记忆系统内嵌服务日志。"""
     if service not in SERVICE_LOG_SERVICES:
-        return jsonify({'success': False, 'error': f'未知服务日志：{service}'}), 404
+        return jsonify({'success': False, 'error': f'Unknown service log: {service}'}), 404
 
     try:
         log_file = PROJECT_ROOT.parent / 'logs' / f'{service}.log'
@@ -328,7 +328,7 @@ def generate_tts_bat():
         text = request.form.get('text', '')
 
         if not model_file or not audio_file or not role_name or not text:
-            return jsonify({'success': False, 'error': '缺少必要参数'}), 400
+            return jsonify({'success': False, 'error': 'Missing required parameters'}), 400
 
         # 保存到 Voice_Model_Factory 目录
         voice_model_dir = PROJECT_ROOT / 'Voice_Model_Factory'
@@ -361,7 +361,7 @@ def generate_tts_bat():
 chcp 65001 >nul
 echo.
 echo ========================================
-echo  TTS 声音克隆 - {role_name}
+echo TTS voice clone - {role_name}
 echo ========================================
 echo.
 set "PATH=%~dp0..\\..\\full-hub\\tts-hub\\GPT-SoVITS-Bundle\\runtime;%PATH%"
@@ -376,7 +376,7 @@ pause
 
         return jsonify({
             'success': True,
-            'message': f'已生成 TTS 的 bat 文件：{role_name}.bat',
+            'message': f'Created the TTS .bat file: {role_name}.bat',
             'bat_path': str(bat_path)
         })
     except Exception as e:
@@ -458,6 +458,6 @@ def clear_chat_history():
             with open(history_file, 'w', encoding='utf-8') as f:
                 pass
         
-        return jsonify({'success': True, 'message': '对话历史已清空'})
+        return jsonify({'success': True, 'message': 'Chat history cleared'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
