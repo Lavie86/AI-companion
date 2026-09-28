@@ -175,8 +175,8 @@ function positionCloudTour() {
 function showCloudTourFields() {
   cloudTourStage = 2;
   clearCloudTourHighlights();
-  $('cloud-tour-title').textContent = '填写模型连接信息';
-  $('cloud-tour-text').textContent = '请依次填写 API Key、API URL 和模型名称。这三项都是连接云端模型所必需的。';
+  $('cloud-tour-title').textContent = 'Fill in the model connection';
+  $('cloud-tour-text').textContent = 'Fill in the API Key, the API URL and the model name. All three are needed to connect to a cloud model.';
   $('cloud-tour-done').hidden = false;
   positionCloudTour();
 }
@@ -186,8 +186,8 @@ function startCloudTour() {
   clearCloudTourHighlights();
   const target = document.querySelector('[data-page="llm"]');
   target.classList.add('cloud-tour-target');
-  $('cloud-tour-title').textContent = '第一步：打开模型配置';
-  $('cloud-tour-text').textContent = '点击左侧的“Model settings”继续。';
+  $('cloud-tour-title').textContent = 'Step 1: open Model settings';
+  $('cloud-tour-text').textContent = 'Click “Model settings” on the left to continue.';
   $('cloud-tour-done').hidden = true;
   $('cloud-tour').hidden = false;
   positionCloudTour();
