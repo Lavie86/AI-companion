@@ -81,15 +81,19 @@ function showAvatarLoadingWindow() {
 function cleanToolLog(line) {
   return line
     .replace(/^(?:\[[^\]\r\n]+\]\s*)+/, '')
-    .replace(/插件已加载[：:]\s*/u, '')
+    .replace(/(?:插件已加载|Plugin loaded)[：:]\s*/u, '')
     .trim();
 }
 
 function cleanPetLog(line) {
   if (/\[Live2DStage\]\s*初始化完成|\[Live2DSetup\]\s*共发现|\[Live2DLoader\]\s*(?:开始加载模型|transform:|模型加载完成)|\[ParamDirector\]\s*已启用|\[Live2DRuntime\]\s*已安装|\[EmotionEngine\].*配置加载完成|\[AuDriver\]\s*(?:未找到模型 AU 配置|跳过不可映射 AU|已就绪|解算)|\[AvatarFacade\]\s*形态已激活/.test(line)) return null;
+  // the same lines as the English pet logs them
+  if (/\[Live2DStage\]\s*Ready:|\[Live2DSetup\]\s*Found|\[Live2DLoader\]\s*(?:Loading model|Model loaded)|\[ParamDirector\]\s*On,|\[Live2DRuntime\]\s*Installed:|\[EmotionEngine\].*config loaded|\[AuDriver\]\s*(?:No AU config for this model|Skipping unmappable AU|Ready:|Solved)|\[AvatarFacade\]\s*Avatar type active/.test(line)) return null;
   if (/插件热加载监听已启动|\[Plugin:core_memory_injector\].*(?:不存在，跳过加载|插件已启动)|\[Plugin:dawn_dusk_line\].*已启动|\[Plugin:user_profile\].*(?:插件已启动|MemOS 不可用)|\[MotionDirector\]\s*(?:body|face)\s*失败，保留本地编舞|对话模型[：:].*提供商|配置文件加载成功|AI回复中/.test(line)) return null;
+  if (/Plugin hot-reload watcher started|\[MotionDirector\]\s*(?:body|face)\s*failed, keeping local choreography|Chat model:.*\(provider|Config file loaded|AI is replying/.test(line)) return null;
   if (/已将内容发送给AI/.test(line)) return null;
-  const modelMatch = line.match(/已加载\s*\d+\s*个\s*LLM\s*提供商[^\n]*?当前模型[：:]\s*([^）)\s]+)/i);
+  const modelMatch = line.match(/已加载\s*\d+\s*个\s*LLM\s*提供商[^\n]*?当前模型[：:]\s*([^）)\s]+)/i)
+    || line.match(/Loaded\s*\d+\s*LLM\s*providers[^\n]*?current model:\s*([^)\s]+)/i);
   return modelMatch ? `当前使用模型：${modelMatch[1]}` : line.replace(/\[Plugin:[^\]\r\n]+\][ \t]*/g, '');
 }
 
@@ -106,7 +110,7 @@ function pumpRuntimeLog(flush = false) {
     for (const rawLine of lines) {
       const line = rawLine.trim();
       if (!line) continue;
-      if (/\[AvatarFacade\]\s*形态已激活|\[Live2DLoader\]\s*模型加载完成/.test(line)) closeAvatarLoadingWindow();
+      if (/\[AvatarFacade\]\s*(?:形态已激活|Avatar type active)|\[Live2DLoader\]\s*(?:模型加载完成|Model loaded)/.test(line)) closeAvatarLoadingWindow();
       const channel = line.includes('[TOOL]') ? 'control:tool-log' : 'control:live2d-log';
       const cleaned = channel === 'control:tool-log' ? cleanToolLog(line) : cleanPetLog(line);
       if (cleaned) runtimeLogSender.send(channel, `${cleaned}\n`);

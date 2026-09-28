@@ -460,11 +460,11 @@ function render() {
 }
 
 function serviceLogLineType(line) {
-  if (/\b(ERROR|CRITICAL|FATAL)\b|Traceback|Exception|Error:|错误|失败|无法|找不到|未找到/i.test(line)) return 'error';
+  if (/\b(ERROR|CRITICAL|FATAL)\b|Traceback|Exception|Error:|\bfailed\b|\bcannot\b|\bnot found\b|错误|失败|无法|找不到|未找到/i.test(line)) return 'error';
   if (/\b(WARN(?:ING)?)\b|警告|注意/i.test(line)) return 'warning';
-  if (/\b(SUCCESS|DONE)\b|成功|已启动|已停止|下载完成|加载完成/i.test(line)) return 'success';
+  if (/\b(SUCCESS|DONE)\b|\b(?:started|stopped|downloaded|loaded|finished)\b|成功|已启动|已停止|下载完成|加载完成/i.test(line)) return 'success';
   if (/\b(DEBUG|TRACE)\b/i.test(line)) return 'debug';
-  if (/\bINFO\b|正在启动|正在停止|开始下载|Listening|Running on|Uvicorn running/i.test(line)) return 'info';
+  if (/\bINFO\b|\b(?:Starting|Stopping|Downloading)\b|正在启动|正在停止|开始下载|Listening|Running on|Uvicorn running/i.test(line)) return 'info';
   if (/^\s*(File \"|at\s+|\^+)|\.(py|js):\d+/i.test(line)) return 'trace';
   return 'plain';
 }
