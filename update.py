@@ -386,6 +386,15 @@ def backup_and_restore_memory():
 
 
 if __name__ == "__main__":
+    # In a git checkout (like this fork), replacing live-2d with the release zip would delete its changes.
+    if (PROJECT_ROOT / ".git").exists() and "--force" not in sys.argv:
+        print("This folder is a git checkout, so update.py does not replace live-2d with the release zip.")
+        print("Update with git instead (see START_HERE.md):")
+        print("  git pull")
+        print("  git fetch upstream && git merge upstream/main")
+        print("Run 'python update.py --force' to replace live-2d anyway. That deletes local changes in live-2d.")
+        sys.exit(0)
+
     current_version = now_version()
     latest_version = get_latest_release()
     if "错误" in latest_version or "未找到" in latest_version:
