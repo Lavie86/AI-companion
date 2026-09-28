@@ -229,6 +229,14 @@ class MCPStdioTransport {
     stop() {
         if (this.process) {
             try {
+                // Closing stdin tells a stdio MCP server to exit.
+                try { this.process.stdin.end(); } catch (e) { /* already closed */ }
+                // On Windows the server runs under cmd.exe (shell: true), and kill() stops only
+                // cmd.exe. taskkill /T also stops uvx and the Python server it started.
+                if (process.platform === 'win32' && this.process.pid) {
+                    spawn('taskkill', ['/pid', String(this.process.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true })
+                        .on('error', () => {});
+                }
                 this.process.kill();
                 console.log(`🛑 MCP Stdio服务器 ${this.serverName} 已停止`);
             } catch (error) {

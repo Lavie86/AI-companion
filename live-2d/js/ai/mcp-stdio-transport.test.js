@@ -56,6 +56,18 @@ describe('MCPStdioTransport', () => {
         assert.equal(await transport.callTool('Click', {}), 'clicked');
     });
 
+    it('closes stdin on stop, so the server exits even when kill() only reaches a wrapper shell', { timeout: 10000 }, async () => {
+        const registry = new MCPToolRegistry();
+        const server = `${STRICT_SERVER}\nprocess.stdin.on('end', () => process.exit(0));`;
+        const transport = new MCPStdioTransport({ command: process.execPath, args: ['-e', server] }, registry, 5000);
+        await quiet(() => transport.start('windows-mcp'));
+        const child = transport.process;
+        const exited = new Promise(resolve => child.on('exit', resolve));
+        child.kill = () => true; // like Windows, where kill() stops cmd.exe but not the server under it
+        await quiet(() => transport.stop());
+        await exited;
+    });
+
     it('returns image results as screenshots instead of dropping them', async () => {
         const registry = new MCPToolRegistry();
         const transport = new MCPStdioTransport({ command: process.execPath, args: ['-e', STRICT_SERVER] }, registry, 5000);
