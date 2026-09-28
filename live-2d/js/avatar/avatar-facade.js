@@ -34,7 +34,7 @@ function summarizeIPCResult(result) {
         success: result?.success === true,
         message: typeof result?.message === 'string'
             ? result.message
-            : (result?.success === true ? '操作成功' : '操作失败')
+            : (result?.success === true ? 'Done' : 'Failed')
     };
     if (Object.prototype.hasOwnProperty.call(result || {}, 'restored')) {
         summary.restored = result.restored === true;
@@ -114,7 +114,7 @@ class AvatarFacade {
         const t = normalizeType(type);
         const driver = this._drivers[t];
         if (!driver) {
-            const error = new Error(`形态 "${t}" 的 driver 未注册（该形态尚未移植完成）`);
+            const error = new Error(`Avatar type "${t}" has no registered driver (this type is not ported yet)`);
             await reportAvatarRuntimeReady({
                 success: false,
                 phase: 'failed',
@@ -136,13 +136,13 @@ class AvatarFacade {
 
             this._wireMouthSink();
             this._bindIPC();
-            logToTerminal('info', `[AvatarFacade] 形态已激活: ${t}`);
+            logToTerminal('info', `[AvatarFacade] Avatar type active: ${t}`);
             await reportAvatarRuntimeReady({
                 success: true,
                 phase: 'ready',
                 targetType: t,
                 activeType: t,
-                message: `${t} 形态已就绪`
+                message: `${t} avatar type ready`
             });
             return result;
         } catch (error) {
@@ -153,7 +153,7 @@ class AvatarFacade {
                 phase: 'failed',
                 targetType: t,
                 activeType: null,
-                message: `初始化 ${t} 失败: ${error.message}`
+                message: `Setting up ${t} failed: ${error.message}`
             });
             throw error;
         }
@@ -168,7 +168,7 @@ class AvatarFacade {
                 phase: 'busy',
                 targetType: t,
                 activeType: this._activeType,
-                message: '形态切换进行中'
+                message: 'An avatar type switch is already in progress'
             };
         }
         if (t === this._activeType) {
@@ -178,7 +178,7 @@ class AvatarFacade {
                 targetType: t,
                 activeType: t,
                 reloadRequired: false,
-                message: `已是 ${t} 形态`
+                message: `Already using the ${t} avatar type`
             };
         }
         const nextDriver = this._drivers[t];
@@ -188,7 +188,7 @@ class AvatarFacade {
                 phase: 'failed',
                 targetType: t,
                 activeType: this._activeType,
-                message: `形态 "${t}" 尚未移植`
+                message: `Avatar type "${t}" is not ported yet`
             };
         }
 
@@ -203,14 +203,14 @@ class AvatarFacade {
         if (WEBGL_ENGINES.includes(nextEngine)) {
             const conflicting = [...this._webglEnginesUsed].some(e => e !== nextEngine);
             if (conflicting) {
-                logToTerminal('info', `[AvatarFacade] 页内已存在其他 WebGL 引擎(${[...this._webglEnginesUsed].join(',')})，切换 ${t} 需要窗口重载`);
+                logToTerminal('info', `[AvatarFacade] Another WebGL engine is already on the page (${[...this._webglEnginesUsed].join(',')}), switching to ${t} needs a window reload`);
                 return {
                     success: true,
                     phase: 'reload-required',
                     targetType: t,
                     activeType: this._activeType,
                     reloadRequired: true,
-                    message: `切换到 ${t} 需要重载（跨渲染引擎）`
+                    message: `Switching to ${t} needs a reload (different render engine)`
                 };
             }
         }
@@ -225,14 +225,14 @@ class AvatarFacade {
                 if (typeof previousDriver.dispose === 'function') {
                     await previousDriver.dispose();
                 } else {
-                    logToTerminal('warn', `[AvatarFacade] ${previousType} driver 无 dispose，需要窗口重载`);
+                    logToTerminal('warn', `[AvatarFacade] ${previousType} driver has no dispose, needs a window reload`);
                     return {
                         success: true,
                         phase: 'reload-required',
                         targetType: t,
                         activeType: previousType,
                         reloadRequired: true,
-                        message: `${previousType} 不支持热释放，需要重载以切换到 ${t}`
+                        message: `${previousType} cannot be released in place, a reload is needed to switch to ${t}`
                     };
                 }
             }
@@ -253,14 +253,14 @@ class AvatarFacade {
             }
             this._wireMouthSink();
 
-            logToTerminal('info', `[AvatarFacade] 形态切换完成: ${previousType} -> ${t}`);
+            logToTerminal('info', `[AvatarFacade] Avatar type switch done: ${previousType} -> ${t}`);
             return {
                 success: true,
                 phase: 'ready',
                 targetType: t,
                 activeType: t,
                 reloadRequired: false,
-                message: `已切换到 ${t}`,
+                message: `Switched to ${t}`,
                 result
             };
         } catch (e) {
@@ -283,18 +283,18 @@ class AvatarFacade {
                     this._activeDriver = previousDriver;
                     this._wireMouthSink();
                     restored = true;
-                    logToTerminal('warn', `[AvatarFacade] 切换失败，已恢复 ${previousType}`);
+                    logToTerminal('warn', `[AvatarFacade] Switch failed, restored ${previousType}`);
                 } catch (error) {
                     restoreError = error;
                 }
             }
 
             if (!restored) {
-                logToTerminal('error', `[AvatarFacade] 形态切换失败: ${e.message}，恢复旧形态也失败`);
+                logToTerminal('error', `[AvatarFacade] Avatar type switch failed: ${e.message}, and restoring the old type failed too`);
             } else {
-                logToTerminal('error', `[AvatarFacade] 形态切换失败: ${e.message}，已恢复旧形态`);
+                logToTerminal('error', `[AvatarFacade] Avatar type switch failed: ${e.message}, restored the old type`);
             }
-            const suffix = restoreError ? `；恢复失败: ${restoreError.message}` : '';
+            const suffix = restoreError ? `; restore failed: ${restoreError.message}` : '';
             return {
                 success: false,
                 phase: restored ? 'rolled-back' : 'reload-required',
@@ -302,7 +302,7 @@ class AvatarFacade {
                 activeType: restored ? previousType : null,
                 restored,
                 reloadRequired: !restored,
-                message: `切换失败(${e.message})${restored ? '，已恢复原形态' : '，需要主进程重载恢复'}${suffix}`
+                message: `Switch failed (${e.message})${restored ? ', restored the original type' : ', the main process needs to reload to recover'}${suffix}`
             };
         } finally {
             this._switching = false;
@@ -345,12 +345,12 @@ class AvatarFacade {
     /** 同形态重载（换模型用）：配置与 driver 初始化一起提交，失败时恢复。 */
     async reloadActiveModel(configPatch = null) {
         if (this._switching) {
-            return { success: false, message: '形态切换进行中' };
+            return { success: false, message: 'An avatar type switch is already in progress' };
         }
         const driver = this._activeDriver;
         const type = this._activeType;
         if (!driver || !type) {
-            return { success: false, message: '当前没有激活的形态' };
+            return { success: false, message: 'No avatar type is active' };
         }
 
         const uiPatch = configPatch && typeof configPatch === 'object'
@@ -358,7 +358,7 @@ class AvatarFacade {
             : {};
         const config = this._context?.config;
         if (!config) {
-            return { success: false, message: 'Avatar 配置尚未初始化' };
+            return { success: false, message: 'Avatar config is not initialized yet' };
         }
         if (!config.ui || typeof config.ui !== 'object') config.ui = {};
         const previousValues = {};
@@ -372,7 +372,7 @@ class AvatarFacade {
         this._switching = true;
         try {
             if (typeof driver.dispose !== 'function') {
-                throw new Error(`${type} driver 不支持重载`);
+                throw new Error(`${type} driver does not support reloading`);
             }
             await driver.dispose();
             this._activeDriver = null;
@@ -382,8 +382,8 @@ class AvatarFacade {
             this._activeDriver = driver;
             this._activeType = type;
             this._wireMouthSink();
-            logToTerminal('info', `[AvatarFacade] ${type} 模型已重载`);
-            return { success: true, message: `${type} 模型已重载`, result };
+            logToTerminal('info', `[AvatarFacade] ${type} model reloaded`);
+            return { success: true, message: `${type} model reloaded`, result };
         } catch (e) {
             console.error('[AvatarFacade] 模型重载失败:', e);
             try { await driver.dispose?.(); } catch (_) {}
@@ -402,11 +402,11 @@ class AvatarFacade {
                 this._activeType = type;
                 this._wireMouthSink();
                 restored = true;
-                logToTerminal('warn', `[AvatarFacade] ${type} 重载失败，已恢复原模型`);
+                logToTerminal('warn', `[AvatarFacade] ${type} reload failed, restored the original model`);
                 return {
                     success: false,
                     restored: true,
-                    message: `重载失败(${e.message})，已恢复原模型`,
+                    message: `Reload failed (${e.message}), restored the original model`,
                     result: restoredResult
                 };
             } catch (restoreFailure) {
@@ -415,8 +415,8 @@ class AvatarFacade {
 
             this._activeDriver = null;
             this._activeType = null;
-            logToTerminal('error', `[AvatarFacade] 模型重载失败: ${e.message}，恢复也失败`);
-            const suffix = restoreError ? `；恢复失败: ${restoreError.message}` : '';
+            logToTerminal('error', `[AvatarFacade] Model reload failed: ${e.message}, and restoring failed too`);
+            const suffix = restoreError ? `; restore failed: ${restoreError.message}` : '';
             return {
                 success: false,
                 phase: 'reload-required',
@@ -424,7 +424,7 @@ class AvatarFacade {
                 activeType: null,
                 restored,
                 reloadRequired: true,
-                message: `重载失败(${e.message})，需要主进程重载恢复${suffix}`
+                message: `Reload failed (${e.message}), the main process needs to reload to recover${suffix}`
             };
         } finally {
             this._switching = false;
@@ -437,31 +437,31 @@ class AvatarFacade {
         ipcRenderer.on('avatar-switch-type', async (event, payload) => {
             const requestId = payload?.requestId;
             let res;
-            await avatarTransition.show('正在切换皮套');
+            await avatarTransition.show('Switching avatar');
             try {
                 res = await this.switchType(payload?.type);
             } catch (error) {
-                res = { success: false, message: `切换异常: ${error.message}` };
+                res = { success: false, message: `Switch error: ${error.message}` };
             }
             if (!res?.reloadRequired) avatarTransition.hide();
             const summary = summarizeIPCResult(res);
-            logToTerminal('info', `[AvatarFacade] IPC 切换结果: ${JSON.stringify(summary)}`);
+            logToTerminal('info', `[AvatarFacade] IPC switch result: ${JSON.stringify(summary)}`);
             await reportIPCResult('avatar-switch-type-result', requestId, res);
         });
         ipcRenderer.on('avatar-reload-model', async (event, payload) => {
             const requestId = payload?.requestId;
             let res;
-            await avatarTransition.show('正在切换皮套');
+            await avatarTransition.show('Switching avatar');
             try {
                 const patch = payload?.configKey
                     ? { [payload.configKey]: payload.configValue }
                     : null;
                 res = await this.reloadActiveModel(patch);
             } catch (error) {
-                res = { success: false, message: `重载异常: ${error.message}` };
+                res = { success: false, message: `Reload error: ${error.message}` };
             }
             if (!res?.reloadRequired) avatarTransition.hide();
-            logToTerminal('info', `[AvatarFacade] IPC 模型重载结果: ${JSON.stringify(summarizeIPCResult(res))}`);
+            logToTerminal('info', `[AvatarFacade] IPC model reload result: ${JSON.stringify(summarizeIPCResult(res))}`);
             await reportIPCResult('avatar-reload-model-result', requestId, res);
         });
         ipcRenderer.on('avatar-config-updated', (_event, payload) => {

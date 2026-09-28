@@ -494,11 +494,11 @@ def start_singing():
         req.add_header('Content-Type', 'application/json')
         with urllib.request.urlopen(req, timeout=2) as response:
             if response.status == 200:
-                return jsonify({'success': True, 'message': '已开始唱歌'})
-        return jsonify({'success': True, 'message': '唱歌请求已发送'})
+                return jsonify({'success': True, 'message': 'Started singing'})
+        return jsonify({'success': True, 'message': 'Sing request sent'})
     except Exception as e:
         logger.warning(f'开始唱歌 HTTP 请求失败：{e}')
-        return jsonify({'success': True, 'message': '唱歌请求已发送'})
+        return jsonify({'success': True, 'message': 'Sing request sent'})
 
 
 @live2d_bp.route('/api/live2d/singing/stop', methods=['POST'])
@@ -510,11 +510,11 @@ def stop_singing():
         req.add_header('Content-Type', 'application/json')
         with urllib.request.urlopen(req, timeout=2) as response:
             if response.status == 200:
-                return jsonify({'success': True, 'message': '已停止唱歌'})
-        return jsonify({'success': True, 'message': '停止请求已发送'})
+                return jsonify({'success': True, 'message': 'Stopped singing'})
+        return jsonify({'success': True, 'message': 'Stop request sent'})
     except Exception as e:
         logger.warning(f'停止唱歌 HTTP 请求失败：{e}')
-        return jsonify({'success': True, 'message': '停止请求已发送'})
+        return jsonify({'success': True, 'message': 'Stop request sent'})
 
 
 # ============ 模型配置 ============
@@ -527,7 +527,7 @@ def save_live2d_model():
         model_name = data.get('model', '')
 
         if not model_name:
-            return jsonify({'success': False, 'error': '未提供模型名称'})
+            return jsonify({'success': False, 'error': 'No model name given'})
 
         # 优先通知运行中的桌宠热切换（会同时把选择持久化到 config.ui.live2d_model）
         try:
@@ -539,7 +539,7 @@ def save_live2d_model():
                 result = json.loads(resp.read().decode('utf-8'))
             if result.get('success'):
                 logger.info(f'已热切换当前模型为：{model_name}')
-                return jsonify({'success': True, 'message': f'已应用模型：{model_name}'})
+                return jsonify({'success': True, 'message': f'Model applied: {model_name}'})
             logger.warning(f'桌宠热切换返回失败：{result}')
         except Exception as e:
             logger.info(f'桌宠未运行或热切换失败（{e}），直接写入 config')
@@ -551,8 +551,8 @@ def save_live2d_model():
             config['ui'] = {}
         config['ui']['live2d_model'] = model_name
         if save_config(config):
-            return jsonify({'success': True, 'message': f'已保存模型选择：{model_name}（启动桌宠后生效）'})
-        return jsonify({'success': False, 'error': '保存配置失败'}), 500
+            return jsonify({'success': True, 'message': f'Model choice saved: {model_name} (applies when the pet starts)'})
+        return jsonify({'success': False, 'error': 'Failed to save config'}), 500
     except Exception as e:
         logger.error(f'保存模型失败：{str(e)}')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -579,8 +579,8 @@ def save_model_position():
         config['ui']['model_position']['remember_position'] = True
 
         if save_config(config):
-            return jsonify({'success': True, 'message': '皮套位置已保存，请重启桌宠生效'})
-        return jsonify({'error': '保存失败'}), 500
+            return jsonify({'success': True, 'message': 'Avatar position saved. Restart the pet to apply it.'})
+        return jsonify({'error': 'Save failed'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -603,8 +603,8 @@ def reset_model_position():
         config['ui']['model_position']['remember_position'] = True
 
         if save_config(config):
-            return jsonify({'success': True, 'message': '皮套位置已保存，请重启桌宠生效'})
-        return jsonify({'error': '保存失败'}), 500
+            return jsonify({'success': True, 'message': 'Avatar position saved. Restart the pet to apply it.'})
+        return jsonify({'error': 'Save failed'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -620,11 +620,11 @@ def adjust_subtitle_position():
         with urllib.request.urlopen(req, timeout=2) as response:
             result = json.loads(response.read().decode('utf-8'))
         if result.get('success'):
-            return jsonify({'success': True, 'message': '已进入字幕调整模式，请到桌宠窗口拖动调整'})
-        return jsonify({'success': False, 'error': result.get('message', '进入调整模式失败，请重启桌宠后再试')})
+            return jsonify({'success': True, 'message': 'Subtitle adjust mode is on. Drag the subtitles in the pet window.'})
+        return jsonify({'success': False, 'error': result.get('message', 'Could not enter adjust mode. Restart the pet and try again.')})
     except Exception as e:
         logger.warning(f'进入字幕调整模式失败：{e}')
-        return jsonify({'success': False, 'error': '无法连接桌宠，请先启动桌宠'})
+        return jsonify({'success': False, 'error': 'Cannot reach the pet. Start the pet first.'})
 
 
 @live2d_bp.route('/api/live2d/subtitle/reset-position', methods=['POST'])
@@ -637,7 +637,7 @@ def reset_subtitle_position():
         with urllib.request.urlopen(req, timeout=2) as response:
             result = json.loads(response.read().decode('utf-8'))
         if result.get('success'):
-            return jsonify({'success': True, 'message': '字幕位置已复位'})
+            return jsonify({'success': True, 'message': 'Subtitle position reset'})
     except Exception as e:
         logger.warning(f'实时复位字幕失败，回退为直接清除配置：{e}')
 
@@ -649,8 +649,8 @@ def reset_subtitle_position():
         if 'ui' in config and 'subtitle_position' in config['ui']:
             config['ui'].pop('subtitle_position', None)
             if not save_config(config):
-                return jsonify({'error': '保存失败'}), 500
-        return jsonify({'success': True, 'message': '字幕位置已复位，重启桌宠后生效'})
+                return jsonify({'error': 'Save failed'}), 500
+        return jsonify({'success': True, 'message': 'Subtitle position reset. Restart the pet to apply it.'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -703,7 +703,7 @@ def save_motions_config():
         _write_profile(model_name, motion_emotions=motion_emotions)
         logger.info(f'已保存动作配置（模型：{model_name}）')
 
-        return jsonify({'success': True, 'message': '动作配置已保存'})
+        return jsonify({'success': True, 'message': 'Motion config saved'})
     except Exception as e:
         logger.error(f'保存动作配置失败：{str(e)}')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -740,13 +740,13 @@ def reset_motion_config():
                 motion_emotions, named_motions = _split_named_and_emotions(reset_actions)
                 _write_profile(model_name, motion_emotions=motion_emotions, named_motions=named_motions)
                 logger.info(f'动作配置已从备份恢复（模型：{model_name}）')
-                return jsonify({'success': True, 'message': '动作配置已重置'})
+                return jsonify({'success': True, 'message': 'Motion config reset'})
             else:
                 logger.warning(f'备份中没有模型 {model_name} 的数据')
-                return jsonify({'success': False, 'error': '备份中没有该模型的数据'})
+                return jsonify({'success': False, 'error': 'The backup has no data for this model'})
         else:
             logger.error(f'备份文件不存在：{backup_path}')
-            return jsonify({'success': False, 'error': '备份文件不存在'})
+            return jsonify({'success': False, 'error': 'Backup file not found'})
     except Exception as e:
         logger.error(f'重置动作配置失败：{str(e)}')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -760,7 +760,7 @@ def preview_motion():
         motion_name = data.get('motion', '')
 
         if not motion_name:
-            return jsonify({'success': False, 'error': '未提供动作名称'})
+            return jsonify({'success': False, 'error': 'No motion name given'})
 
         # 使用 trigger_emotion action 来触发情绪对应的动作
         json_data = json.dumps({
@@ -771,9 +771,9 @@ def preview_motion():
         req.add_header('Content-Type', 'application/json')
         with urllib.request.urlopen(req, timeout=2) as response:
             if response.status == 200:
-                return jsonify({'success': True, 'message': f'正在预览动作：{motion_name}'})
+                return jsonify({'success': True, 'message': f'Previewing motion: {motion_name}'})
 
-        return jsonify({'success': True, 'message': f'预览请求已发送：{motion_name}'})
+        return jsonify({'success': True, 'message': f'Preview request sent: {motion_name}'})
     except Exception as e:
         logger.error(f'预览动作失败：{str(e)}')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -818,7 +818,7 @@ def save_expressions():
         _write_profile(current_model, expression_emotions=expression_emotions)
         
         logger.info(f'已保存表情配置（模型：{current_model}）')
-        return jsonify({'success': True, 'message': '表情配置已保存'})
+        return jsonify({'success': True, 'message': 'Expression config saved'})
     except Exception as e:
         logger.error(f'保存表情配置失败：{str(e)}')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -863,9 +863,9 @@ def reset_expressions():
 
         if restored_from_backup:
             logger.info(f'表情配置已从备份恢复（模型：{current_model}）')
-            return jsonify({'success': True, 'message': '表情配置已重置'})
+            return jsonify({'success': True, 'message': 'Expression config reset'})
         logger.info(f'模型 {current_model} 没有表情备份，已按模型文件重新生成默认配置')
-        return jsonify({'success': True, 'message': '没有找到备份，已按模型文件重新生成默认表情配置'})
+        return jsonify({'success': True, 'message': 'No backup found, so the default expression config was rebuilt from the model files'})
     except Exception as e:
         logger.error(f'重置表情配置失败：{str(e)}')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -879,7 +879,7 @@ def preview_expression():
         expression = data.get('expression', '')
 
         if not expression:
-            return jsonify({'success': False, 'error': '未提供表情名称'})
+            return jsonify({'success': False, 'error': 'No expression name given'})
 
         json_data = json.dumps({
             'action': 'trigger_expression',
@@ -889,9 +889,9 @@ def preview_expression():
         req.add_header('Content-Type', 'application/json')
         with urllib.request.urlopen(req, timeout=2) as response:
             if response.status == 200:
-                return jsonify({'success': True, 'message': f'正在预览表情：{expression}'})
+                return jsonify({'success': True, 'message': f'Previewing expression: {expression}'})
 
-        return jsonify({'success': True, 'message': f'预览请求已发送：{expression}'})
+        return jsonify({'success': True, 'message': f'Preview request sent: {expression}'})
     except Exception as e:
         logger.error(f'预览表情失败：{str(e)}')
         return jsonify({'success': False, 'error': str(e)}), 500

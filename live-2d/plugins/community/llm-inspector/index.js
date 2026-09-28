@@ -25,7 +25,7 @@ class LLMInspectorPlugin extends Plugin {
 
     async onStart() {
         if (!this._cfg.enabled) return;
-        this.context.log('info', '🔍 LLM抓包器已启动');
+        this.context.log('info', '🔍 LLM inspector started');
 
         // 确保日志目录存在
         if (this._cfg.save_to_file) {
@@ -50,8 +50,8 @@ class LLMInspectorPlugin extends Plugin {
             const divider = '─'.repeat(60);
 
             this.context.log('info', `\n${divider}`);
-            this.context.log('info', `📡 LLM请求 #${reqId}  ${timestamp}`);
-            this.context.log('info', `   消息数: ${messages.length}  工具数: ${tools.length}`);
+            this.context.log('info', `📡 LLM request #${reqId}  ${timestamp}`);
+            this.context.log('info', `   Messages: ${messages.length}  Tools: ${tools.length}`);
             this.context.log('info', divider);
 
             for (const msg of messages) {
@@ -60,7 +60,7 @@ class LLMInspectorPlugin extends Plugin {
 
                 if (typeof msg.content === 'string') {
                     body = (maxLen > 0 && msg.content.length > maxLen)
-                        ? msg.content.slice(0, maxLen) + `…(共${msg.content.length}字)`
+                        ? msg.content.slice(0, maxLen) + `… (${msg.content.length} chars)`
                         : msg.content;
                 } else if (Array.isArray(msg.content)) {
                     // 多模态内容（含图片）
@@ -69,7 +69,7 @@ class LLMInspectorPlugin extends Plugin {
                             const t = p.text || '';
                             return (maxLen > 0 && t.length > maxLen) ? t.slice(0, maxLen) + '…' : t;
                         }
-                        if (p.type === 'image_url') return '[图片]';
+                        if (p.type === 'image_url') return '[image]';
                         return `[${p.type}]`;
                     });
                     body = parts.join(' ');
@@ -80,7 +80,7 @@ class LLMInspectorPlugin extends Plugin {
                 // tool_calls 附加信息
                 if (msg.tool_calls && msg.tool_calls.length > 0) {
                     const calls = msg.tool_calls.map(tc => tc.function?.name || tc.id).join(', ');
-                    body += `  ← 调用工具: [${calls}]`;
+                    body += `  ← tool calls: [${calls}]`;
                 }
 
                 // tool 消息附加 tool_call_id
@@ -125,9 +125,9 @@ class LLMInspectorPlugin extends Plugin {
 
         if (this._cfg.log_to_terminal) {
             const preview = (maxLen > 0 && text.length > maxLen)
-                ? text.slice(0, maxLen) + `…(共${text.length}字)`
+                ? text.slice(0, maxLen) + `… (${text.length} chars)`
                 : text;
-            this.context.log('info', `  ✅ LLM响应 #${this._requestCount} | ${preview}`);
+            this.context.log('info', `  ✅ LLM response #${this._requestCount} | ${preview}`);
         }
 
         if (this._cfg.save_to_file) {
@@ -150,7 +150,7 @@ class LLMInspectorPlugin extends Plugin {
             out.content = msg.content;
         } else if (Array.isArray(msg.content)) {
             out.content = msg.content.map(p => {
-                if (p.type === 'image_url') return { type: 'image_url', url: '(base64省略)' };
+                if (p.type === 'image_url') return { type: 'image_url', url: '(base64 omitted)' };
                 return p;
             });
         } else {
@@ -168,7 +168,7 @@ class LLMInspectorPlugin extends Plugin {
         try {
             fs.appendFileSync(LOG_FILE, JSON.stringify(record) + '\n', 'utf8');
         } catch (err) {
-            this.context.log('warn', `抓包文件写入失败: ${err.message}`);
+            this.context.log('warn', `Failed to write the inspector log file: ${err.message}`);
         }
     }
 }

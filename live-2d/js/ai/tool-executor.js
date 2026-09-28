@@ -58,7 +58,7 @@ class ToolExecutor {
             safeEmitTelemetry({
                 cat: 'tool',
                 type: 'tool.start',
-                title: `调用工具: ${functionName}`,
+                title: `Calling tool: ${functionName}`,
                 source: 'main'
             });
             let toolResult = null;
@@ -100,7 +100,7 @@ class ToolExecutor {
                             hasToolExecuted = true;
                         }
                     } catch (error) {
-                        logToolAction('warn', `MCP工具 ${functionName} 执行失败，尝试本地工具: ${error.message}`);
+                        logToolAction('warn', `MCP tool ${functionName} failed, trying a local tool: ${error.message}`);
                     }
                 }
             }
@@ -121,7 +121,7 @@ class ToolExecutor {
                             hasToolExecuted = true;
                         }
                     } catch (error) {
-                        logToolAction('error', `插件工具 ${functionName} 执行失败: ${error.message}`);
+                        logToolAction('error', `Plugin tool ${functionName} failed: ${error.message}`);
                     }
                 }
             }
@@ -165,9 +165,9 @@ class ToolExecutor {
                 // 工具未找到或执行失败
                 results.push({
                     tool_call_id: toolCall.id,
-                    content: `工具 ${functionName} 执行失败或未找到`
+                    content: `Tool ${functionName} failed or was not found`
                 });
-                logToolAction('error', `工具 ${functionName} 未找到或执行失败`);
+                logToolAction('error', `Tool ${functionName} was not found or failed`);
             }
 
             // 工具结束遥测（含耗时与成败）
@@ -177,7 +177,7 @@ class ToolExecutor {
             safeEmitTelemetry({
                 cat: 'tool',
                 type: toolFailed ? 'tool.error' : 'tool.end',
-                title: toolFailed ? `工具 ${functionName} 失败 (${toolSecs}s)` : `工具 ${functionName} 完成 (${toolSecs}s)`,
+                title: toolFailed ? `Tool ${functionName} failed (${toolSecs}s)` : `Tool ${functionName} done (${toolSecs}s)`,
                 level: toolFailed ? 'error' : 'info',
                 metrics: { duration_ms: toolDurationMs },
                 source: 'main'
@@ -185,7 +185,7 @@ class ToolExecutor {
         }
 
         if (!hasToolExecuted) {
-            logToolAction('error', '所有工具调用均失败');
+            logToolAction('error', 'All tool calls failed');
             return null;
         }
 

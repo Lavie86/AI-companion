@@ -1,8 +1,8 @@
 {
   "name": "dynamic-persona",
-  "displayName": "动态人格",
+  "displayName": "Dynamic Persona",
   "version": "1.0.0",
   "author": "community",
-  "description": "根据用户消息和时间动态调整AI当前状态，让回复更有生命力",
+  "description": "Adjusts the AI's current state based on your messages and the time, so replies feel more alive.",
   "main": "index.js"
 }

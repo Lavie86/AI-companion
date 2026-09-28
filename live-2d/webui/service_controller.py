@@ -210,7 +210,7 @@ def _find_service_pids(service):
         env=env,
     )
     if result.returncode != 0:
-        raise RuntimeError(result.stderr.strip() or 'PowerShell 进程查询失败')
+        raise RuntimeError(result.stderr.strip() or 'PowerShell process lookup failed')
     return [
         line.strip()
         for line in result.stdout.splitlines()
@@ -308,16 +308,16 @@ def get_system_info():
     hours, remainder = divmod(uptime.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
 
-    uptime_str = f"{days}天{hours}小时{minutes}分钟{seconds}秒" if days > 0 else f"{hours}小时{minutes}分钟{seconds}秒"
+    uptime_str = f"{days}d {hours}h {minutes}m {seconds}s" if days > 0 else f"{hours}h {minutes}m {seconds}s"
 
     from .utils import WEBUI_VERSION
     from .config_manager import CONFIG_PATH
     # 旧版前端读 config.json 的 version 字段（neuro_version）
-    neuro_version = '未知'
+    neuro_version = 'unknown'
     try:
         import json as _json
         if CONFIG_PATH.exists():
-            neuro_version = _json.loads(CONFIG_PATH.read_text(encoding='utf-8')).get('version', '未知')
+            neuro_version = _json.loads(CONFIG_PATH.read_text(encoding='utf-8')).get('version', 'unknown')
     except Exception:
         pass
     return jsonify({
@@ -339,13 +339,13 @@ def start_memos_webui():
                 'success': True,
                 'already_running': True,
                 'url': MEMOS_WEBUI_URL,
-                'message': '记忆系统 WebUI 已在运行，已打开浏览器'
+                'message': 'The Memory System WebUI is already running. The browser was opened.'
             })
 
         if not _probe_port(SERVICE_PORTS['memos']):
             return jsonify({
                 'success': False,
-                'error': '记忆系统后端未运行，请先点击记忆系统「启动」'
+                'error': 'The Memory System backend is not running. Click "Start" on the Memory System first.'
             })
 
         memos_dir = resolve_memos_dir()
@@ -353,7 +353,7 @@ def start_memos_webui():
         if not script_path.exists():
             return jsonify({
                 'success': False,
-                'error': f'找不到启动脚本：{script_path}'
+                'error': f'Start script not found: {script_path}'
             })
 
         if sys.platform.startswith('win'):
@@ -380,7 +380,7 @@ def start_memos_webui():
             'success': True,
             'pid': proc.pid,
             'url': MEMOS_WEBUI_URL,
-            'message': '正在启动记忆系统 WebUI'
+            'message': 'Starting the Memory System WebUI'
         })
 
     except Exception as e:
@@ -399,13 +399,13 @@ def start_service(service):
     except TimeoutError:
         return jsonify({
             'success': False,
-            'error': '服务启动操作正由另一个 WebUI 执行，请稍后重试',
+            'error': 'Another WebUI is starting services right now. Try again later.',
         }), 409
     except Exception as error:
         logger.error(f'获取 {service} 服务启动锁失败：{error}')
         return jsonify({
             'success': False,
-            'error': f'服务启动锁失败：{error}',
+            'error': f'Could not get the service start lock: {error}',
         }), 500
 
 
@@ -419,7 +419,7 @@ def _start_service_locked(service):
                 'success': False,
                 'already_running': True,
                 'pid': state.get('owner_pid'),
-                'error': '服务已在运行中',
+                'error': 'The service is already running',
             })
 
         # 根据服务类型启动对应的脚本
@@ -473,14 +473,14 @@ def _start_service_locked(service):
         }
 
         if service not in script_map:
-            return jsonify({'success': False, 'error': f'未知服务：{service}'})
+            return jsonify({'success': False, 'error': f'Unknown service: {service}'})
 
         config = script_map[service]
         script_path = _get_service_script_path(service)
         if not script_path or not script_path.is_file():
             return jsonify({
                 'success': False,
-                'error': f'找不到启动脚本：{script_path}',
+                'error': f'Start script not found: {script_path}',
             })
 
         # 对于 Live2D 服务，启动前清空日志文件
@@ -527,7 +527,7 @@ def _start_service_locked(service):
                 service_pids[service] = False
                 return jsonify({
                     'success': False,
-                    'error': f'{service} 启动失败（退出码 {exit_code}），请查看「{service} 日志」',
+                    'error': f'{service} failed to start (exit code {exit_code}). Check the "{service} Log"',
                     'log': service
                 })
         elif config.get('hide_window'):
@@ -558,7 +558,7 @@ def _start_service_locked(service):
                     _reset_service_state(service, clear_owner=True)
                     return jsonify({
                         'success': False,
-                        'error': 'Live2D 启动失败，启动脚本立即退出',
+                        'error': 'Live2D failed to start: the start script exited right away',
                     })
         else:
             # 其他服务：使用独立控制台，脚本结束后 cmd 也随之退出。
@@ -593,22 +593,22 @@ def stop_service(service):
     except TimeoutError:
         return jsonify({
             'success': False,
-            'error': '服务停止操作正由另一个 WebUI 执行，请稍后重试',
+            'error': 'Another WebUI is stopping services right now. Try again later.',
         }), 409
     except Exception as error:
         logger.error(f'获取 {service} 服务停止锁失败：{error}')
         return jsonify({
             'success': False,
-            'error': f'服务停止锁失败：{error}',
+            'error': f'Could not get the service stop lock: {error}',
         }), 500
 
 
 def _stop_service_locked(service):
     """停止指定服务"""
     if not sys.platform.startswith('win'):
-        return jsonify({'success': False, 'error': '仅支持 Windows 系统'}), 400
+        return jsonify({'success': False, 'error': 'Only supported on Windows'}), 400
     if service not in MANAGED_SERVICES:
-        return jsonify({'success': False, 'error': f'未知服务：{service}'}), 404
+        return jsonify({'success': False, 'error': f'Unknown service: {service}'}), 404
 
     try:
         proc = service_processes.get(service)
@@ -629,10 +629,10 @@ def _stop_service_locked(service):
                 service_pids[service] = True
                 return jsonify({
                     'success': False,
-                    'error': '检测到服务端口仍在监听，但无法确认所属进程，未执行终止',
+                    'error': 'The service port is still in use, but its process could not be identified, so nothing was stopped',
                 }), 409
             _reset_service_state(service, clear_owner=True)
-            return jsonify({'success': True, 'message': '服务已停止'})
+            return jsonify({'success': True, 'message': 'Service stopped'})
 
         command_failures = []
         for pid in pids:
@@ -645,7 +645,7 @@ def _stop_service_locked(service):
             if kill_result.returncode != 0:
                 output = (kill_result.stdout + kill_result.stderr).strip()
                 command_failures.append(
-                    f'PID {pid}: {output or f"返回码={kill_result.returncode}"}'
+                    f'PID {pid}: {output or f"exit code={kill_result.returncode}"}'
                 )
 
         if _wait_for_service_stopped(service, pids):
@@ -653,27 +653,27 @@ def _stop_service_locked(service):
             logger.info(f'{service} 服务已停止（核验 {len(pids)} 个进程树）')
             return jsonify({
                 'success': True,
-                'message': f'成功终止 {len(pids)} 个进程树',
+                'message': f'Stopped {len(pids)} process trees',
             })
 
         service_pids[service] = True
-        detail = '；'.join(command_failures) if command_failures else '进程或端口仍然存活'
+        detail = '；'.join(command_failures) if command_failures else 'The process or port is still alive'
         logger.error(f'停止 {service} 服务后核验失败：{detail}')
         return jsonify({
             'success': False,
-            'error': f'停止失败：{detail}',
+            'error': f'Stop failed: {detail}',
         }), 500
     except subprocess.TimeoutExpired as error:
         logger.error(f'停止 {service} 服务超时')
         service_pids[service] = _get_service_state(service)['started']
         return jsonify({
             'success': False,
-            'error': f'停止服务超时：{error}',
+            'error': f'Timed out stopping the service: {error}',
         }), 504
     except Exception as e:
         logger.error(f'停止 {service} 服务失败：{str(e)}')
         service_pids[service] = _get_service_state(service)['started']
         return jsonify({
             'success': False,
-            'error': f'停止服务时出错：{str(e)}',
+            'error': f'Error while stopping the service: {str(e)}',
         }), 500

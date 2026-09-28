@@ -28,7 +28,7 @@ class TranslationPlugin extends Plugin {
             const data = await res.json();
             return data.choices[0].message.content || text;
         } catch (e) {
-            this.context.log('warn', `翻译失败: ${e.message}`);
+            this.context.log('warn', `Translation failed: ${e.message}`);
             return text;
         }
     }

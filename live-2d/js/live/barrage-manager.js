@@ -47,7 +47,7 @@ class BarrageManager {
     // 添加弹幕到队列
     addToQueue(nickname, text) {
         this.normalQueue.push({ nickname, text });
-        logToTerminal('info', `弹幕：${nickname}：${text}`);
+        logToTerminal('info', `Live chat: ${nickname}: ${text}`);
         // 不再手动调用processNext，由队列处理循环自动处理
     }
 
@@ -57,7 +57,7 @@ class BarrageManager {
         this.normalQueue = [];
         if (cleared > 0) {
             console.log(`清空了${cleared}条未处理的弹幕`);
-            logToTerminal('info', `清空了${cleared}条未处理的弹幕`);
+            logToTerminal('info', `Cleared ${cleared} unhandled live chat messages`);
         }
     }
 
@@ -109,7 +109,7 @@ class BarrageManager {
 
                 } catch (error) {
                     console.error('弹幕处理失败:', error.message);
-                    logToTerminal('error', `弹幕处理失败: ${error.message}`);
+                    logToTerminal('error', `Failed to handle the live chat message: ${error.message}`);
 
                     // 恢复ASR录音
                     const localASREnabled = this.config.asr?.enabled !== false;
@@ -133,7 +133,7 @@ class BarrageManager {
     // 执行弹幕处理
     async executeBarrage(nickname, text) {
         if (!this.voiceChat) {
-            throw new Error('VoiceChat未初始化');
+            throw new Error('VoiceChat not initialized');
         }
 
         // 重置AI日记定时器
@@ -147,7 +147,7 @@ class BarrageManager {
         // 添加用户消息
         this.voiceChat.messages.push({
             role: 'user',
-            content: `[接收到了直播间的弹幕] ${nickname}给你发送了一个消息: ${text}`
+            content: `[Live chat message] ${nickname} sent you a message: ${text}`
         });
 
         // 限制上下文
@@ -162,7 +162,7 @@ class BarrageManager {
         if (this.interruptFlag) {
             console.log('弹幕LLM调用被打断');
             this.interruptFlag = false;
-            throw new Error('弹幕处理被打断');
+            throw new Error('Live chat handling was interrupted');
         }
 
         // 调用 LLM
@@ -172,13 +172,13 @@ class BarrageManager {
         if (this.interruptFlag) {
             console.log('弹幕LLM响应被打断');
             this.interruptFlag = false;
-            throw new Error('弹幕处理被打断');
+            throw new Error('Live chat handling was interrupted');
         }
 
         // 处理工具调用
         if (result.tool_calls && result.tool_calls.length > 0) {
             console.log("检测到工具调用:", result.tool_calls);
-            logToTerminal('info', `工具调用: ${JSON.stringify(result.tool_calls)}`);
+            logToTerminal('info', `Tool call: ${JSON.stringify(result.tool_calls)}`);
 
             // 添加助手消息
             this.voiceChat.messages.push({
@@ -215,7 +215,7 @@ class BarrageManager {
                 if (this.interruptFlag) {
                     console.log('弹幕工具调用后被打断');
                     this.interruptFlag = false;
-                    throw new Error('弹幕处理被打断');
+                    throw new Error('Live chat handling was interrupted');
                 }
 
                 // 获取最终回复
@@ -225,7 +225,7 @@ class BarrageManager {
                 if (this.interruptFlag) {
                     console.log('弹幕最终回复被打断');
                     this.interruptFlag = false;
-                    throw new Error('弹幕处理被打断');
+                    throw new Error('Live chat handling was interrupted');
                 }
 
                 if (finalResult.content) {
@@ -240,7 +240,7 @@ class BarrageManager {
                 }
             } else {
                 console.error("工具调用失败");
-                throw new Error("工具调用失败");
+                throw new Error("Tool call failed");
             }
 
         } else if (result.content) {
@@ -275,16 +275,16 @@ class BarrageManager {
 
             const originalPrompt = this.voiceChat.messages[0].content;
 
-            if (!originalPrompt.includes('你可能会收到直播弹幕')) {
+            if (!originalPrompt.includes('You may receive live stream chat messages') && !originalPrompt.includes('你可能会收到直播弹幕')) {
                 const enhancedPrompt = originalPrompt +
-                    "\n\n你可能会收到直播弹幕消息，这些消息会被标记为[接收到了直播间的弹幕]，" +
-                    "表示这是来自直播间观众的消息，而不是主人直接对你说的话。" +
-                    "当你看到[接收到了直播间的弹幕]标记时，你应该知道这是其他人发送的，" +
-                    "但你仍然可以回应，就像在直播间与观众互动一样。";
+                    "\n\nYou may receive live stream chat messages. They are marked with [Live chat message], " +
+                    "which means a viewer in the live stream sent them, not your owner talking to you directly. " +
+                    "When you see [Live chat message], you know someone else sent it, " +
+                    "but you can still reply, just like talking with viewers in a live stream.";
 
                 this.voiceChat.messages[0].content = enhancedPrompt;
                 console.log('系统提示已增强，添加了直播弹幕相关说明');
-                logToTerminal('info', '系统提示已增强，添加了直播弹幕相关说明');
+                logToTerminal('info', 'Added the live chat instructions to the system prompt');
             }
         }
     }
@@ -299,7 +299,7 @@ class BarrageManager {
     reset() {
         this.isProcessing = false;
         console.log('弹幕管理器已重置');
-        logToTerminal('info', '弹幕管理器已重置');
+        logToTerminal('info', 'Live chat manager reset');
     }
 }
 

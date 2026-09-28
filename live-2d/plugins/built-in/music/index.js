@@ -15,10 +15,10 @@ class MusicPlugin extends Plugin {
 
     getTools() {
         return [
-            { type: 'function', function: { name: 'play_random_music', description: '使用你的真实声音开始唱一首随机的歌曲', parameters: { type: 'object', properties: {}, required: [] } } },
-            { type: 'function', function: { name: 'stop_music', description: '停止你当前的歌曲演唱', parameters: { type: 'object', properties: {}, required: [] } } },
-            { type: 'function', function: { name: 'list_music_files', description: '查看你的歌曲库中有哪些可以用声音演唱的歌曲', parameters: { type: 'object', properties: {}, required: [] } } },
-            { type: 'function', function: { name: 'play_specific_music', description: '使用你的真实声音唱指定的歌曲', parameters: { type: 'object', properties: { filename: { type: 'string', description: '要唱的歌曲文件名（不需要包含路径与格式）' } }, required: ['filename'] } } }
+            { type: 'function', function: { name: 'play_random_music', description: 'Sing a random song in your real voice', parameters: { type: 'object', properties: {}, required: [] } } },
+            { type: 'function', function: { name: 'stop_music', description: 'Stop the song you are singing', parameters: { type: 'object', properties: {}, required: [] } } },
+            { type: 'function', function: { name: 'list_music_files', description: 'See which songs in your library you can sing', parameters: { type: 'object', properties: {}, required: [] } } },
+            { type: 'function', function: { name: 'play_specific_music', description: 'Sing a specific song in your real voice', parameters: { type: 'object', properties: { filename: { type: 'string', description: 'File name of the song to sing (no path or file extension needed)' } }, required: ['filename'] } } }
         ];
     }
 
@@ -28,7 +28,7 @@ class MusicPlugin extends Plugin {
             case 'stop_music':          return await this._stop();
             case 'list_music_files':    return this._list();
             case 'play_specific_music': return await this._playSpecific(params.filename);
-            default: throw new Error(`[music] 不支持的工具: ${name}`);
+            default: throw new Error(`[music] Unsupported tool: ${name}`);
         }
     }
 
@@ -48,11 +48,11 @@ class MusicPlugin extends Plugin {
                 res.on('end', () => {
                     try {
                         const result = JSON.parse(data);
-                        resolve(result.success ? result.message : `操作失败: ${result.message}`);
-                    } catch { resolve('操作完成'); }
+                        resolve(result.success ? result.message : `Action failed: ${result.message}`);
+                    } catch { resolve('Done'); }
                 });
             });
-            req.on('error', () => resolve('连接音乐控制服务失败，请确保应用已启动'));
+            req.on('error', () => resolve('Could not connect to the music control service. Make sure the app is running'));
             req.write(postData);
             req.end();
         });
@@ -62,36 +62,36 @@ class MusicPlugin extends Plugin {
         if (typeof result === 'string') return result;
         const { message, metadata } = result;
         if (!metadata) return message;
-        let response = `开始演唱：${metadata.title} - ${metadata.artist}。\n`;
+        let response = `Now singing: ${metadata.title} - ${metadata.artist}.\n`;
         if (metadata.lyrics && metadata.lyrics !== '暂无歌词') {
-            response += `歌词内容：\n${metadata.lyrics.split('\n').slice(0, 200).join('\n')}\n`;
+            response += `Lyrics:\n${metadata.lyrics.split('\n').slice(0, 200).join('\n')}\n`;
         }
         return response;
     }
 
     async _playRandom() {
-        if (this._getMusicFiles().length === 0) return '我的歌曲库中没有找到任何歌曲';
+        if (this._getMusicFiles().length === 0) return 'No songs found in my song library';
         return this._formatResponse(await this._request('play_random'));
     }
 
     async _stop() {
         const result = await this._request('stop');
-        return result.replace('音乐已停止', '好的，我停止唱歌了');
+        return result.replace(/Music stopped|音乐已停止/, 'OK, I stopped singing');
     }
 
     _list() {
         const files = this._getMusicFiles();
-        if (files.length === 0) return '我的歌曲库中没有找到任何歌曲';
+        if (files.length === 0) return 'No songs found in my song library';
         const names = new Set(files.map(f => f.replace(/\.(mp3|wav|m4a|ogg)$/i, '').replace(/-(Acc|Vocal)$/i, '')));
         const sorted = Array.from(names).sort();
-        return `我会唱 ${sorted.length} 首歌:\n${sorted.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
+        return `I can sing ${sorted.length} songs:\n${sorted.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
     }
 
     async _playSpecific(filename) {
         const files = this._getMusicFiles();
-        if (files.length === 0) return '我的歌曲库中没有找到任何歌曲';
+        if (files.length === 0) return 'No songs found in my song library';
         const matched = files.find(f => f.toLowerCase().includes(filename.toLowerCase()) || filename.toLowerCase().includes(f.toLowerCase().replace(/\.[^/.]+$/, '')));
-        if (!matched) return `我不会唱这首歌: ${filename}`;
+        if (!matched) return `I can't sing this song: ${filename}`;
         return this._formatResponse(await this._request('play_specific', matched));
     }
 }

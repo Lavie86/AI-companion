@@ -1,26 +1,26 @@
 {
   "api_key": {
-    "title": "翻译 API Key",
-    "description": "用于翻译的 LLM API 密钥，留空则使用全局配置",
+    "title": "Translation API Key",
+    "description": "LLM API key for translation. Leave empty to use the global setting",
     "type": "string",
     "default": ""
   },
   "api_url": {
-    "title": "翻译 API 地址",
-    "description": "用于翻译的 LLM API 地址，留空则使用全局配置",
+    "title": "Translation API URL",
+    "description": "LLM API URL for translation. Leave empty to use the global setting",
     "type": "string",
     "default": ""
   },
   "model": {
-    "title": "翻译模型",
-    "description": "用于翻译的 LLM 模型名称，留空则使用全局配置",
+    "title": "Translation model",
+    "description": "LLM model name for translation. Leave empty to use the global setting",
     "type": "string",
     "default": ""
   },
   "system_prompt": {
-    "title": "翻译系统提示词",
-    "description": "指导 LLM 执行翻译任务的提示词",
+    "title": "Translation system prompt",
+    "description": "Prompt that tells the LLM how to translate",
     "type": "text",
-    "default": "你是一个专业翻译助手，请将以下中文准确翻译成英语，保持原意和语调，只返回翻译结果，不要添加任何解释："
+    "default": "You are a professional translator. Translate the following text into natural English, keeping its meaning and tone. If it is already in English, return it unchanged. Return only the translation, with no explanation:"
   }
 }

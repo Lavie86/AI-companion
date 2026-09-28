@@ -22,9 +22,9 @@ A2     = "#6a58d4"
 
 PAGE_ORDER = ["welcome", "components", "confirm", "installing", "done"]
 STEP_INFO  = [
-    ("components", "选择组件"),
-    ("confirm",    "确认安装"),
-    ("installing", "安装中"),
+    ("components", "Choose components"),
+    ("confirm",    "Confirm"),
+    ("installing", "Installing"),
 ]
 
 
@@ -56,7 +56,7 @@ class InstallerApp(tk.Tk):
 
         tk.Label(inner, text="My-Neuro", bg=SIDE, fg=FG,
                  font=("Segoe UI", 14, "bold")).pack(anchor="w")
-        tk.Label(inner, text="AI 虚拟伴侣", bg=SIDE, fg=GRAY,
+        tk.Label(inner, text="AI Companion", bg=SIDE, fg=GRAY,
                  font=("Segoe UI", 9)).pack(anchor="w", pady=(2, 0))
 
         tk.Frame(inner, bg=SEP, height=1).pack(fill="x", pady=24)
@@ -85,13 +85,13 @@ class InstallerApp(tk.Tk):
         self._nav.pack_propagate(False)
 
         self._btn_back = tk.Button(
-            self._nav, text="上一步", bg=BG, fg=FG2,
+            self._nav, text="Back", bg=BG, fg=FG2,
             relief="flat", cursor="hand2", bd=0, padx=14, pady=6,
             font=("Segoe UI", 9),
             activebackground=CARD, activeforeground=FG,
             command=self._back)
         self._btn_next = tk.Button(
-            self._nav, text="下一步", bg=ACCENT, fg=FG,
+            self._nav, text="Next", bg=ACCENT, fg=FG,
             relief="flat", cursor="hand2", bd=0, padx=20, pady=6,
             font=("Segoe UI", 9, "bold"),
             activebackground=A2, activeforeground=FG,
@@ -131,14 +131,14 @@ class InstallerApp(tk.Tk):
 
         if name == "welcome":
             self._btn_next.configure(
-                text="开始", bg=ACCENT, fg=FG,
+                text="Start", bg=ACCENT, fg=FG,
                 activebackground=A2, state="normal", command=self._next)
             self._btn_next.pack(side="right", padx=18, pady=10)
 
         elif name == "components":
             self._btn_back.pack(side="left", padx=18, pady=10)
             self._btn_next.configure(
-                text="下一步", bg=ACCENT, fg=FG,
+                text="Next", bg=ACCENT, fg=FG,
                 activebackground=A2, state="normal", command=self._next)
             self._btn_next.pack(side="right", padx=18, pady=10)
 
@@ -147,18 +147,18 @@ class InstallerApp(tk.Tk):
             self._btn_back.pack(side="left", padx=18, pady=10)
             if self._vram_ok:
                 self._btn_next.configure(
-                    text="开始安装", bg=GREEN, fg=BG,
+                    text="Install", bg=GREEN, fg=BG,
                     activebackground="#27b84d", state="normal",
                     command=self._start)
             else:
                 self._btn_next.configure(
-                    text="显存不足", bg=CARD, fg=GRAY,
+                    text="Not enough VRAM", bg=CARD, fg=GRAY,
                     activebackground=CARD, state="disabled")
             self._btn_next.pack(side="right", padx=18, pady=10)
 
         elif name == "done":
             self._btn_next.configure(
-                text="关闭", bg=CARD, fg=FG2,
+                text="Close", bg=CARD, fg=FG2,
                 activebackground=SEP, state="normal",
                 command=self.destroy)
             self._btn_next.pack(side="right", padx=18, pady=10)
@@ -179,9 +179,9 @@ class InstallerApp(tk.Tk):
         tk.Label(f, bg=BG).pack(expand=True)
         tk.Label(f, text="My-Neuro", bg=BG, fg=FG,
                  font=("Segoe UI", 32, "bold")).pack()
-        tk.Label(f, text="AI 虚拟伴侣", bg=BG, fg=ACCENT,
+        tk.Label(f, text="AI Companion", bg=BG, fg=ACCENT,
                  font=("Segoe UI", 11)).pack(pady=(4, 0))
-        tk.Label(f, text="向导将自动下载并配置所有必要组件",
+        tk.Label(f, text="This wizard downloads and sets up everything you need",
                  bg=BG, fg=GRAY, font=("Segoe UI", 9)).pack(pady=(16, 0))
         tk.Label(f, bg=BG).pack(expand=True)
         return f
@@ -190,17 +190,17 @@ class InstallerApp(tk.Tk):
     def _page_components(self):
         f = tk.Frame(self._content, bg=BG)
 
-        tk.Label(f, text="选择组件", bg=BG, fg=FG,
+        tk.Label(f, text="Choose components", bg=BG, fg=FG,
                  font=("Segoe UI", 14, "bold")).pack(anchor="w", padx=30, pady=(26, 4))
-        tk.Label(f, text="选择需要安装的功能模块",
+        tk.Label(f, text="Choose the features to install",
                  bg=BG, fg=FG2, font=("Segoe UI", 9)).pack(anchor="w", padx=30)
 
         items = [
-            ("asr",    "ASR",    "语音识别",  "~2 GB",   True,  False),
-            ("bert",   "BERT",   "语言理解",  "~1 GB",   True,  False),
-            ("tts",    "TTS",    "语音合成",  "~4 GB",   True,  False),
-            ("live2d", "Live2D", "立绘模型",  "~200 MB", True,  False),
-            ("rag",    "RAG",    "长期记忆",  "~2 GB",   False, True),
+            ("asr",    "ASR",    "Speech recognition",  "~2 GB",   True,  False),
+            ("bert",   "BERT",   "Language understanding",  "~1 GB",   True,  False),
+            ("tts",    "TTS",    "Voice (text to speech)",  "~4 GB",   True,  False),
+            ("live2d", "Live2D", "Character model",  "~200 MB", True,  False),
+            ("rag",    "RAG",    "Long-term memory",  "~2 GB",   False, True),
         ]
 
         box = tk.Frame(f, bg=CARD)
@@ -208,9 +208,9 @@ class InstallerApp(tk.Tk):
 
         header = tk.Frame(box, bg=CARD)
         header.pack(fill="x", padx=12, pady=(8, 0))
-        tk.Label(header, text="组件", bg=CARD, fg=GRAY,
+        tk.Label(header, text="Component", bg=CARD, fg=GRAY,
                  font=("Segoe UI", 7), width=20, anchor="w").pack(side="left")
-        tk.Label(header, text="下载大小", bg=CARD, fg=GRAY,
+        tk.Label(header, text="Download size", bg=CARD, fg=GRAY,
                  font=("Segoe UI", 7)).pack(side="right")
         tk.Frame(box, bg=SEP, height=1).pack(fill="x")
 
@@ -232,7 +232,7 @@ class InstallerApp(tk.Tk):
             rf = tk.Frame(row, bg=CARD)
             rf.pack(side="right", padx=14)
             if optional:
-                tk.Label(rf, text="可选", bg=CARD, fg=GRAY,
+                tk.Label(rf, text="Optional", bg=CARD, fg=GRAY,
                          font=("Segoe UI", 7)).pack(side="right", padx=(4, 0))
             tk.Label(rf, text=size, bg=CARD, fg=GRAY,
                      font=("Consolas", 8)).pack(side="right")
@@ -242,9 +242,9 @@ class InstallerApp(tk.Tk):
     # ── 确认页 ────────────────────────────────────────────
     def _page_confirm(self):
         f = tk.Frame(self._content, bg=BG)
-        tk.Label(f, text="确认安装", bg=BG, fg=FG,
+        tk.Label(f, text="Confirm", bg=BG, fg=FG,
                  font=("Segoe UI", 14, "bold")).pack(anchor="w", padx=30, pady=(26, 4))
-        tk.Label(f, text="请核对以下信息",
+        tk.Label(f, text="Check the details below",
                  bg=BG, fg=FG2, font=("Segoe UI", 9)).pack(anchor="w", padx=30)
         self._confirm_box = tk.Frame(f, bg=CARD)
         self._confirm_box.pack(fill="x", padx=30, pady=18)
@@ -274,7 +274,7 @@ class InstallerApp(tk.Tk):
                 return name
         except Exception:
             pass
-        return "未检测到显卡"
+        return "No graphics card found"
 
     def _detect_vram_free_mb(self):
         try:
@@ -296,26 +296,26 @@ class InstallerApp(tk.Tk):
         sizes  = {"asr": 2.0, "bert": 1.0, "tts": 4.0, "live2d": 0.2, "rag": 2.0}
         selected  = [k for k, v in self.checks.items() if v.get()]
         total_gb  = 3.6 + sum(sizes.get(k, 0) for k in selected)
-        comp_text = "  ".join(labels[k] for k in selected) or "（未选择）"
+        comp_text = "  ".join(labels[k] for k in selected) or "(none selected)"
         gpu_name  = self._detect_gpu()
         free_mb   = self._detect_vram_free_mb()
 
         if free_mb is None:
-            vram_text, vram_color = "无法检测（需要 NVIDIA 驱动）", GRAY
+            vram_text, vram_color = "Cannot check (needs the NVIDIA driver)", GRAY
             self._vram_ok = False
         elif free_mb < 5120:
-            vram_text  = f"{free_mb/1024:.1f} GB 可用  —  至少需要 5 GB"
+            vram_text  = f"{free_mb/1024:.1f} GB free — needs at least 5 GB"
             vram_color = RED
             self._vram_ok = False
         else:
-            vram_text, vram_color = f"{free_mb/1024:.1f} GB 可用", GREEN
+            vram_text, vram_color = f"{free_mb/1024:.1f} GB free", GREEN
             self._vram_ok = True
 
         rows = [
-            ("安装组件", comp_text,              FG),
-            ("显卡",    gpu_name,                FG),
-            ("显存",    vram_text,               vram_color),
-            ("需下载", f"约 {total_gb:.1f} GB", FG),
+            ("Components", comp_text,              FG),
+            ("Graphics card",    gpu_name,                FG),
+            ("VRAM",    vram_text,               vram_color),
+            ("Download", f"About {total_gb:.1f} GB", FG),
         ]
         for i, (k, v, color) in enumerate(rows):
             if i > 0:
@@ -331,7 +331,7 @@ class InstallerApp(tk.Tk):
     def _page_installing(self):
         f = tk.Frame(self._content, bg=BG)
 
-        tk.Label(f, text="正在安装", bg=BG, fg=FG,
+        tk.Label(f, text="Installing", bg=BG, fg=FG,
                  font=("Segoe UI", 14, "bold")).pack(anchor="w", padx=30, pady=(26, 4))
 
         style = ttk.Style(self)
@@ -350,7 +350,7 @@ class InstallerApp(tk.Tk):
 
         row1 = tk.Frame(prog, bg=BG)
         row1.pack(fill="x", pady=(0, 4))
-        tk.Label(row1, text="总进度", bg=BG, fg=GRAY,
+        tk.Label(row1, text="Overall", bg=BG, fg=GRAY,
                  font=("Segoe UI", 8)).pack(side="left")
         self.pct_label = tk.Label(row1, text="0%", bg=BG, fg=ACCENT,
                                   font=("Segoe UI", 8, "bold"))
@@ -362,9 +362,9 @@ class InstallerApp(tk.Tk):
 
         row2 = tk.Frame(prog, bg=BG)
         row2.pack(fill="x", pady=(0, 4))
-        tk.Label(row2, text="当前文件", bg=BG, fg=GRAY,
+        tk.Label(row2, text="Current file", bg=BG, fg=GRAY,
                  font=("Segoe UI", 8)).pack(side="left")
-        self.file_label = tk.Label(row2, text="准备中...", bg=BG, fg=FG2,
+        self.file_label = tk.Label(row2, text="Getting ready...", bg=BG, fg=FG2,
                                    font=("Segoe UI", 8), anchor="e")
         self.file_label.pack(side="right")
 
@@ -388,7 +388,7 @@ class InstallerApp(tk.Tk):
         self._done_icon  = tk.Label(f, text="✓", bg=BG, fg=GREEN,
                                     font=("Segoe UI", 48))
         self._done_icon.pack()
-        self._done_title = tk.Label(f, text="安装完成", bg=BG, fg=FG,
+        self._done_title = tk.Label(f, text="Installation complete", bg=BG, fg=FG,
                                     font=("Segoe UI", 14, "bold"))
         self._done_title.pack(pady=(8, 0))
         self._done_sub   = tk.Label(f, text="",
@@ -440,7 +440,7 @@ class InstallerApp(tk.Tk):
         if m:
             filename, pct_s, downloaded, total = m.groups()
             self.set_file_progress(int(pct_s),
-                                   f"下载  {filename}   {downloaded} / {total}")
+                                   f"Downloading {filename} {downloaded} / {total}")
         else:
             self.log_msg(line)
             self.set_file_progress(0, line[:80])
@@ -459,11 +459,11 @@ class InstallerApp(tk.Tk):
 
         try:
             if os.path.exists(env_python):
-                self.log_msg("env/ 已存在，跳过下载和解压")
-                self.set_progress(58, "env 环境已就绪")
+                self.log_msg("env/ already exists, skipping the download and extraction")
+                self.set_progress(58, "env (Python environment) is ready")
             else:
-                self.set_progress(5, "下载 Python 环境包（~3.6 GB）...")
-                self.log_msg("开始下载 Python 环境包...")
+                self.set_progress(5, "Downloading the Python environment package (~3.6 GB)...")
+                self.log_msg("Downloading the Python environment package...")
 
                 url = (f"https://modelscope.cn/models/{CONDA_ENV_MODEL}"
                        f"/resolve/master/{CONDA_ENV_FILE}")
@@ -485,18 +485,18 @@ class InstallerApp(tk.Tk):
                         pct = int(done / total_bytes * 100) if total_bytes else 0
                         self.set_file_progress(
                             pct,
-                            f"下载  my-neuro-env.tar.gz   "
+                            f"Downloading my-neuro-env.tar.gz "
                             f"{mb_done:.0f} MB / {mb_total:.0f} MB")
                         self.set_progress(
                             max(5, min(43, int(done / total_bytes * 38) + 5))
                             if total_bytes else 5)
 
                 if not os.path.exists(tar_path):
-                    raise RuntimeError("环境包下载失败，文件不存在")
-                self.log_msg("环境包下载完成")
+                    raise RuntimeError("The environment package download failed: the file is missing")
+                self.log_msg("Environment package downloaded")
 
-                self.set_progress(45, "正在解压环境包...")
-                self.log_msg("开始解压...")
+                self.set_progress(45, "Extracting the environment package...")
+                self.log_msg("Extracting...")
                 with tarfile.open(tar_path, "r:gz") as tar:
                     members = tar.getmembers()
                     total   = len(members)
@@ -507,13 +507,13 @@ class InstallerApp(tk.Tk):
                             self.set_progress(p)
                             self.set_file_progress(
                                 int(i / total * 100),
-                                f"解压中...  {i} / {total} 文件")
+                                f"Extracting... {i} / {total} files")
                 os.remove(tar_path)
-                self.log_msg("解压完成")
-                self.set_progress(58, "环境就绪")
+                self.log_msg("Extraction finished")
+                self.set_progress(58, "Environment ready")
 
-            self.set_progress(60, "开始下载模型...")
-            self.log_msg("开始下载所选模型...")
+            self.set_progress(60, "Downloading models...")
+            self.log_msg("Downloading the selected models...")
 
             flags = []
             if self.checks["asr"].get():    flags.append("--asr")
@@ -537,28 +537,28 @@ class InstallerApp(tk.Tk):
                     self.set_progress(int(step))
                 proc.wait()
                 if proc.returncode != 0:
-                    raise RuntimeError("模型下载失败")
+                    raise RuntimeError("Model download failed")
 
-            self.set_progress(100, "安装完成")
+            self.set_progress(100, "Installation complete")
             self.set_file_progress(100, "")
-            self.log_msg("安装成功")
+            self.log_msg("Installed successfully")
             self._done_icon.configure(text="✓", fg=GREEN)
-            self._done_title.configure(text="安装完成")
+            self._done_title.configure(text="Installation complete")
             self._done_sub.configure(text="")
             self._show("done")
 
         except Exception as e:
             tb = traceback.format_exc()
-            self.log_msg(f"[错误] {e}")
+            self.log_msg(f"[Error] {e}")
             try:
                 self._log_file.write(tb)
                 self._log_file.flush()
             except Exception:
                 pass
-            self.set_progress(0, "安装失败")
+            self.set_progress(0, "Installation failed")
             self._done_icon.configure(text="✗", fg=RED)
-            self._done_title.configure(text="安装失败")
-            self._done_sub.configure(text=f"{e}\n日志: {self._log_path}")
+            self._done_title.configure(text="Installation failed")
+            self._done_sub.configure(text=f"{e}\nLog: {self._log_path}")
             self._show("done")
 
 

@@ -20,14 +20,14 @@ class MemosPlugin extends Plugin {
 
     async onStart() {
         if (!this.client.enabled) {
-            this.context.log('warn', 'MemOS 已禁用');
+            this.context.log('warn', 'MemOS is disabled');
             return;
         }
 
         this._syncBackendConfig();
 
         const ok = await this.client.isAvailable();
-        this.context.log('info', `MemOS 服务: ${ok ? '已连接' : '不可用（请确认 memos_system 是否启动）'}`);
+        this.context.log('info', `MemOS service: ${ok ? 'connected' : 'unavailable (check that memos_system is running)'}`);
     }
 
     async onStop() {
@@ -44,12 +44,12 @@ class MemosPlugin extends Plugin {
             const memories = await this.client.search(event.text);
             if (memories.length > 0) {
                 const text = this.client.formatMemoriesForPrompt(memories);
-                this.context.addSystemPromptPatch('memos-recall', `\n【你对主人的已知记忆，回答时必须自然融入，不要说"根据记忆"】:\n${text}`);
+                this.context.addSystemPromptPatch('memos-recall', `\n[What you already remember about your owner. Work it into your replies naturally and never say "according to my memory"]:\n${text}`);
             } else {
                 this.context.removeSystemPromptPatch('memos-recall');
             }
         } catch (err) {
-            this.context.log('error', `记忆注入失败: ${err.message}`);
+            this.context.log('error', `Memory injection failed: ${err.message}`);
         }
     }
 
@@ -65,7 +65,7 @@ class MemosPlugin extends Plugin {
             { role: 'user', content: lastUser.content },
             { role: 'assistant', content: response.text }
         ]).catch(err => {
-            this.context.log('error', `MemOS 保存对话失败: ${err.message}`);
+            this.context.log('error', `MemOS failed to save the conversation: ${err.message}`);
         });
     }
 
@@ -152,9 +152,9 @@ class MemosPlugin extends Plugin {
             const dir = path.dirname(BACKEND_CONFIG_PATH);
             if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
             fs.writeFileSync(BACKEND_CONFIG_PATH, JSON.stringify(backendCfg, null, 2), 'utf-8');
-            this.context.log('info', '已同步后端配置到 memos_config.json');
+            this.context.log('info', 'Synced the backend settings to memos_config.json');
         } catch (err) {
-            this.context.log('warn', `同步后端配置失败（不影响运行）: ${err.message}`);
+            this.context.log('warn', `Failed to sync the backend settings (the plugin still works): ${err.message}`);
         }
     }
 }

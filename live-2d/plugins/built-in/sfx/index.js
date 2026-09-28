@@ -3,9 +3,9 @@ const { exec } = require('child_process');
 const path = require('path');
 
 const SFX_LIBRARY = {
-    '01': '搞啥情况的意思', '02': '突然一惊的意思', '03': '一声巨大的爆炸',
-    '04': '一个钢管掉落的嘈杂声', '05': '一声OMG 表示不可思议',
-    '06': '一个震撼的管弦乐声音', '07': '一个表示wow 的效果音'
+    '01': 'what is going on?', '02': 'a sudden fright', '03': 'a huge explosion',
+    '04': 'the noisy clatter of a falling steel pipe', '05': 'an OMG, for disbelief',
+    '06': 'a stirring orchestral hit', '07': 'a wow sound effect'
 };
 
 class SfxPlugin extends Plugin {
@@ -19,12 +19,12 @@ class SfxPlugin extends Plugin {
             type: 'function',
             function: {
                 name: 'play_sound_effect',
-                description: '播放音效来增强对话的趣味性和表现力。01=搞啥情况, 02=突然一惊, 03=巨大爆炸, 04=钢管掉落, 05=OMG不可思议, 06=震撼管弦乐, 07=wow效果音',
+                description: 'Play a sound effect to make the conversation more fun and expressive. 01=what\'s going on, 02=sudden fright, 03=huge explosion, 04=falling steel pipe, 05=OMG (disbelief), 06=orchestral hit, 07=wow sound effect',
                 parameters: {
                     type: 'object',
                     properties: {
-                        sfx_id: { type: 'string', description: "音效编号(01-07)，或逗号分隔的多个音效，如'01,03'" },
-                        repeat: { type: 'integer', description: '连续播放次数(1-10)，默认1次', minimum: 1, maximum: 10, default: 1 }
+                        sfx_id: { type: 'string', description: "Sound effect number (01-07), or several separated by commas, for example '01,03'" },
+                        repeat: { type: 'integer', description: 'How many times to play it in a row (1-10). Default: 1', minimum: 1, maximum: 10, default: 1 }
                     },
                     required: ['sfx_id']
                 }
@@ -34,13 +34,13 @@ class SfxPlugin extends Plugin {
 
     async executeTool(name, params) {
         if (name === 'play_sound_effect') return await this._playSfx(params);
-        throw new Error(`[sfx] 不支持的工具: ${name}`);
+        throw new Error(`[sfx] Unsupported tool: ${name}`);
     }
 
     async _playSfx({ sfx_id, repeat = 1 }) {
         const sfxIds = sfx_id.split(',').map(id => id.trim());
         for (const id of sfxIds) {
-            if (!SFX_LIBRARY[id]) throw new Error(`无效的音效ID: ${id}`);
+            if (!SFX_LIBRARY[id]) throw new Error(`Invalid sound effect ID: ${id}`);
         }
         const playCount = Math.min(Math.max(repeat || 1, 1), 10);
 
@@ -55,7 +55,7 @@ class SfxPlugin extends Plugin {
                 }, index * 250);
             }));
 
-            Promise.all(promises).then(() => resolve('成功播放音效')).catch(reject);
+            Promise.all(promises).then(() => resolve('Played the sound effect')).catch(reject);
         });
     }
 }

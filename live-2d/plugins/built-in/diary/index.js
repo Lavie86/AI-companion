@@ -7,7 +7,7 @@ class DiaryPlugin extends Plugin {
         const pluginConfig = this.context.getPluginFileConfig();
         const voiceChat = global.voiceChat;
         if (!voiceChat?.diaryManager) {
-            this.context.log('warn', 'diaryManager 未就绪，跳过日记插件启动');
+            this.context.log('warn', 'diaryManager is not ready, skipping the diary plugin');
             return;
         }
 

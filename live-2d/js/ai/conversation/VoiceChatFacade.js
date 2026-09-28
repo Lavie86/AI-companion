@@ -299,8 +299,8 @@ class VoiceChatFacade {
             
             if (memories && memories.length > 0) {
                 // 构建记忆注入文本
-                const memoryTexts = memories.map((m, i) => `[记忆${i + 1}] ${m.content || m}`).join('\n');
-                const injectionText = `\n\n【相关长期记忆】:\n${memoryTexts}\n`;
+                const memoryTexts = memories.map((m, i) => `[Memory ${i + 1}] ${m.content || m}`).join('\n');
+                const injectionText = `\n\n[Related long-term memories]:\n${memoryTexts}\n`;
                 
                 // 获取当前系统提示词
                 const messages = this.conversationCore.getMessages();

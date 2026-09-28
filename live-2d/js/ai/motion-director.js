@@ -384,7 +384,7 @@ class MotionDirector {
         if (cfg.enabled === false) {
             logToTerminal(
                 'warn',
-                `[MotionDirector] motion_director.enabled=false 但动作模式为 ${mode}，仍启用编舞。请改选「传统动作」模式关闭`
+                `[MotionDirector] motion_director.enabled=false but the motion mode is ${mode}, so choreography stays on. Pick a “classic motions” mode to turn it off`
             );
         }
         const { purifiedText, tags } = stripTags(fullText);
@@ -405,7 +405,7 @@ class MotionDirector {
         const catalog = global.paramDirector.getParamCatalog?.() || [];
         const catalogById = new Map(catalog.map(item => [item.id, item]));
         if (catalogById.size === 0) {
-            logToTerminal('warn', '[MotionDirector] 参数目录为空，跳过编舞');
+            logToTerminal('warn', '[MotionDirector] The parameter list is empty, skipping choreography');
             firstFrameGate.resolve({ source: 'empty-catalog' });
             return { mode, source: 'empty-catalog', accepted: 0 };
         }
@@ -440,7 +440,7 @@ class MotionDirector {
         if (!bodyUsable && !faceUsable) {
             logToTerminal(
                 'warn',
-                '[MotionDirector] 编舞 API 配置不完整，保留本地编舞'
+                '[MotionDirector] The choreography API settings are incomplete, keeping local choreography'
             );
             firstFrameGate.resolve({ source: 'missing-dialogue-api' });
             return { mode, source: 'fallback-only', accepted: 0 };
@@ -448,7 +448,7 @@ class MotionDirector {
         if (typeof this.fetchImpl !== 'function') {
             logToTerminal(
                 'warn',
-                '[MotionDirector] 当前环境没有 fetch，保留本地编舞'
+                '[MotionDirector] fetch is not available here, keeping local choreography'
             );
             return { mode, source: 'fallback-only', accepted: 0 };
         }
@@ -544,7 +544,7 @@ class MotionDirector {
         if (result.applied.length > 0) {
             logToTerminal(
                 'info',
-                `[MotionDirector] 显式动作指令: ${result.applied.join(', ')}`
+                `[MotionDirector] Explicit motion command: ${result.applied.join(', ')}`
             );
         }
         return { loaded, applied: result.applied };
@@ -780,16 +780,16 @@ class MotionDirector {
                 });
             }
             const summary = summarizeChoreographyApi(options.resolved);
-            const sourceLabel = summary.source === 'dedicated' ? '专用模型' : '主对话模型';
+            const sourceLabel = summary.source === 'dedicated' ? 'the dedicated model' : 'the main chat model';
             logToTerminal(
                 'info',
-                `[MotionDirector] ${options.pathName} source=${summary.source} provider=${safeText(summary.provider_id, 80)} 使用${sourceLabel} ${safeText(summary.model, 80)}，接受 ${accepted} 帧，耗时 ${Date.now() - startedAt}ms`
+                `[MotionDirector] ${options.pathName} source=${summary.source} provider=${safeText(summary.provider_id, 80)} using ${sourceLabel} ${safeText(summary.model, 80)}, accepted ${accepted} frames, took ${Date.now() - startedAt}ms`
             );
         } catch (error) {
             const timeout = error?.name === 'AbortError' || controller.signal.aborted;
             logToTerminal(
                 'warn',
-                `[MotionDirector] ${options.pathName} ${timeout ? '超时' : '失败'}，保留本地编舞: ${safeText(error?.message || error)}`
+                `[MotionDirector] ${options.pathName} ${timeout ? 'timed out' : 'failed'}, keeping local choreography: ${safeText(error?.message || error)}`
             );
         } finally {
             clearTimeout(timer);

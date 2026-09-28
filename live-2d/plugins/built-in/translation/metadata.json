@@ -1,8 +1,8 @@
 {
   "name": "translation",
-  "displayName": "同声传译",
+  "displayName": "Live Translation",
   "version": "1.0.0",
   "author": "official",
-  "description": "将送入TTS的文本翻译为目标语言，字幕保持原文不变",
+  "description": "Translates the text sent to TTS into a target language. Subtitles keep the original text.",
   "main": "index.js"
 }

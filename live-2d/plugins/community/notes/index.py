@@ -38,7 +38,7 @@ class NotesPlugin(Plugin):
     async def on_start(self):
         notes = self._load()
         self.context.storage.set('notes', notes)
-        self.context.log('info', f'备忘录已加载，共 {len(notes)} 条')
+        self.context.log('info', f'Notes loaded: {len(notes)} in total')
 
     async def on_stop(self):
         notes = self.context.storage.get('notes') or []
@@ -52,13 +52,13 @@ class NotesPlugin(Plugin):
                 'type': 'function',
                 'function': {
                     'name': 'save_note',
-                    'description': '帮用户保存一条备忘录，当用户说"记一下""帮我记住""别忘了"等时使用',
+                    'description': 'Save a note for the user. Use it when the user says "note this down", "help me remember", "do not forget" and so on',
                     'parameters': {
                         'type': 'object',
                         'properties': {
                             'content': {
                                 'type': 'string',
-                                'description': '备忘内容'
+                                'description': 'What to note down'
                             }
                         },
                         'required': ['content']
@@ -69,13 +69,13 @@ class NotesPlugin(Plugin):
                 'type': 'function',
                 'function': {
                     'name': 'list_notes',
-                    'description': '查看用户保存的备忘录，当用户问"我记了什么""有什么备忘"时使用',
+                    'description': 'Show the notes the user saved. Use it when the user asks "what did I note down", "do I have any notes" and so on',
                     'parameters': {
                         'type': 'object',
                         'properties': {
                             'limit': {
                                 'type': 'integer',
-                                'description': '最多显示几条，默认显示全部'
+                                'description': 'The most notes to show. Shows all of them by default'
                             }
                         },
                         'required': []
@@ -86,13 +86,13 @@ class NotesPlugin(Plugin):
                 'type': 'function',
                 'function': {
                     'name': 'delete_note',
-                    'description': '删除指定编号的备忘录',
+                    'description': 'Delete the note with the given number',
                     'parameters': {
                         'type': 'object',
                         'properties': {
                             'index': {
                                 'type': 'integer',
-                                'description': '备忘录编号（从1开始，可从 list_notes 获取）'
+                                'description': 'Note number (starts at 1, get it from list_notes)'
                             }
                         },
                         'required': ['index']
@@ -103,7 +103,7 @@ class NotesPlugin(Plugin):
                 'type': 'function',
                 'function': {
                     'name': 'clear_notes',
-                    'description': '清空所有备忘录',
+                    'description': 'Delete all notes',
                     'parameters': {
                         'type': 'object',
                         'properties': {},
@@ -121,7 +121,7 @@ class NotesPlugin(Plugin):
         if name == 'save_note':
             content = params.get('content', '').strip()
             if not content:
-                return '备忘内容不能为空。'
+                return 'The note must not be empty.'
             note = {
                 'content': content,
                 'time': datetime.now().strftime('%Y-%m-%d %H:%M')
@@ -129,15 +129,15 @@ class NotesPlugin(Plugin):
             notes.append(note)
             self.context.storage.set('notes', notes)
             self._save(notes)
-            return f'已保存备忘（第{len(notes)}条）：{content}'
+            return f'Saved note #{len(notes)}: {content}'
 
         elif name == 'list_notes':
             if not notes:
-                return '备忘录是空的，还没有记录任何东西。'
+                return 'There are no notes yet.'
             limit = params.get('limit', len(notes))
             shown = notes[-limit:]
             offset = len(notes) - len(shown)
-            lines = [f'共 {len(notes)} 条备忘：']
+            lines = [f'{len(notes)} notes:']
             for i, note in enumerate(shown, start=offset + 1):
                 lines.append(f'{i}. [{note["time"]}] {note["content"]}')
             return '\n'.join(lines)
@@ -145,19 +145,19 @@ class NotesPlugin(Plugin):
         elif name == 'delete_note':
             idx = params.get('index', 0) - 1
             if idx < 0 or idx >= len(notes):
-                return f'编号无效，当前共 {len(notes)} 条备忘。'
+                return f'Invalid number. There are {len(notes)} notes.'
             removed = notes.pop(idx)
             self.context.storage.set('notes', notes)
             self._save(notes)
-            return f'已删除：{removed["content"]}'
+            return f'Deleted: {removed["content"]}'
 
         elif name == 'clear_notes':
             count = len(notes)
             self.context.storage.set('notes', [])
             self._save([])
-            return f'已清空全部 {count} 条备忘。'
+            return f'Deleted all {count} notes.'
 
-        return '未知工具。'
+        return 'Unknown tool.'
 
 
 if __name__ == '__main__':

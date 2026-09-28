@@ -1,9 +1,9 @@
 {
   "name": "diary",
-  "displayName": "AI 日记",
+  "displayName": "AI Diary",
   "version": "1.0.0",
   "author": "official",
-  "description": "闲置一段时间后自动让 AI 写日记，TTS 结束时重置计时器",
+  "description": "Has the AI write a diary entry after some idle time. The timer resets when TTS finishes.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

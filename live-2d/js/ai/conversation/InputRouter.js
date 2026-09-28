@@ -152,7 +152,7 @@ class InputRouter {
         const chatMessages = document.getElementById('chat-messages');
         if (chatMessages) {
             const messageElement = document.createElement('div');
-            messageElement.innerHTML = `<strong>${role === 'user' ? '你' : 'Fake Neuro'}:</strong> ${content}`;
+            messageElement.innerHTML = `<strong>${role === 'user' ? 'You' : 'Fake Neuro'}:</strong> ${content}`;
             chatMessages.appendChild(messageElement);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }

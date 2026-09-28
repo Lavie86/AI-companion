@@ -1,7 +1,7 @@
 {
   "update_frequency": {
-    "title": "人格更新频率（条）",
-    "description": "每隔多少条对话更新一次动态人格",
+    "title": "Persona update frequency (messages)",
+    "description": "How many messages between dynamic persona updates",
     "type": "int",
     "default": 3
   }

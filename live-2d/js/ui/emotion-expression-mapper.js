@@ -25,7 +25,7 @@ class EmotionExpressionMapper {
         try {
             const response = await fetch('emotion_expressions.json');
             if (!response.ok) {
-                throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
+                throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
                 
             }
             

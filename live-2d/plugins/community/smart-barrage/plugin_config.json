@@ -1,43 +1,43 @@
 {
   "roomId": {
-    "title": "直播间 ID",
-    "description": "B站直播间的房间号",
+    "title": "Live room ID",
+    "description": "The Bilibili live room number",
     "type": "int",
     "default": 30230160
   },
   "mode": {
-    "title": "过滤模式",
-    "description": "smart=LLM自动挑选；prefix=只响应#前缀；both=两种都启用",
+    "title": "Filter mode",
+    "description": "smart = the LLM picks messages. prefix = only messages starting with #. both = both",
     "type": "string",
     "default": "both"
   },
   "windowSeconds": {
-    "title": "批次窗口时长（秒）",
-    "description": "收集多少秒内的弹幕再统一过滤，默认15秒",
+    "title": "Batch window (seconds)",
+    "description": "How many seconds of chat to collect before filtering. Default 15 seconds",
     "type": "int",
     "default": 15
   },
   "maxRespond": {
-    "title": "每批最多回复几条",
-    "description": "LLM从一批弹幕中最多挑几条来回复",
+    "title": "Max replies per batch",
+    "description": "The most messages the LLM picks from one batch to reply to",
     "type": "int",
     "default": 3
   },
   "maxBufferSize": {
-    "title": "窗口内最大缓存弹幕数",
-    "description": "超出后丢弃最旧的，避免弹幕暴增时上下文过长",
+    "title": "Max messages kept per window",
+    "description": "The oldest are dropped after this, so the context stays short when chat floods in",
     "type": "int",
     "default": 30
   },
   "prefixChar": {
-    "title": "点名前缀字符",
-    "description": "带此前缀的弹幕立即响应，跳过过滤",
+    "title": "Call-out prefix",
+    "description": "Messages with this prefix get an immediate reply and skip the filter",
     "type": "string",
     "default": "#"
   },
   "checkInterval": {
-    "title": "弹幕拉取间隔（毫秒）",
-    "description": "每隔多少毫秒向B站接口拉取一次弹幕",
+    "title": "Chat fetch interval (ms)",
+    "description": "How many milliseconds between chat fetches from the Bilibili API",
     "type": "int",
     "default": 5000
   }

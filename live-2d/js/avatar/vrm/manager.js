@@ -40,7 +40,7 @@ class VRMManager {
     initThreeJS(canvasId = 'vrm-canvas') {
         this.canvas = document.getElementById(canvasId);
         if (!this.canvas) {
-            throw new Error(`VRMManager: 找不到 canvas 元素 #${canvasId}`);
+            throw new Error(`VRMManager: canvas element not found #${canvasId}`);
         }
 
         this.renderer = new THREE.WebGLRenderer({
@@ -59,7 +59,7 @@ class VRMManager {
             const gl = this.renderer.getContext();
             const dbg = gl.getExtension('WEBGL_debug_renderer_info');
             const glRenderer = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown';
-            logToTerminal('info', `[VRMManager] WebGL渲染器: ${glRenderer}, pixelRatio=${this.renderer.getPixelRatio()}`);
+            logToTerminal('info', `[VRMManager] WebGL renderer: ${glRenderer}, pixelRatio=${this.renderer.getPixelRatio()}`);
         } catch (_) {}
 
         this.scene = new THREE.Scene();
@@ -88,7 +88,7 @@ class VRMManager {
         const token = ++this._activeLoadToken;
         const absPath = path.resolve(APP_ROOT, modelPath);
         if (!fs.existsSync(absPath)) {
-            throw new Error(`VRM文件不存在: ${absPath}`);
+            throw new Error(`VRM file not found: ${absPath}`);
         }
 
         const fileBuffer = fs.readFileSync(absPath);
@@ -96,7 +96,7 @@ class VRMManager {
             fileBuffer.byteOffset,
             fileBuffer.byteOffset + fileBuffer.byteLength
         );
-        logToTerminal('info', `[VRMManager] 加载 VRM: ${modelPath} (${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
+        logToTerminal('info', `[VRMManager] Loading VRM: ${modelPath} (${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
 
         const loader = new GLTFLoader();
         loader.register((parser) => new VRMLoaderPlugin(parser));
@@ -106,11 +106,11 @@ class VRMManager {
         });
 
         if (token !== this._activeLoadToken || this._disposed) {
-            throw new Error('VRM 加载已被更新的请求取代');
+            throw new Error('VRM load was replaced by a newer request');
         }
 
         const vrm = gltf.userData.vrm;
-        if (!vrm) throw new Error('GLTF文件中未找到VRM数据');
+        if (!vrm) throw new Error('GLTF file has no VRM data');
 
         // 优化
         try {
@@ -122,7 +122,7 @@ class VRMManager {
         vrm.scene.traverse((object) => { object.frustumCulled = false; });
 
         const metaVersion = String(vrm.meta?.metaVersion ?? '0');
-        logToTerminal('info', `[VRMManager] VRM 规格版本: ${metaVersion}，表情: ${vrm.expressionManager ? Object.keys(vrm.expressionManager._expressionMap || {}).length : 0} 个`);
+        logToTerminal('info', `[VRMManager] VRM spec version: ${metaVersion}, expressions: ${vrm.expressionManager ? Object.keys(vrm.expressionManager._expressionMap || {}).length : 0} total`);
 
         // 卸载旧模型
         await this.removeModel();
@@ -200,9 +200,9 @@ class VRMManager {
                 if (!firstFrameLogged) {
                     firstFrameLogged = true;
                     const vr = model.viewRect;
-                    logToTerminal('info', `[VRMManager] 首帧完成: ${cost.toFixed(1)}ms, viewRect=(${vr.x.toFixed(0)},${vr.y.toFixed(0)},${vr.width.toFixed(0)}x${vr.height.toFixed(0)})`);
+                    logToTerminal('info', `[VRMManager] First frame done: ${cost.toFixed(1)}ms, viewRect=(${vr.x.toFixed(0)},${vr.y.toFixed(0)},${vr.width.toFixed(0)}x${vr.height.toFixed(0)})`);
                 } else if (this._frameCount % 300 === 0) {
-                    logToTerminal('info', `[VRMManager] 帧观测: 近300帧均值 ${(this._frameCostSum / 300).toFixed(2)}ms`);
+                    logToTerminal('info', `[VRMManager] Frame timing: average over the last 300 frames ${(this._frameCostSum / 300).toFixed(2)}ms`);
                     this._frameCostSum = 0;
                 }
             } catch (e) {
@@ -211,7 +211,7 @@ class VRMManager {
                 if (this._frameErrorCount <= 3) {
                     console.error('[VRMManager] 渲染帧异常:', e);
                 } else if (this._frameErrorCount === 4) {
-                    logToTerminal('error', `[VRMManager] 渲染循环连续异常，已停止: ${e.message}`);
+                    logToTerminal('error', `[VRMManager] The render loop kept failing, stopped: ${e.message}`);
                     this.stopLoop();
                 }
             }
@@ -260,7 +260,7 @@ class VRMManager {
                 this.renderer.clear(true, true, true);
             }
         } catch (_) {}
-        logToTerminal('info', '[VRMManager] 已挂起（保留渲染上下文）');
+        logToTerminal('info', '[VRMManager] Suspended (render context kept)');
     }
 
     // 完整释放（仅应用退出/异常兜底；热切换请用 suspend）
@@ -285,7 +285,7 @@ class VRMManager {
         this.scene = null;
         this.camera = null;
         this.clock = null;
-        logToTerminal('info', '[VRMManager] 已释放 Three.js 资源');
+        logToTerminal('info', '[VRMManager] Released Three.js resources');
     }
 }
 

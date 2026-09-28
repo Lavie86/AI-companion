@@ -50,9 +50,9 @@ def get_tool_description(file_path):
                     desc = line.lstrip('/').lstrip('*').strip()
                     if desc and not desc.startswith('@'):
                         return desc
-        return "无描述"
+        return "No description"
     except Exception as e:
-        return f"无法读取描述：{e}"
+        return f"Could not read the description: {e}"
 
 
 def get_tool_short_description(file_path):
@@ -66,9 +66,9 @@ def get_tool_short_description(file_path):
                     desc = line[2:].strip()
                     if desc and not desc.startswith('@'):
                         return desc
-        return "无描述"
+        return "No description"
     except Exception as e:
-        return "无法读取描述"
+        return "Could not read the description"
 
 
 def get_external_mcp_tools():
@@ -102,8 +102,8 @@ def get_external_mcp_tools():
             tools.append({
                 'name': actual_name,  # 使用实际名称（不含 _disabled）
                 'config_key': tool_name,  # 保存原始配置键名
-                'description': f"外部 MCP 工具 (通过 {cmd_name} 启动)",
-                'short_desc': f"外部工具 - {cmd_name}",
+                'description': f"External MCP tool (started with {cmd_name} )",
+                'short_desc': f"External tool - {cmd_name}",
                 'enabled': not is_disabled,
                 'type': 'mcp',
                 'is_external': True,
@@ -180,14 +180,14 @@ def toggle_tool():
         is_external = data.get('is_external', False)
 
         if not tool_name or not tool_type:
-            return jsonify({'success': False, 'error': '缺少参数'}), 400
+            return jsonify({'success': False, 'error': 'Missing parameters'}), 400
 
         # 处理外部 MCP 工具
         if is_external:
             mcp_config_path = PROJECT_ROOT / 'mcp' / 'mcp_config.json'
 
             if not mcp_config_path.exists():
-                return jsonify({'success': False, 'error': 'MCP 配置文件不存在'}), 404
+                return jsonify({'success': False, 'error': 'MCP config file not found'}), 404
 
             with resource_lock(mcp_config_path):
                 with open(mcp_config_path, 'r', encoding='utf-8') as f:
@@ -222,7 +222,7 @@ def toggle_tool():
         elif tool_type == 'mcp':
             dir_path = PROJECT_ROOT / 'mcp' / 'tools'
         else:
-            return jsonify({'success': False, 'error': '无效的工具类型'}), 400
+            return jsonify({'success': False, 'error': 'Invalid tool type'}), 400
 
         js_file = dir_path / f"{tool_name}.js"
         txt_file = dir_path / f"{tool_name}.txt"
@@ -234,7 +234,7 @@ def toggle_tool():
             txt_file.rename(js_file)
             action = 'enabled'
         else:
-            return jsonify({'success': False, 'error': '工具文件不存在'}), 404
+            return jsonify({'success': False, 'error': 'Tool file not found'}), 404
 
         return jsonify({
             'success': True,

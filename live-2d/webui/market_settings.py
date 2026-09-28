@@ -57,26 +57,26 @@ def normalize_settings(raw):
 def validate_settings(settings):
     """返回 (是否合法, 错误说明)。说明里指出具体是哪个字段。"""
     if not isinstance(settings, dict):
-        return False, '设置必须是对象'
+        return False, 'Settings must be an object'
 
     mode = settings.get('github_mirror_mode', '')
     if mode not in MIRROR_MODES:
-        return False, f'github_mirror_mode 只能是 {"/".join(MIRROR_MODES)}'
+        return False, f'github_mirror_mode must be one of {"/".join(MIRROR_MODES)}'
 
     mirror = settings.get('github_mirror', '')
     if mirror and not _MIRROR_RE.match(mirror):
-        return False, 'github_mirror 必须是 https:// 开头的主机名，不能带路径'
+        return False, 'github_mirror must be a host name starting with https://, with no path'
     if mode == 'fixed' and not mirror:
-        return False, '固定镜像模式需要填写 github_mirror'
+        return False, 'Fixed mirror mode needs github_mirror'
 
-    for key, label in (('pip_index_url', 'pip 镜像地址'), ('npm_registry', 'npm registry 地址')):
+    for key, label in (('pip_index_url', 'pip mirror address'), ('npm_registry', 'npm registry address')):
         value = settings.get(key, '')
         if value and not _REGISTRY_RE.match(value):
-            return False, f'{label} 必须是 https:// 开头且只包含常规 URL 字符'
+            return False, f'{label} must start with https:// and contain only normal URL characters'
 
     hub_url = settings.get('hub_url', '')
     if hub_url and not _HUB_URL_RE.match(hub_url):
-        return False, '插件源地址必须是 https:// 开头且不含空白字符'
+        return False, 'The plugin index URL must start with https:// and contain no spaces'
 
     return True, ''
 

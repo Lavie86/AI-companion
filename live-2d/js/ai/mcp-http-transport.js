@@ -19,7 +19,7 @@ class MCPHttpTransport {
 
         return new Promise((resolve, reject) => {
             const timeoutHandle = setTimeout(() => {
-                reject(new Error(`服务器 ${serverName} 连接超时`));
+                reject(new Error(`Server ${serverName} connection timed out`));
             }, this.timeout);
 
             this._connect(serverName, timeoutHandle, resolve, reject);
@@ -86,7 +86,7 @@ class MCPHttpTransport {
     // 调用工具
     async callTool(toolName, args) {
         if (!this.client) {
-            throw new Error(`HTTP MCP服务器未连接: ${this.serverName}`);
+            throw new Error(`HTTP MCP server not connected: ${this.serverName}`);
         }
 
         try {
@@ -108,7 +108,7 @@ class MCPHttpTransport {
 
         } catch (error) {
             console.error(`❌ HTTP MCP工具 ${toolName} 调用失败:`, error.message);
-            throw new Error(`HTTP MCP工具调用失败: ${error.message}`);
+            throw new Error(`HTTP MCP tool call failed: ${error.message}`);
         }
     }
 

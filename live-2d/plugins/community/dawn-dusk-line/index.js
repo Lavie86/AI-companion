@@ -19,15 +19,21 @@ const { Plugin } = require('../../../js/core/plugin-base.js');
 
 const PATCH_ID = 'dawn-dusk-line-greeting';
 
-const WEEKDAY_NAMES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+// chinese-workday returns Chinese holiday names; the LLM gets them in English
+const FESTIVAL_NAMES = {
+    '元旦': "New Year's Day", '春节': 'Spring Festival', '清明节': 'Qingming Festival', '劳动节': 'Labour Day',
+    '端午节': 'Dragon Boat Festival', '中秋节': 'Mid-Autumn Festival', '国庆节': 'National Day'
+};
 
 /** 与 LLMPerception / 常用习惯一致：上午/中午/下午/晚上/深夜 */
 function timePeriodFromHour(hour) {
-    if (hour >= 5 && hour < 12) return '上午';
-    if (hour >= 12 && hour < 14) return '中午';
-    if (hour >= 14 && hour < 18) return '下午';
-    if (hour >= 18 && hour < 22) return '晚上';
-    return '深夜';
+    if (hour >= 5 && hour < 12) return 'morning';
+    if (hour >= 12 && hour < 14) return 'noon';
+    if (hour >= 14 && hour < 18) return 'afternoon';
+    if (hour >= 18 && hour < 22) return 'evening';
+    return 'late night';
 }
 
 /**
@@ -68,18 +74,18 @@ function getWeekdayMon0(date, timeZone) {
 
 // 注入系统提示词用：引导 AI 在下次回复中自然融入问候
 const GREETING_PROMPTS = {
-    0:  '现在是午夜12点了，夜深了。如果你接下来要回复用户，请自然地提醒对方注意休息、早点睡觉，语气温柔关切，不要生硬地报时。',
-    8:  '现在是早上8点，新的一天开始了。如果你接下来要回复用户，请自然地说一句早安问候，可以提到早晨的感觉，语气活泼温暖，不要生硬地报时。',
-    12: '现在是中午12点，该吃午饭了。如果你接下来要回复用户，请自然地提醒对方吃午饭、休息一下，语气轻松日常，不要生硬地报时。',
-    18: '现在是傍晚6点，一天快结束了。如果你接下来要回复用户，请自然地说一句傍晚的问候，可以关心对方今天过得怎么样，语气温和，不要生硬地报时。'
+    0:  'It is now midnight, and it is late. When you next reply to the user, gently remind them to rest and go to bed early, in a warm and caring tone. Do not announce the time like a clock.',
+    8:  'It is now 8 in the morning, and a new day has begun. When you next reply to the user, naturally say good morning. You can mention how the morning feels. Keep it lively and warm, and do not announce the time like a clock.',
+    12: 'It is now noon, time for lunch. When you next reply to the user, naturally remind them to have lunch and take a break, in a relaxed, everyday tone. Do not announce the time like a clock.',
+    18: 'It is now 6 in the evening, and the day is almost over. When you next reply to the user, naturally give an evening greeting. You can ask how their day went. Keep the tone gentle, and do not announce the time like a clock.'
 };
 
 // 直接发送用：给 AI 一个情景提示让它自由发挥
 const DIRECT_GREETING_HINTS = {
-    0:  '（现在是午夜12点，夜深了，关心一下对方是否还没睡，温柔地提醒早点休息）',
-    8:  '（现在是早上8点，新的一天，元气满满地跟对方说早安吧）',
-    12: '（现在是中午12点了，提醒对方该吃午饭了，关心一下）',
-    18: '（现在是傍晚6点，一天快结束了，问问对方今天过得怎么样）'
+    0:  '(It is midnight now, very late. Check whether they are still up, and gently remind them to get some rest)',
+    8:  '(It is 8 in the morning, a new day. Say good morning to them, full of energy)',
+    12: '(It is noon now. Remind them it is time for lunch, and show that you care)',
+    18: '(It is 6 in the evening, and the day is almost over. Ask them how their day went)'
 };
 
 class DawnDuskLinePlugin extends Plugin {
@@ -96,7 +102,8 @@ class DawnDuskLinePlugin extends Plugin {
         this._deferTimeout    = (cfg.deferTimeout     ?? 30) * 60 * 1000;
         this._checkInterval   = (cfg.checkInterval    ?? 30) * 1000;
 
-        this._timezone = cfg.timezone || 'Asia/Shanghai';
+        // Empty means the computer's own time zone
+        this._timezone = cfg.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai';
         this._enableHoliday = cfg.enableHolidayPerception !== false;
         this._injectPerception = cfg.injectEnvironmentPerception !== false;
         this._holidayCountry = (cfg.holidayCountry || 'CN').toUpperCase();
@@ -139,11 +146,11 @@ class DawnDuskLinePlugin extends Plugin {
                 this._cnWorkday = mod;
                 return;
             }
-            this.context.log('warn', '晨昏之线: chinese-workday 加载后 API 异常，节假日将仅按周末判断');
+            this.context.log('warn', 'Dawn and Dusk: chinese-workday loaded, but its API is not as expected, so holidays fall back to weekends only');
             this._cnWorkday = null;
         } catch (e) {
             this.context.log('warn',
-                `晨昏之线: 未加载 chinese-workday（请在插件目录执行 npm install），节假日将仅按周末判断: ${e.message}`);
+                `Dawn and Dusk: chinese-workday is not loaded (run npm install in the plugin folder), so holidays fall back to weekends only: ${e.message}`);
             this._cnWorkday = null;
         }
     }
@@ -163,8 +170,8 @@ class DawnDuskLinePlugin extends Plugin {
 
         const calOk = this._cnWorkday && this._enableHoliday && this._holidayCountry === 'CN';
         this.context.log('info',
-            `晨昏之线已启动 | 时区: ${this._timezone} | 注入感知: ${this._injectPerception} | ` +
-            `节假日: ${calOk ? 'chinese-workday' : '仅周末'} | 问候时刻: ${this._greetingHours.join(',')}点 | 检查间隔: ${this._checkInterval / 1000}s`);
+            `Dawn and Dusk started | time zone: ${this._timezone} | add awareness: ${this._injectPerception} | ` +
+            `holidays: ${calOk ? 'chinese-workday' : 'weekends only'} | greeting hours: ${this._greetingHours.join(',')} | check interval: ${this._checkInterval / 1000}s`);
     }
 
     async onStop() {
@@ -199,19 +206,19 @@ class DawnDuskLinePlugin extends Plugin {
                 } catch (_) {
                     festival = '';
                 }
-                if (!festival) festival = '法定节假日';
-                calParts.push(isWeekend ? `周末(${festival})` : `法定节假日(${festival})`);
+                festival = FESTIVAL_NAMES[festival] || festival || 'public holiday';
+                calParts.push(isWeekend ? `weekend (${festival})` : `public holiday (${festival})`);
             } else if (isWork) {
-                calParts.push(isWeekend ? '调休工作日' : '工作日');
+                calParts.push(isWeekend ? 'make-up workday' : 'workday');
             } else {
-                calParts.push('周末');
+                calParts.push('weekend');
             }
         } else {
-            calParts.push(isWeekend ? '周末' : '工作日');
+            calParts.push(isWeekend ? 'weekend' : 'workday');
         }
 
         calParts.push(timePeriodFromHour(hour));
-        return `发送时间: ${timestr} | ${calParts.join(', ')}`;
+        return `Sent at: ${timestr} | ${calParts.join(', ')}`;
     }
 
     _prependToLastUserMessage(messages, prefix) {
@@ -247,13 +254,13 @@ class DawnDuskLinePlugin extends Plugin {
                 type: 'function',
                 function: {
                     name: 'dawn_dusk_get_time',
-                    description: '当用户明确询问当前时间、日期、星期、是否工作日/节假日时调用。返回配置时区的精确时间戳、星期、工作日/调休/法定节假日名称（若已安装依赖）及上午/中午/下午/晚上/深夜。',
+                    description: 'Call this when the user explicitly asks about the current time, date or day of the week, or whether it is a workday or a holiday. Returns the exact timestamp in the configured time zone, the day of the week, workday / make-up workday / public holiday name (if the dependency is installed) and the time of day (morning, noon, afternoon, evening, late night).',
                     parameters: {
                         type: 'object',
                         properties: {
                             timezone: {
                                 type: 'string',
-                                description: 'IANA 时区（可选，默认与插件配置一致，如 Asia/Shanghai）'
+                                description: 'IANA time zone (optional, for example Europe/London). Defaults to the plugin setting'
                             }
                         },
                         required: []
@@ -264,7 +271,7 @@ class DawnDuskLinePlugin extends Plugin {
                 type: 'function',
                 function: {
                     name: 'dawn_dusk_greeting_check',
-                    description: '当用户使用与时间相关的问候语或道别语时自动调用。例如："早上好", "晚上好", "晚安", "晚上见"',
+                    description: 'Call this on your own when the user says a greeting or goodbye tied to the time of day. For example: "good morning", "good evening", "good night", "see you tonight"',
                     parameters: {
                         type: 'object',
                         properties: {},
@@ -284,11 +291,11 @@ class DawnDuskLinePlugin extends Plugin {
                     const line = this._buildPerceptionLine(new Date(), tz);
                     return line;
                 } catch (e) {
-                    return `时间解析失败（请检查时区字符串是否为合法 IANA 时区）: ${e.message}`;
+                    return `Could not work out the time (check that the time zone is a valid IANA time zone): ${e.message}`;
                 }
             }
             default:
-                throw new Error(`晨昏之线：不支持的工具 ${name}`);
+                throw new Error(`Dawn and Dusk: unsupported tool ${name}`);
         }
     }
 
@@ -322,50 +329,50 @@ class DawnDuskLinePlugin extends Plugin {
         try {
             const { appState } = require('../../../js/core/app-state.js');
             if (appState.isPlayingTTS() || appState.isProcessingUserInput()) {
-                this.context.log('info', `[晨昏之线] ${hour}点问候 → AI正在说话/处理中，注入提示词`);
+                this.context.log('info', `[Dawn and Dusk] ${hour}:00 greeting → the AI is talking or busy, adding a prompt`);
                 this._injectPatch(hour);
                 return;
             }
         } catch (_) {}
 
         if (elapsed < this._activeThreshold) {
-            this.context.log('info', `[晨昏之线] ${hour}点问候 → 对话活跃中(${Math.round(elapsed / 1000)}s前)，注入提示词`);
+            this.context.log('info', `[Dawn and Dusk] ${hour}:00 greeting → chat is active (${Math.round(elapsed / 1000)}s ago), adding a prompt`);
             this._injectPatch(hour);
         } else if (elapsed >= this._quietThreshold) {
-            this.context.log('info', `[晨昏之线] ${hour}点问候 → 静默状态(${Math.round(elapsed / 1000)}s前)，直接主动问候`);
+            this.context.log('info', `[Dawn and Dusk] ${hour}:00 greeting → chat is quiet (${Math.round(elapsed / 1000)}s ago), greeting right away`);
             this._sendDirectGreeting(hour);
         } else {
-            this.context.log('info', `[晨昏之线] ${hour}点问候 → 半活跃状态，进入延迟等待`);
+            this.context.log('info', `[Dawn and Dusk] ${hour}:00 greeting → chat is half active, waiting for a gap`);
             this._deferGreeting(hour);
         }
     }
 
     async _sendDirectGreeting(hour) {
-        const hint = DIRECT_GREETING_HINTS[hour] || `（现在是${hour}点，自然地打个招呼）`;
+        const hint = DIRECT_GREETING_HINTS[hour] || `(It is now ${hour}:00. Say hi naturally)`;
         try {
             const arbiter = global.proactiveArbiter;
             const externalPolicy = arbiter?.externalSourcePolicy?.('dawn-dusk-line');
             if (externalPolicy === 'block') {
-                this.context.log('info', '[晨昏之线] 已被人格导演阻断主动问候');
+                this.context.log('info', '[Dawn and Dusk] The persona director blocked this greeting');
                 return;
             }
             if (arbiter?.submitExternal && externalPolicy === 'collect') {
                 await arbiter.submitExternal('dawn-dusk-line', hint, {
                     priority: 0.56,
-                    topic: `${hour}点问候`,
+                    topic: `${hour}:00 greeting`,
                     topic_key: `dawn_dusk_${hour}`,
-                    render_hint: '这是晨昏问候意图，保留时间感，但不要像报时机器。'
+                    render_hint: 'This is a time-of-day greeting. Keep the sense of time, but do not sound like a talking clock.'
                 });
                 return;
             }
             await this.context.sendMessage(hint);
         } catch (e) {
-            this.context.log('error', `[晨昏之线] 主动问候发送失败: ${e.message}`);
+            this.context.log('error', `[Dawn and Dusk] Failed to send the greeting: ${e.message}`);
         }
     }
 
     _injectPatch(hour) {
-        const prompt = GREETING_PROMPTS[hour] || `现在是${hour}点，请在下次回复中自然地融入一句应景的问候。`;
+        const prompt = GREETING_PROMPTS[hour] || `It is now ${hour}:00. Work a greeting that fits the time into your next reply, naturally.`;
         this.context.addSystemPromptPatch(PATCH_ID, prompt);
         this._patchApplied = true;
     }
@@ -390,7 +397,7 @@ class DawnDuskLinePlugin extends Plugin {
 
             const waitedMs = Date.now() - this._deferredGreeting.startTime;
             if (waitedMs > this._deferTimeout) {
-                this.context.log('info', `[晨昏之线] 延迟等待超时(${Math.round(waitedMs / 60000)}min)，放弃本次问候`);
+                this.context.log('info', `[Dawn and Dusk] Waited too long (${Math.round(waitedMs / 60000)}min), skipping this greeting`);
                 this._deferredGreeting = null;
                 clearInterval(this._deferTimer);
                 this._deferTimer = null;
@@ -403,7 +410,7 @@ class DawnDuskLinePlugin extends Plugin {
                 this._deferredGreeting = null;
                 clearInterval(this._deferTimer);
                 this._deferTimer = null;
-                this.context.log('info', `[晨昏之线] 检测到对话间隙，发送延迟问候`);
+                this.context.log('info', `[Dawn and Dusk] Found a gap in the chat, sending the delayed greeting`);
                 this._sendDirectGreeting(h);
             }
         }, 15000);
@@ -416,7 +423,7 @@ class DawnDuskLinePlugin extends Plugin {
             const h = this._deferredGreeting.hour;
             this._deferredGreeting = null;
             if (this._deferTimer) { clearInterval(this._deferTimer); this._deferTimer = null; }
-            this.context.log('info', `[晨昏之线] TTS结束后检测到静默，发送延迟问候`);
+            this.context.log('info', `[Dawn and Dusk] Quiet after TTS finished, sending the delayed greeting`);
             this._sendDirectGreeting(h);
         }
     }

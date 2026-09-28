@@ -70,7 +70,7 @@ class AutoChatModule {
        if (playingTTS || processingBarrage || processingUserInput) {
            console.log(`⏸️ 主动对话延迟 - TTS播放:${playingTTS}, 弹幕处理:${processingBarrage}, 用户输入:${processingUserInput}`);
            if (typeof logToTerminal === 'function') {
-               logToTerminal('warning', `⏸️ 主动对话延迟 - TTS:${playingTTS}, 弹幕:${processingBarrage}, 输入:${processingUserInput}`);
+               logToTerminal('warning', `⏸️ Proactive chat delayed - TTS:${playingTTS}, live chat:${processingBarrage}, input:${processingUserInput}`);
            }
            this.timeoutId = setTimeout(() => this.executeChat(), 5000);
            return;
@@ -79,7 +79,7 @@ class AutoChatModule {
        this.isProcessing = true;
        console.log('✅ 开始自动对话');
        if (typeof logToTerminal === 'function') {
-           logToTerminal('info', '🔧 开始自动对话执行');
+           logToTerminal('info', '🔧 Starting auto chat');
        }
 
        try {
@@ -89,13 +89,13 @@ class AutoChatModule {
                return;
            }
 
-           let prompt = `[自动触发] ${this.pluginConfig.prompt || ''}`;
+           let prompt = `[Auto-triggered] ${this.pluginConfig.prompt || ''}`;
 
            // 🎯 核心简化：检查是否需要截图，如果需要则修改prompt让sendToLLM处理
            if (this.screenshotEnabled && this.autoScreenshot) {
                console.log('自动截图模式已开启，主动对话将包含截图');
                // 添加特殊标记，让sendToLLM知道需要截图
-               prompt = `${prompt} [需要截图]`;
+               prompt = `${prompt} [Screenshot needed]`;
 
                // 临时设置标志，让sendToLLM知道要截图
                voiceChat._autoScreenshotFlag = true;
@@ -115,7 +115,7 @@ class AutoChatModule {
        } catch (error) {
            console.error('自动对话错误:', error);
            if (typeof logToTerminal === 'function') {
-               logToTerminal('error', `❌ 自动对话执行失败: ${error.message}`);
+               logToTerminal('error', `❌ Auto chat failed: ${error.message}`);
            }
        } finally {
            this.isProcessing = false;

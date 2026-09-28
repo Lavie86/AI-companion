@@ -66,7 +66,7 @@ class LLMClient {
         } else {
             // tools 为 null（视觉模型调用）或空数组（强制获取最终回复、未配置任何工具）
             // 都是预期行为，仅记录 info 便于排查，不输出警告
-            logToTerminal('info', `本次调用未传递工具列表 (tools=${tools ? '[]' : 'null'})`);
+            logToTerminal('info', `No tool list sent with this call (tools=${tools ? '[]' : 'null'})`);
         }
 
 
@@ -90,9 +90,9 @@ class LLMClient {
 //                logToTerminal('warn', `⚠️ 请求体过大 (${Math.round(stats.requestSize/1024)}KB)，可能导致API错误`);
             }
         } catch (jsonError) {
-            logToTerminal('error', `❌ 请求体JSON格式错误: ${jsonError.message}`);
+            logToTerminal('error', `❌ Invalid JSON in the request body: ${jsonError.message}`);
             console.error('请求体内容:', requestBody);
-            throw new Error(`请求格式错误: ${jsonError.message}`);
+            throw new Error(`Invalid request format: ${jsonError.message}`);
         }
 
         try {
@@ -120,7 +120,7 @@ class LLMClient {
             // 验证响应格式
             this._validateResponse(responseData);
 
-            logToTerminal('info', `AI回复中`);
+            logToTerminal('info', `AI is replying`);
 
             const message = responseData.choices[0].message;
 
@@ -141,7 +141,7 @@ class LLMClient {
             if (message.content && !message.tool_calls) {
                 const parsedToolCalls = this._parseQwenToolCalls(message.content);
                 if (parsedToolCalls && parsedToolCalls.length > 0) {
-                    logToTerminal('info', `🔧 AI调用了 ${parsedToolCalls.length} 个工具`);
+                    logToTerminal('info', `🔧 AI called ${parsedToolCalls.length} tools`);
                     message.tool_calls = parsedToolCalls;
                     // 从 content 中移除工具调用部分，只保留文本回复
                     message.content = this._removeToolCallsFromContent(message.content);
@@ -153,10 +153,11 @@ class LLMClient {
         } catch (error) {
             // 多模态不支持错误由上层 llm-handler 统一处理和记录，这里不重复打 ERROR
             const isMultimodalError = error.message.toLowerCase().includes('multimodal') ||
+                error.message.toLowerCase().includes('does not support image') ||
                 error.message.toLowerCase().includes('不支持图片') ||
                 error.message.toLowerCase().includes('模型不支持图片');
             if (!isMultimodalError) {
-                logToTerminal('error', `LLM API调用失败: ${error.message}`);
+                logToTerminal('error', `LLM API call failed: ${error.message}`);
             }
             throw error;
         }
@@ -206,7 +207,7 @@ class LLMClient {
                 // 🔥 确保字符串长度不超过限制(避免超大响应)
                 const MAX_CONTENT_LENGTH = 8000;
                 if (content.length > MAX_CONTENT_LENGTH) {
-                    content = content.substring(0, MAX_CONTENT_LENGTH) + '...(内容过长已截断)';
+                    content = content.substring(0, MAX_CONTENT_LENGTH) + '...(cut off, too long)';
                 }
 
                 // 返回清理后的tool消息
@@ -235,10 +236,10 @@ class LLMClient {
     _validateResponse(responseData) {
         // 检查API错误响应
         if (responseData.error) {
-            const errorMsg = responseData.error.message || responseData.error || '未知API错误';
-            logToTerminal('error', `LLM API错误: ${errorMsg}`);
+            const errorMsg = responseData.error.message || responseData.error || 'Unknown API error';
+            logToTerminal('error', `LLM API error: ${errorMsg}`);
             // 🔥 将完整的错误信息传递出去，方便重试机制识别
-            throw new Error(`API错误: ${errorMsg}`);
+            throw new Error(`API error: ${errorMsg}`);
         }
 
         // 检查响应格式,适应不同的API响应结构
@@ -250,15 +251,15 @@ class LLMClient {
         } else {
             // 🔥 详细打印响应数据以便调试
             const debugInfo = JSON.stringify(responseData).substring(0, 500);
-            logToTerminal('error', `LLM响应格式异常，缺少choices字段。响应数据: ${debugInfo}`);
+            logToTerminal('error', `LLM response has an unexpected format: the choices field is missing. Response data: ${debugInfo}`);
             console.error('完整响应数据:', responseData);
-            throw new Error('LLM响应格式异常：缺少choices字段或为空');
+            throw new Error('LLM response has an unexpected format: the choices field is missing or empty');
         }
 
         if (!choices || choices.length === 0) {
             // 🔥 打印完整响应数据
             const debugInfo = JSON.stringify(responseData).substring(0, 500);
-            logToTerminal('error', `LLM响应choices为空。响应数据: ${debugInfo}`);
+            logToTerminal('error', `LLM response choices are empty. Response data: ${debugInfo}`);
             console.error('完整响应数据:', responseData);
 
             // 🔥 检查响应数据中是否包含"不支持图片"相关的错误信息
@@ -268,26 +269,26 @@ class LLMClient {
                  responseStr.includes('不支持') ||
                  responseStr.includes('invalid') ||
                  responseStr.includes('unsupported'))) {
-                logToTerminal('error', '⚠️ 检测到模型不支持视觉功能');
-                throw new Error('模型不支持图片：该模型不支持 image_url 参数');
+                logToTerminal('error', '⚠️ The model does not seem to support vision');
+                throw new Error('The model does not support images: it does not accept the image_url parameter');
             }
 
             // 🔥 检查是否是内容过滤（多种可能的字段）
             if (responseData.promptFilterResults ||
                 responseData.finishReason === 'content_filter' ||
                 responseData.finish_reason === 'content_filter') {
-                throw new Error('API内容过滤：请求被API的内容过滤器拦截，可能包含敏感内容');
+                throw new Error('API content filter: the request was blocked by the content filter of the API and may contain sensitive content');
             }
 
             // 🔥 检查usage，如果有prompt_tokens但completion_tokens为0，很可能是内容过滤
             if (responseData.usage &&
                 responseData.usage.prompt_tokens > 0 &&
                 responseData.usage.completion_tokens === 0) {
-                logToTerminal('warn', '⚠️ API处理了请求但拒绝生成内容，可能触发了安全过滤器');
-                throw new Error('API拒绝生成内容：可能触发了安全过滤器或内容政策限制。请检查最近的对话内容。');
+                logToTerminal('warn', '⚠️ API processed the request but refused to generate content. A safety filter may have been triggered');
+                throw new Error('API refused to generate content: a safety filter or content policy may have blocked it. Check the recent conversation.');
             }
 
-            throw new Error('LLM响应格式异常：choices为空');
+            throw new Error('LLM response has an unexpected format: choices is empty');
         }
 
         // 将标准化的choices写回
@@ -321,7 +322,7 @@ class LLMClient {
                 });
                 index++;
             } catch (error) {
-                logToTerminal('warn', `⚠️ 解析 Qwen 工具调用(格式1)失败: ${error.message}`);
+                logToTerminal('warn', `⚠️ Failed to parse a Qwen tool call (format 1): ${error.message}`);
             }
         }
 
@@ -470,7 +471,7 @@ class LLMClient {
                             }
                         } catch (parseError) {
                             // 忽略解析错误，继续处理下一行
-                            logToTerminal('warn', `⚠️ 流式数据解析失败: ${parseError.message}`);
+                            logToTerminal('warn', `⚠️ Failed to parse streamed data: ${parseError.message}`);
                         }
                     }
                 }
@@ -497,7 +498,7 @@ class LLMClient {
             if (message.content && !message.tool_calls) {
                 const parsedToolCalls = this._parseQwenToolCalls(message.content);
                 if (parsedToolCalls && parsedToolCalls.length > 0) {
-                    logToTerminal('info', `🔧 AI调用了 ${parsedToolCalls.length} 个工具`);
+                    logToTerminal('info', `🔧 AI called ${parsedToolCalls.length} tools`);
                     message.tool_calls = parsedToolCalls;
                     message.content = this._removeToolCallsFromContent(message.content);
                 }
@@ -506,7 +507,7 @@ class LLMClient {
             return message;
 
         } catch (error) {
-            logToTerminal('error', `流式响应处理错误: ${error.message}`);
+            logToTerminal('error', `Error while handling the streamed response: ${error.message}`);
             throw error;
         } finally {
             reader.releaseLock();
@@ -530,7 +531,7 @@ class LLMClient {
             this.reasoningEffort = newConfig.llm.reasoning_effort !== undefined
                 ? newConfig.llm.reasoning_effort
                 : this.reasoningEffort;
-            logToTerminal('info', 'LLM客户端配置已更新');
+            logToTerminal('info', 'LLM client config updated');
         }
     }
 

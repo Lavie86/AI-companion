@@ -62,7 +62,7 @@ class AuDriver {
                 .map(target => target.action)
                 .filter(action => !this.adapter.canResolve(action));
             if (unresolved.length > 0) {
-                logToTerminal('info', `[AuDriver] 跳过不可映射 AU "${unit.id}": ${unresolved.join(', ')}`);
+                logToTerminal('info', `[AuDriver] Skipping unmappable AU "${unit.id}": ${unresolved.join(', ')}`);
                 return false;
             }
             return unit.enabled !== false;
@@ -77,7 +77,7 @@ class AuDriver {
         });
         logToTerminal(
             'info',
-            `[AuDriver] 已就绪: 可用 AU=${units.length}, 原生=${units.filter(unit => unit.kind === 'native').length}, 参数绑定=${this.adapter.bindings.size}`
+            `[AuDriver] Ready: usable AU=${units.length}, native=${units.filter(unit => unit.kind === 'native').length}, parameter bindings=${this.adapter.bindings.size}`
         );
         return true;
     }
@@ -106,7 +106,7 @@ class AuDriver {
             coreScore: 0.65
         });
         if (selected.units.length === 0) {
-            logToTerminal('warn', `[AuDriver] "${tag}" 没有可用的 AU，回退旧表情逻辑`);
+            logToTerminal('warn', `[AuDriver] "${tag}" has no usable AU, falling back to the old expression logic`);
             return false;
         }
 
@@ -121,7 +121,7 @@ class AuDriver {
         this._transitionTo(platformTargets, now, transitionMs, solverConfig.neutralMs);
         logToTerminal(
             'info',
-            `[AuDriver] 解算 ${tag}: ${selected.units.map(unit => unit.id).join(' + ') || '中性'}`
+            `[AuDriver] Solved ${tag}: ${selected.units.map(unit => unit.id).join(' + ') || 'neutral'}`
         );
         return true;
     }

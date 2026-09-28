@@ -1,9 +1,9 @@
 {
   "name": "wait",
-  "displayName": "等待",
+  "displayName": "Wait",
   "version": "1.0.0",
   "author": "official",
-  "description": "让 AI 等待指定时间，提供 wait 工具",
+  "description": "Makes the AI wait for a given time. Provides the wait tool.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

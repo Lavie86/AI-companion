@@ -416,7 +416,7 @@ class MusicPlayer {
 
         // 获取元数据
         const metadata = await this.parseMetadata(songFile);
-        const resultMessage = `正在播放: ${metadata.title} - ${metadata.artist}`;
+        const resultMessage = `Now playing: ${metadata.title} - ${metadata.artist}`;
 
         // 如果找到分离音频，优先使用分离播放
         if (accFile && vocalFile) {
@@ -486,11 +486,11 @@ class MusicPlayer {
     async playRandomMusic() {
         if (this.isPlaying) {
             console.log('已经在播放音乐了');
-            return { message: '已经在播放音乐了', metadata: null };
+            return { message: 'Music is already playing', metadata: null };
         }
 
         const songFile = this.getRandomSong();
-        if (!songFile) return { message: '没有找到歌曲', metadata: null };
+        if (!songFile) return { message: 'No song found', metadata: null };
 
         return await this.playSpecificSong(songFile);
     }

@@ -1,20 +1,20 @@
 {
   "trigger_threshold": {
-    "title": "压缩触发阈值（条）",
-    "description": "对话历史超过此条数时，自动触发上下文压缩",
+    "title": "Compression threshold (messages)",
+    "description": "Compresses the context when the chat history has more messages than this",
     "type": "int",
     "default": 16
   },
   "keep_recent": {
-    "title": "保留最近对话数",
-    "description": "压缩时保留最新的几条对话不被压缩",
+    "title": "Recent messages to keep",
+    "description": "How many of the newest messages are kept uncompressed",
     "type": "int",
     "default": 4
   },
   "prompt": {
-    "title": "压缩提示词",
-    "description": "指导 LLM 如何压缩对话历史的提示词",
+    "title": "Compression prompt",
+    "description": "Prompt that tells the LLM how to compress the chat history",
     "type": "text",
-    "default": "请将以下历史对话总结为简洁的要点，保留关键信息和上下文。要求：1. 总结为200字以内的关键要点 2. 保留重要的人名、事件、决定等 3. 使用简洁的语言 4. 只输出总结内容，不要额外说明"
+    "default": "Summarize the conversation below as short key points. Keep the important information and context. Rules: 1. At most about 150 words of key points 2. Keep important names, events, decisions and so on 3. Use plain, short language 4. Output only the summary, with no extra explanation"
   }
 }

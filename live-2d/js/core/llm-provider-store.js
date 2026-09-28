@@ -168,7 +168,7 @@ function buildLegacyProviders(config) {
     if (hasLlm) {
         const mainProvider = {
             id: 'main',
-            name: '主模型',
+            name: 'Main model',
             api_key: llmConfig.api_key || '',
             api_url: llmConfig.api_url || '',
             enabled: true,
@@ -196,7 +196,7 @@ function buildLegacyProviders(config) {
     if (hasVision) {
         providers.push({
             id: 'vision',
-            name: '视觉模型',
+            name: 'Vision model',
             api_key: visionConfig.api_key || '',
             api_url: visionConfig.api_url || '',
             enabled: true,

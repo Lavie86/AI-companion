@@ -8,7 +8,7 @@
 import asyncio
 from plugin_sdk import Plugin, run
 
-PROMPT = '你注意到用户有一段时间没说话了，随口问一句他在干什么，用你平时的风格，不用太正式。'
+PROMPT = 'You notice the user has not said anything for a while. Casually ask what they are up to, in your usual style. No need to be formal.'
 
 
 class CheckInPlugin(Plugin):

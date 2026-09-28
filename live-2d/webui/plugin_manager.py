@@ -106,10 +106,10 @@ def enable_plugin_path(plugin_path):
     """
     plugin_path = str(plugin_path).replace('\\', '/').strip()
     if '/' not in plugin_path:
-        raise ValueError('插件路径应为 category/name 格式')
+        raise ValueError('The plugin path must look like category/name')
     category, dir_name = plugin_path.split('/', 1)
     if category not in ('built-in', 'community') or not dir_name:
-        raise ValueError('无效的插件类别')
+        raise ValueError('Invalid plugin category')
 
     enabled_path = PROJECT_ROOT / 'plugins' / 'enabled_plugins.json'
     with resource_lock(enabled_path):
@@ -156,7 +156,7 @@ def scan_plugins_directory():
                 plugins.append({
                     'name': metadata.get('name', plugin_dir.name),
                     'display_name': metadata.get('displayName', metadata.get('name', plugin_dir.name)),
-                    'description': metadata.get('description', '无描述'),
+                    'description': metadata.get('description', 'No description'),
                     'version': metadata.get('version', '1.0.0'),
                     'author': metadata.get('author', 'unknown'),
                     'repo': metadata.get('repo', ''),
@@ -211,25 +211,25 @@ def toggle_plugin():
     
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'error': '无效的请求数据'}), 400
+        return jsonify({'success': False, 'error': 'Invalid request data'}), 400
     
     plugin_path = data.get('plugin_path')
     if not plugin_path:
-        return jsonify({'success': False, 'error': '缺少 plugin_path 参数'}), 400
+        return jsonify({'success': False, 'error': 'Missing plugin_path parameter'}), 400
     
     # 验证 plugin_path 格式
     if '/' not in plugin_path:
         logger.error(f'无效的 plugin_path：{plugin_path}')
-        return jsonify({'success': False, 'error': '无效的插件路径，应为 category/name 格式'}), 400
+        return jsonify({'success': False, 'error': 'Invalid plugin path, it must look like category/name'}), 400
     
     # 验证插件目录是否存在
     category, dir_name = plugin_path.split('/', 1)
     if category not in ['built-in', 'community']:
-        return jsonify({'success': False, 'error': '无效的插件类别'}), 400
+        return jsonify({'success': False, 'error': 'Invalid plugin category'}), 400
     
     plugin_dir = PROJECT_ROOT / 'plugins' / category / dir_name
     if not plugin_dir.exists():
-        return jsonify({'success': False, 'error': f'插件目录不存在：{plugin_path}'}), 404
+        return jsonify({'success': False, 'error': f'Plugin folder not found: {plugin_path}'}), 404
     
     # 切换状态
     if plugin_path in enabled_plugins:
@@ -245,7 +245,7 @@ def toggle_plugin():
             'action': action,
             'plugin_path': plugin_path
         })
-    return jsonify({'success': False, 'error': '保存失败'}), 500
+    return jsonify({'success': False, 'error': 'Save failed'}), 500
 
 
 @plugin_bp.route('/api/plugins/panel-info', methods=['POST'])
@@ -269,7 +269,7 @@ def plugin_panel_info():
     if not panel:
         return jsonify({
             'success': False,
-            'error': '该插件没有已知的独立面板'
+            'error': 'This plugin has no known panel'
         }), 404
 
     try:
@@ -320,11 +320,11 @@ def open_plugin_panel():
     if payload.get('enabled') is False:
         return jsonify({
             'success': False,
-            'error': '该插件当前未启用，本地面板未运行',
+            'error': 'This plugin is not enabled, so its local panel is not running',
             'url': url
         }), 409
     if not url or not str(url).startswith(('http://127.0.0.1:', 'http://localhost:')):
-        return jsonify({'success': False, 'error': '面板 URL 不安全或不可用'}), 400
+        return jsonify({'success': False, 'error': 'The panel URL is unsafe or not available'}), 400
 
     try:
         import webbrowser
@@ -345,15 +345,15 @@ def open_plugin_config():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'error': '无效的请求数据'}), 400
+        return jsonify({'success': False, 'error': 'Invalid request data'}), 400
     
     plugin_path = data.get('plugin_path')
     if not plugin_path:
-        return jsonify({'success': False, 'error': '缺少 plugin_path 参数'}), 400
+        return jsonify({'success': False, 'error': 'Missing plugin_path parameter'}), 400
     
     # 从 plugin_path 提取目录名
     if '/' not in plugin_path:
-        return jsonify({'success': False, 'error': '无效的 plugin_path 格式'}), 400
+        return jsonify({'success': False, 'error': 'Invalid plugin_path format'}), 400
     
     category, dir_name = plugin_path.split('/', 1)
     plugin_config_key = dir_name.replace('-', '_')
@@ -365,7 +365,7 @@ def open_plugin_config():
     if not plugin_dir.exists():
         return jsonify({
             'success': False,
-            'error': f'插件目录不存在：{plugin_path}'
+            'error': f'Plugin folder not found: {plugin_path}'
         }), 404
     
     # 检查插件是否有自己的配置文件
@@ -377,12 +377,12 @@ def open_plugin_config():
             return jsonify({
                 'success': True,
                 'config_path': str(plugin_config),
-                'message': f'已打开插件主文件：{plugin_config}\n请在 config.json 中配置该插件（plugins.{plugin_config_key}）'
+                'message': f'Opened the plugin\'s main file: {plugin_config}\nConfigure this plugin in config.json (plugins.{plugin_config_key})'
             })
         except Exception as e:
             return jsonify({
                 'success': False,
-                'error': f'打开文件失败：{str(e)}',
+                'error': f'Failed to open file: {str(e)}',
                 'config_path': str(plugin_config)
             })
     else:
@@ -392,12 +392,12 @@ def open_plugin_config():
             return jsonify({
                 'success': True,
                 'config_path': str(plugin_dir),
-                'message': f'已打开插件目录：{plugin_dir}\n请在 config.json 中配置该插件（plugins.{plugin_config_key}）'
+                'message': f'Opened the plugin folder: {plugin_dir}\nConfigure this plugin in config.json (plugins.{plugin_config_key})'
             })
         except Exception as e:
             return jsonify({
                 'success': False,
-                'error': f'打开目录失败：{str(e)}',
+                'error': f'Failed to open folder: {str(e)}',
                 'config_path': str(plugin_dir)
             })
 
@@ -408,7 +408,7 @@ def get_plugin_config(plugin_name):
     try:
         # 安全检查：防止路径遍历攻击
         if '..' in plugin_name or '/' in plugin_name or '\\' in plugin_name:
-            return jsonify({'error': '无效的插件名称'}), 400
+            return jsonify({'error': 'Invalid plugin name'}), 400
         
         # 使用 display_name 查找插件目录
         plugins_base = PROJECT_ROOT / 'plugins'
@@ -444,7 +444,7 @@ def get_plugin_config(plugin_name):
                 break
         
         if not config_file:
-            return jsonify({'error': f'插件 {plugin_name} 没有配置文件'}), 404
+            return jsonify({'error': f'Plugin {plugin_name} has no config file'}), 404
         
         # 读取配置文件（保持顺序）
         with open(config_file, 'r', encoding='utf-8') as f:
@@ -461,7 +461,7 @@ def get_plugin_config(plugin_name):
         })
     
     except json.JSONDecodeError as e:
-        return jsonify({'error': f'配置文件格式错误：{str(e)}'}), 500
+        return jsonify({'error': f'Config file has an invalid format: {str(e)}'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -472,11 +472,11 @@ def check_readme_exists_route():
     try:
         data = request.get_json()
         if not data:
-            return jsonify({'exists': False, 'error': '无效的请求数据'})
+            return jsonify({'exists': False, 'error': 'Invalid request data'})
         
         display_name = data.get('display_name')
         if not display_name:
-            return jsonify({'exists': False, 'error': '缺少 display_name 参数'})
+            return jsonify({'exists': False, 'error': 'Missing display_name parameter'})
         
         # 使用 display_name 查找插件目录
         plugins_base = PROJECT_ROOT / 'plugins'
@@ -510,7 +510,7 @@ def check_readme_exists_route():
                 break
         
         if not plugin_dir:
-            return jsonify({'exists': False, 'error': f'插件 {display_name} 目录不存在'})
+            return jsonify({'exists': False, 'error': f'Plugin {display_name} folder not found'})
         
         # 查找 README.md 文件（支持多种命名）
         readme_exists = False
@@ -532,12 +532,12 @@ def save_plugin_config(plugin_name):
     try:
         # 安全检查：防止路径遍历攻击
         if '..' in plugin_name or '/' in plugin_name or '\\' in plugin_name:
-            return jsonify({'error': '无效的插件名称'}), 400
+            return jsonify({'error': 'Invalid plugin name'}), 400
         
         # 获取请求数据
         config_data = request.get_json()
         if not config_data:
-            return jsonify({'error': '没有配置数据'}), 400
+            return jsonify({'error': 'No config data'}), 400
         
         # 使用 display_name 查找插件目录
         plugins_base = PROJECT_ROOT / 'plugins'
@@ -573,7 +573,7 @@ def save_plugin_config(plugin_name):
                 break
         
         if not config_file:
-            return jsonify({'error': f'插件 {plugin_name} 没有配置文件'}), 404
+            return jsonify({'error': f'Plugin {plugin_name} has no config file'}), 404
         
         # 读取原始配置文件以保持顺序和元数据
         with open(config_file, 'r', encoding='utf-8') as f:
@@ -608,7 +608,7 @@ def save_plugin_config(plugin_name):
         
         return jsonify({
             'success': True,
-            'message': '配置保存成功'
+            'message': 'Config saved'
         })
     
     except Exception as e:
@@ -621,7 +621,7 @@ def check_readme_exists_api(plugin_name):
     try:
         # 安全检查：防止路径遍历攻击
         if '..' in plugin_name or '/' in plugin_name or '\\' in plugin_name:
-            return jsonify({'exists': False, 'error': '无效的插件名称'})
+            return jsonify({'exists': False, 'error': 'Invalid plugin name'})
         
         # 使用 display_name 查找插件目录
         plugins_base = PROJECT_ROOT / 'plugins'
@@ -655,7 +655,7 @@ def check_readme_exists_api(plugin_name):
                 break
         
         if not plugin_dir:
-            return jsonify({'exists': False, 'error': f'插件 {plugin_name} 目录不存在'})
+            return jsonify({'exists': False, 'error': f'Plugin {plugin_name} folder not found'})
         
         # 查找 README.md 文件（支持多种命名）
         readme_exists = False
@@ -676,7 +676,7 @@ def open_plugin_readme(plugin_name):
     try:
         # 安全检查：防止路径遍历攻击
         if '..' in plugin_name or '/' in plugin_name or '\\' in plugin_name:
-            return jsonify({'error': '无效的插件名称'}), 400
+            return jsonify({'error': 'Invalid plugin name'}), 400
         
         # 使用 display_name 查找插件目录
         plugins_base = PROJECT_ROOT / 'plugins'
@@ -710,7 +710,7 @@ def open_plugin_readme(plugin_name):
                 break
         
         if not plugin_dir:
-            return jsonify({'error': f'插件 {plugin_name} 目录不存在'}), 404
+            return jsonify({'error': f'Plugin {plugin_name} folder not found'}), 404
         
         # 查找 README.md 文件（支持多种命名）
         readme_file = None
@@ -723,14 +723,14 @@ def open_plugin_readme(plugin_name):
         if not readme_file:
             return jsonify({
                 'success': False,
-                'error': '该插件没有 README.md 文件'
+                'error': 'This plugin has no README.md file'
             }), 404
         
         # 打开 README.md 文件
         os.startfile(str(readme_file))
         return jsonify({
             'success': True,
-            'message': f'已打开 README 文件：{readme_file}'
+            'message': f'Opened the README file: {readme_file}'
         })
     
     except Exception as e:

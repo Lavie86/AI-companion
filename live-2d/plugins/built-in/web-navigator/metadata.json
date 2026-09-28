@@ -1,9 +1,9 @@
 {
   "name": "web-navigator",
-  "displayName": "打开网页",
+  "displayName": "Open Web Page",
   "version": "1.0.0",
   "author": "official",
-  "description": "在默认浏览器中打开指定网址，提供 open_webpage 工具",
+  "description": "Opens a URL in the default browser. Provides the open_webpage tool.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

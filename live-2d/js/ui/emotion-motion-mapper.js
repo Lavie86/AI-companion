@@ -17,7 +17,7 @@ class EmotionMotionMapper {
             const response = await fetch('emotion_actions.json');
 
             if (!response.ok) {
-                throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
+                throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
@@ -142,7 +142,7 @@ class EmotionMotionMapper {
             });
 
             if (!response.ok) {
-                throw new Error('保存配置失败');
+                throw new Error('Failed to save the config');
             }
 
             console.log('情绪配置已成功保存');

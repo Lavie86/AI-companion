@@ -2,3 +2,13 @@
 "/打开教程网页.bat" -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 docs/scripts/open-tutorial.cmd -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 docs/scripts/open-tutorial.vbs -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# Keep the English UI text when merging upstream my-neuro (see tools/english-ui/README.md).
+# Each clone needs "node tools/english-ui/setup.js" once. update-from-upstream.bat runs it.
+/live-2d/**/*.js merge=english-ui
+/live-2d/**/*.html merge=english-ui
+/live-2d/**/*.py merge=english-ui
+/live-2d/**/*.json merge=english-ui
+/full-hub/*.py merge=english-ui
+/installer.py merge=english-ui
+/update.py merge=english-ui

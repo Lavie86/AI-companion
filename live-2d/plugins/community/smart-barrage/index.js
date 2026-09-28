@@ -36,9 +36,9 @@ class SmartBarragePlugin extends Plugin {
     async onStart() {
         // 注入系统提示词，让 AI 知道自己在直播
         this.context.addSystemPromptPatch(SYSTEM_PATCH_ID,
-            '你现在正在进行B站直播。你可能会收到来自观众的弹幕消息，' +
-            '标记为[直播弹幕]。请自然地与观众互动，就像真正的主播一样。' +
-            '带有[点名提问]标记的是观众直接点名提问，优先回应。'
+            'You are live streaming on Bilibili right now. You may receive chat messages from viewers, ' +
+            'marked with [Live chat message]. Interact with the viewers naturally, like a real streamer. ' +
+            'Messages marked with [Live chat question] are questions a viewer asked you directly. Answer those first.'
         );
 
         this._liveModule = new LiveStreamModule({
@@ -48,7 +48,7 @@ class SmartBarragePlugin extends Plugin {
         });
 
         this._liveModule.start();
-        this.context.log('info', `智能弹幕已启动 | 房间:${this._roomId} | 模式:${this._mode} | 窗口:${this._windowMs / 1000}s`);
+        this.context.log('info', `Smart live chat started | room:${this._roomId} | mode:${this._mode} | window:${this._windowMs / 1000}s`);
     }
 
     async onStop() {
@@ -74,10 +74,10 @@ class SmartBarragePlugin extends Plugin {
         if (hasPrefix && (this._mode === 'prefix' || this._mode === 'both')) {
             const clean = text.slice(this._prefixChar.length).trim();
             if (!clean) return;
-            this.context.log('info', `[点名] ${nickname}: ${clean}`);
+            this.context.log('info', `[Question] ${nickname}: ${clean}`);
             this.context.sendMessage(
-                `[直播弹幕-点名提问] ${nickname} 向你提问：${clean}`
-            ).catch(e => this.context.log('error', `sendMessage 失败: ${e.message}`));
+                `[Live chat question] ${nickname} asks you: ${clean}`
+            ).catch(e => this.context.log('error', `sendMessage failed: ${e.message}`));
             return;
         }
 
@@ -107,38 +107,38 @@ class SmartBarragePlugin extends Plugin {
         const batch = this._buffer.slice();
         this._buffer = [];
 
-        this.context.log('info', `开始过滤弹幕批次，共 ${batch.length} 条`);
+        this.context.log('info', `Filtering a batch of ${batch.length} live chat messages`);
 
         try {
             const selected = await this._filterWithLLM(batch);
 
             if (selected.length === 0) {
-                this.context.log('info', '本批弹幕无值得回复的内容，跳过');
+                this.context.log('info', 'Nothing in this batch is worth a reply, skipping');
                 return;
             }
 
             const prompt = this._buildPrompt(selected);
-            this.context.log('info', `选中 ${selected.length} 条弹幕，发起回复`);
+            this.context.log('info', `Picked ${selected.length} messages, replying`);
             await this.context.sendMessage(prompt);
 
         } catch (e) {
-            this.context.log('error', `弹幕批次处理失败: ${e.message}`);
+            this.context.log('error', `Failed to process the live chat batch: ${e.message}`);
         }
     }
 
     // ===== LLM 过滤 =====
 
     async _filterWithLLM(batch) {
-        const numbered = batch.map((m, i) => `${i + 1}. ${m.nickname}：${m.text}`).join('\n');
+        const numbered = batch.map((m, i) => `${i + 1}. ${m.nickname}: ${m.text}`).join('\n');
 
         const prompt =
-            `你是一个直播间AI主播的助手，负责筛选值得主播回复的弹幕。\n` +
-            `以下是直播间最近 ${this._windowMs / 1000} 秒内的弹幕，请从中挑选最多 ${this._maxRespond} 条最值得回复的。\n` +
-            `优先选：有实质内容的提问、有趣的评论、值得互动的话题。\n` +
-            `忽略：刷屏、无意义的"哈哈哈"、纯表情、重复的问题。\n` +
-            `如果整批都没有值得回复的，返回空数组。\n` +
-            `只返回选中的序号，JSON数组格式，例如 [1,3] 或 []，不要有其他文字。\n\n` +
-            `弹幕列表：\n${numbered}`;
+            `You help an AI live streamer by picking the chat messages worth replying to.\n` +
+            `Below are the chat messages from the last ${this._windowMs / 1000} seconds of the stream. Pick at most ${this._maxRespond} that are most worth a reply.\n` +
+            `Prefer: real questions, fun comments, topics worth talking about.\n` +
+            `Ignore: spam, meaningless "hahaha", emoji only, repeated questions.\n` +
+            `If nothing in the batch is worth a reply, return an empty array.\n` +
+            `Return only the numbers you picked, as a JSON array such as [1,3] or [], and no other text.\n\n` +
+            `Chat messages:\n${numbered}`;
 
         try {
             const raw = await this.context.callLLM(prompt, { temperature: 0.2 });
@@ -152,7 +152,7 @@ class SmartBarragePlugin extends Plugin {
                 .map(i => batch[i - 1]);
 
         } catch (e) {
-            this.context.log('warn', `LLM过滤调用失败: ${e.message}`);
+            this.context.log('warn', `LLM filter call failed: ${e.message}`);
             return [];
         }
     }
@@ -161,10 +161,10 @@ class SmartBarragePlugin extends Plugin {
 
     _buildPrompt(selected) {
         if (selected.length === 1) {
-            return `[直播弹幕] ${selected[0].nickname} 说：${selected[0].text}`;
+            return `[Live chat message] ${selected[0].nickname} says: ${selected[0].text}`;
         }
-        const lines = selected.map(m => `- ${m.nickname}：${m.text}`).join('\n');
-        return `[直播弹幕] 观众们说：\n${lines}`;
+        const lines = selected.map(m => `- ${m.nickname}: ${m.text}`).join('\n');
+        return `[Live chat message] Viewers say:\n${lines}`;
     }
 }
 

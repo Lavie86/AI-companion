@@ -37,10 +37,10 @@
 
     function fmtAgo(ts) {
         var diff = Date.now() - ts;
-        if (diff < 5000) return '刚刚';
-        if (diff < 60000) return Math.floor(diff / 1000) + ' 秒前';
-        if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
-        return Math.floor(diff / 3600000) + ' 小时前';
+        if (diff < 5000) return 'just now';
+        if (diff < 60000) return Math.floor(diff / 1000) + ' s ago';
+        if (diff < 3600000) return Math.floor(diff / 60000) + ' min ago';
+        return Math.floor(diff / 3600000) + ' h ago';
     }
 
     function pad2(n) { return (n < 10 ? '0' : '') + n; }
@@ -52,7 +52,7 @@
         var metricsEl = document.getElementById('overview-banner-metrics');
         if (dot) dot.className = 'overview-status-dot ' + (live2dRunning ? 'running' : 'idle');
         if (text) {
-            var next = live2dRunning ? '桌宠运行中' : '控制中心空闲';
+            var next = live2dRunning ? 'Pet is running' : 'Control Center idle';
             if (text.textContent !== next) {
                 text.textContent = next;
                 text.classList.remove('banner-text-swap');
@@ -63,9 +63,9 @@
         if (metricsEl) {
             var m = data.metrics || {};
             var src = m.live2d || m.webui;
-            var label = m.live2d ? '桌宠' : (m.available ? '控制中心' : null);
+            var label = m.live2d ? 'Pet' : (m.available ? 'Control Center' : null);
             if (!m.available || !src) {
-                metricsEl.textContent = '采样不可用';
+                metricsEl.textContent = 'Sampling unavailable';
             } else {
                 var cpu = src.cpu_percent != null ? src.cpu_percent + '%' : '—';
                 var rss = src.rss_mb != null ? Math.round(src.rss_mb) + ' MB' : '—';
@@ -73,10 +73,10 @@
                 if (typeof data.uptime_seconds === 'number') {
                     var h = Math.floor(data.uptime_seconds / 3600);
                     var min = Math.floor((data.uptime_seconds % 3600) / 60);
-                    uptime = ' · 已运行 ' + (h > 0 ? h + ' 小时 ' : '') + min + ' 分钟';
+                    uptime = ' · up ' + (h > 0 ? h + ' h ' : '') + min + ' m ';
                 }
-                metricsEl.textContent = (m.live2d ? '' : '(桌宠未启动,显示控制中心占用) ') +
-                    label + ' · CPU ' + cpu + ' · 内存 ' + rss + uptime;
+                metricsEl.textContent = (m.live2d ? '' : '(pet not started, showing Control Center usage) ') +
+                    label + ' · CPU ' + cpu + ' · Memory ' + rss + uptime;
             }
         }
     }
@@ -128,7 +128,7 @@
         if (!box) return;
         var filtered = (events || []).filter(function (ev) { return !SKIP_TYPES[ev.type]; });
         if (filtered.length === 0) {
-            box.innerHTML = '<div class="overview-empty">启动桌宠并说一句话后,这里会实时滚动重要动态</div>';
+            box.innerHTML = '<div class="overview-empty">Start the pet and say something. Important events will scroll here live.</div>';
             lastEventTs = 0;
             return;
         }
@@ -137,7 +137,7 @@
             var dotCls = LEVEL_CLASS[ev.level] || 'dot-info';
             var icon = CAT_ICON[ev.cat] || '•';
             var isNew = ev.ts > lastEventTs ? ' overview-event-new' : '';
-            return '<div class="overview-event' + isNew + '" title="完整原文在下方日志">' +
+            return '<div class="overview-event' + isNew + '" title="The full text is in the logs below">' +
                 '<span class="overview-event-icon">' + icon + '</span>' +
                 '<span class="overview-event-dot ' + dotCls + '"></span>' +
                 '<span class="overview-event-title">' + escapeHtml(ev.title || '') + '</span>' +
@@ -160,7 +160,7 @@
             return true;
         });
         if (list.length === 0) {
-            box.innerHTML = '<div class="overview-empty">暂无插件</div>';
+            box.innerHTML = '<div class="overview-empty">No plugins yet</div>';
             return;
         }
         box.innerHTML = list.map(function (p) {
@@ -254,13 +254,13 @@
         var chart = ensureChart('llm', 'chart-llm', {
             type: 'line',
             data: { labels: [], datasets: [
-                { label: '耗时 (s)', data: [], borderColor: c.accent, backgroundColor: c.accent, tension: 0.3, pointRadius: 2, yAxisID: 'y' },
-                { label: '输出 tokens', data: [], borderColor: c.accent2, backgroundColor: c.accent2, tension: 0.3, pointRadius: 2, borderDash: [4, 3], yAxisID: 'y1' }
+                { label: 'Latency (s)', data: [], borderColor: c.accent, backgroundColor: c.accent, tension: 0.3, pointRadius: 2, yAxisID: 'y' },
+                { label: 'Output tokens', data: [], borderColor: c.accent2, backgroundColor: c.accent2, tension: 0.3, pointRadius: 2, borderDash: [4, 3], yAxisID: 'y1' }
             ]},
             options: Object.assign(baseChartOpts(c), {
                 scales: {
                     x: baseChartOpts(c).scales.x,
-                    y: Object.assign(baseChartOpts(c).scales.y, { title: { display: true, text: '秒', color: c.textSecondary, font: { size: 10 } } }),
+                    y: Object.assign(baseChartOpts(c).scales.y, { title: { display: true, text: 'seconds', color: c.textSecondary, font: { size: 10 } } }),
                     y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { color: c.accent2, font: { size: 10 } }, title: { display: true, text: 'tokens', color: c.accent2, font: { size: 10 } } }
                 }
             })
@@ -282,8 +282,8 @@
         var chart = ensureChart('errors', 'chart-errors', {
             type: 'bar',
             data: { labels: [], datasets: [
-                { label: '错误', data: [], backgroundColor: c.red, stack: 's' },
-                { label: '警告', data: [], backgroundColor: c.orange, stack: 's' }
+                { label: 'Errors', data: [], backgroundColor: c.red, stack: 's' },
+                { label: 'Warnings', data: [], backgroundColor: c.orange, stack: 's' }
             ]},
             options: Object.assign(baseChartOpts(c), { scales: {
                 x: Object.assign(baseChartOpts(c).scales.x, { stacked: true }),
@@ -312,7 +312,7 @@
             type: 'line',
             data: { labels: [], datasets: [
                 { label: 'CPU %', data: [], borderColor: c.green, backgroundColor: c.green, tension: 0.3, pointRadius: 0, yAxisID: 'y' },
-                { label: '内存 MB', data: [], borderColor: c.blue, backgroundColor: c.blue, tension: 0.3, pointRadius: 0, yAxisID: 'y1' }
+                { label: 'Memory MB', data: [], borderColor: c.blue, backgroundColor: c.blue, tension: 0.3, pointRadius: 0, yAxisID: 'y1' }
             ]},
             options: Object.assign(baseChartOpts(c), {
                 scales: {

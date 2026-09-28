@@ -1,9 +1,9 @@
 {
   "name": "watch-screen",
-  "displayName": "看视频",
+  "displayName": "Watch Screen",
   "version": "1.0.0",
   "author": "community",
-  "description": "实时截图，保留最近5帧上下文。被动：每次用户说话时自动把最新屏幕注入LLM。主动：定时观察屏幕，有趣时自主评论。",
+  "description": "Takes live screenshots and keeps the last 5 frames as context. Passive: adds the latest screen to the LLM every time you speak. Active: watches the screen on a timer and comments when something is interesting.",
   "main": "index.js",
   "lang": "js"
 }

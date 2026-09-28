@@ -234,12 +234,12 @@ def _set_task_stage(plugin_name, stage):
 def _validate_hub_catalog(data, source_desc):
     """plugin_hub.json 的格式：{ key: {display_name, desc, author, repo} }。"""
     if not isinstance(data, dict) or not data:
-        raise ValueError(f'{source_desc} 不是插件索引对象')
+        raise ValueError(f'{source_desc} is not a plugin index object')
     for key, value in data.items():
         if not isinstance(key, str) or not isinstance(value, dict):
-            raise ValueError(f'{source_desc} 中条目 {key!r} 格式不正确')
+            raise ValueError(f'{source_desc} entry {key!r} has an invalid format')
         if not isinstance(value.get('repo', ''), str):
-            raise ValueError(f'{source_desc} 中条目 {key!r} 的 repo 不是字符串')
+            raise ValueError(f'{source_desc} entry {key!r} has a repo that is not a string')
     return data
 
 
@@ -257,7 +257,7 @@ def _fetch_hub_catalog(hub_url, settings):
             return _validate_hub_catalog(data, hub_url), source_label(mirror)
         except Exception as exc:
             last_error = exc
-    raise RuntimeError(f'索引 {hub_url} 不可用：{last_error}')
+    raise RuntimeError(f'Index {hub_url} is not available: {last_error}')
 
 
 def load_plugin_hub_catalog(settings=None):
@@ -277,7 +277,7 @@ def load_plugin_hub_catalog(settings=None):
             catalog, _source = _fetch_hub_catalog(hub_url, settings)
             return catalog
         except ValueError as exc:
-            errors.append(f'自定义源格式不正确：{exc}' if hub_url == custom_url else str(exc))
+            errors.append(f'Custom index has an invalid format: {exc}' if hub_url == custom_url else str(exc))
             logger.warning('插件索引格式不正确，将尝试下一来源：%s', exc)
         except Exception as exc:
             errors.append(str(exc))
@@ -288,7 +288,7 @@ def load_plugin_hub_catalog(settings=None):
             return json.load(f)
 
     raise FileNotFoundError(
-        f'无法加载插件商店：远程不可用 ({"; ".join(errors)})，且本地不存在 {plugin_hub_path}'
+        f'Could not load the plugin store: the remote index is not available ({"; ".join(errors)}), and there is no local copy at {plugin_hub_path}'
     )
 
 
@@ -315,8 +315,8 @@ def _build_market_plugin_items(check_updates=True, settings=None):
         plugins.append({
             'name': key,
             'display_name': value.get('display_name', value.get('displayName', key)),
-            'description': value.get('desc', value.get('description', '无描述')),
-            'author': value.get('author', '未知'),
+            'description': value.get('desc', value.get('description', 'No description')),
+            'author': value.get('author', 'unknown'),
             'repo': repo_url,
             # 兼容旧前端字段；这里传 repo，真正 archive URL 由后端动态解析。
             'download_url': repo_url,
@@ -400,9 +400,9 @@ def _plugin_dir_conflict(dir_name):
     """URL/zip 安装的目录名不能撞上已有的 community 或 built-in 目录。"""
     community_dir = _community_root() / dir_name
     if community_dir.exists() and any(community_dir.iterdir()):
-        return f'插件 {dir_name} 已安装，请使用更新'
+        return f'Plugin {dir_name} is already installed. Use update instead'
     if (_builtin_root() / dir_name).exists():
-        return f'目录名 {dir_name} 与内置插件冲突，无法安装'
+        return f'Folder name {dir_name} clashes with a built-in plugin, so it cannot be installed'
     return ''
 
 
@@ -446,7 +446,7 @@ def _start_install_task(plugin_name, plugin_url, plugin_dir, settings, archive_d
     """占位 + 启动后台安装线程。返回 (ok, error_message, http_status)。"""
     _community_root().mkdir(parents=True, exist_ok=True)
     if not _reserve_install_task(plugin_name, status='queued', progress=0, operation='install'):
-        return False, '该插件正在安装中', 409
+        return False, 'This plugin is already being installed', 409
 
     thread = threading.Thread(
         target=_install_plugin_worker,
@@ -485,12 +485,12 @@ def get_prompt_market():
         else:
             return jsonify({
                 'success': False,
-                'error': '获取提示词列表失败'
+                'error': 'Failed to fetch the prompt list'
             }), 500
     except Exception as e:
         return jsonify({
             'success': False,
-            'error': f'网络请求失败：{str(e)}'
+            'error': f'Network request failed: {str(e)}'
         }), 500
 
 
@@ -524,7 +524,7 @@ def get_plugin_market():
     except Exception as e:
         return jsonify({
             'success': False,
-            'error': f'加载插件商店数据失败：{str(e)}'
+            'error': f'Failed to load the plugin store data: {str(e)}'
         }), 500
 
 
@@ -541,13 +541,13 @@ def download_plugin():
             plugin_url = plugin_info.get('repo', '') if plugin_info else ''
 
         if not plugin_name or not plugin_url:
-            return jsonify({'success': False, 'error': '缺少参数'}), 400
+            return jsonify({'success': False, 'error': 'Missing parameters'}), 400
         if '/' in plugin_name or '\\' in plugin_name or '..' in plugin_name:
-            return jsonify({'success': False, 'error': '无效的插件名称'}), 400
+            return jsonify({'success': False, 'error': 'Invalid plugin name'}), 400
 
         plugin_dir = _get_market_plugin_dir(plugin_name)
         if plugin_dir.exists() and any(plugin_dir.iterdir()):
-            return jsonify({'success': False, 'error': '插件已安装'}), 400
+            return jsonify({'success': False, 'error': 'Plugin is already installed'}), 400
 
         settings = market_settings.load_settings()
         ok, error, status = _start_install_task(
@@ -559,7 +559,7 @@ def download_plugin():
         return jsonify({
             'success': True,
             'plugin_name': plugin_name,
-            'message': f'插件 {plugin_name} 开始安装，请稍候...'
+            'message': f'Plugin {plugin_name} install started, please wait...'
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -596,7 +596,7 @@ def _install_plugin_worker(plugin_name, plugin_url, plugin_dir, settings=None,
             logger.warning('插件 %s 已安装但自动启用失败：%s', plugin_name, exc)
             _append_task_warnings(
                 plugin_name,
-                [f'插件已安装但自动启用失败：{exc}，请到「插件管理」手动开启'],
+                [f'Plugin installed, but enabling it automatically failed: {exc}. Turn it on in “Plugins”.'],
             )
 
         _update_install_task(plugin_name, status='completed', progress=100, error='', enabled=enabled)
@@ -645,13 +645,13 @@ def save_market_settings():
     """保存设置；校验失败返回 400 并说明字段。"""
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
-        return jsonify({'success': False, 'error': '无效的请求数据'}), 400
+        return jsonify({'success': False, 'error': 'Invalid request data'}), 400
     try:
         saved = market_settings.save_settings(data)
     except ValueError as exc:
         return jsonify({'success': False, 'error': str(exc)}), 400
     except Exception as exc:
-        return jsonify({'success': False, 'error': f'保存失败：{exc}'}), 500
+        return jsonify({'success': False, 'error': f'Save failed: {exc}'}), 500
     return jsonify({'success': True, 'settings': saved})
 
 
@@ -661,7 +661,7 @@ def inspect_plugin_repository():
     data = request.get_json(silent=True) or {}
     repo_url = (data.get('repo') or '').strip()
     if not repo_url:
-        return jsonify({'success': False, 'error': '请填写 GitHub 仓库地址'}), 400
+        return jsonify({'success': False, 'error': 'Please enter a GitHub repository URL'}), 400
     try:
         settings = market_settings.load_settings()
         described = _describe_remote_plugin(repo_url, settings)
@@ -669,7 +669,7 @@ def inspect_plugin_repository():
     except ValueError as exc:
         return jsonify({'success': False, 'error': str(exc)}), 400
     except Exception as exc:
-        return jsonify({'success': False, 'error': f'读取仓库信息失败：{exc}'}), 502
+        return jsonify({'success': False, 'error': f'Failed to read the repository info: {exc}'}), 502
 
 
 @market_bp.route('/api/market/plugins/install-from-url', methods=['POST'])
@@ -679,21 +679,21 @@ def install_plugin_from_url():
     repo_url = (data.get('repo') or '').strip()
     ignore_compat = bool(data.get('ignore_compat'))
     if not repo_url:
-        return jsonify({'success': False, 'error': '请填写 GitHub 仓库地址'}), 400
+        return jsonify({'success': False, 'error': 'Please enter a GitHub repository URL'}), 400
     try:
         settings = market_settings.load_settings()
         described = _describe_remote_plugin(repo_url, settings)
     except ValueError as exc:
         return jsonify({'success': False, 'error': str(exc)}), 400
     except Exception as exc:
-        return jsonify({'success': False, 'error': f'读取仓库信息失败：{exc}'}), 502
+        return jsonify({'success': False, 'error': f'Failed to read the repository info: {exc}'}), 502
 
     if described['conflict']:
         return jsonify({'success': False, 'error': described['conflict']}), 409
     if not described['compatible'] and not ignore_compat:
         return jsonify({
             'success': False,
-            'error': described['compatibility_message'] or '插件与当前框架版本不兼容',
+            'error': described['compatibility_message'] or 'The plugin is not compatible with this app version',
             'compatibility_error': True,
         }), 409
 
@@ -711,7 +711,7 @@ def install_plugin_from_url():
         'success': True,
         'plugin_name': dir_name,
         'display_name': described['metadata']['displayName'],
-        'message': f'插件 {dir_name} 开始安装，请稍候...',
+        'message': f'Plugin {dir_name} install started, please wait...',
     })
 
 
@@ -720,7 +720,7 @@ def install_plugin_upload():
     """上传本地 zip 安装插件：同步校验 zip，通过后转后台任务。"""
     uploaded = request.files.get('file')
     if uploaded is None or not uploaded.filename:
-        return jsonify({'success': False, 'error': '请选择要上传的 zip 文件'}), 400
+        return jsonify({'success': False, 'error': 'Please choose a zip file to upload'}), 400
     ignore_compat = str(request.form.get('ignore_compat', '')).lower() in ('1', 'true', 'yes', 'on')
 
     upload_dir = _community_root() / UPLOAD_DIR_NAME
@@ -738,7 +738,7 @@ def install_plugin_upload():
         return jsonify({'success': False, 'error': str(exc)}), 400
     except Exception as exc:
         upload_path.unlink(missing_ok=True)
-        return jsonify({'success': False, 'error': f'读取上传文件失败：{exc}'}), 500
+        return jsonify({'success': False, 'error': f'Failed to read the uploaded file: {exc}'}), 500
 
     metadata = inspection['metadata']
     dir_name = inspection['info']['name']
@@ -751,7 +751,7 @@ def install_plugin_upload():
         upload_path.unlink(missing_ok=True)
         return jsonify({
             'success': False,
-            'error': compatibility_message or '插件与当前框架版本不兼容',
+            'error': compatibility_message or 'The plugin is not compatible with this app version',
             'compatibility_error': True,
         }), 409
 
@@ -773,7 +773,7 @@ def install_plugin_upload():
         'plugin_name': dir_name,
         'display_name': metadata.get('displayName') or dir_name,
         'version': inspection['info']['version'],
-        'message': f'插件 {dir_name} 开始安装，请稍候...',
+        'message': f'Plugin {dir_name} install started, please wait...',
     })
 
 
@@ -786,18 +786,18 @@ def update_market_plugin():
         repo_url = data.get('repo') or ''
 
         if not plugin_name:
-            return jsonify({'success': False, 'error': '缺少 plugin_name 参数'}), 400
+            return jsonify({'success': False, 'error': 'Missing plugin_name parameter'}), 400
         if _task_is_active(_get_install_task(plugin_name)):
-            return jsonify({'success': False, 'error': '该插件正在安装或更新中'}), 400
+            return jsonify({'success': False, 'error': 'This plugin is already being installed or updated'}), 400
 
         plugin_info = _find_market_plugin(plugin_name)
         repo_url = repo_url or (plugin_info.get('repo', '') if plugin_info else '')
         if not repo_url:
-            return jsonify({'success': False, 'error': '插件未配置 repo，无法更新'}), 400
+            return jsonify({'success': False, 'error': 'The plugin has no repo set, so it cannot be updated'}), 400
 
         plugin_dir = _get_market_plugin_dir(plugin_name)
         if not plugin_dir.exists() or not any(plugin_dir.iterdir()):
-            return jsonify({'success': False, 'error': '插件尚未安装'}), 404
+            return jsonify({'success': False, 'error': 'The plugin is not installed yet'}), 404
 
         if not _reserve_install_task(
             plugin_name,
@@ -805,7 +805,7 @@ def update_market_plugin():
             progress=10,
             operation='update',
         ):
-            return jsonify({'success': False, 'error': '该插件正在安装或更新中'}), 409
+            return jsonify({'success': False, 'error': 'This plugin is already being installed or updated'}), 409
         settings = market_settings.load_settings()
         result = update_plugin_safe(
             plugin_dir,
@@ -823,7 +823,7 @@ def update_market_plugin():
         )
         return jsonify({
             'success': True,
-            'message': '插件更新完成',
+            'message': 'Plugin update finished',
             'result': result,
             'warnings': result.get('warnings', []),
         })
@@ -849,7 +849,7 @@ def update_all_market_plugins():
         data = request.get_json() or {}
         plugin_names = data.get('plugin_names') or data.get('names') or []
         if not isinstance(plugin_names, list) or not plugin_names:
-            return jsonify({'success': False, 'error': '插件列表不能为空'}), 400
+            return jsonify({'success': False, 'error': 'The plugin list cannot be empty'}), 400
 
         settings = market_settings.load_settings()
         market_plugins = {
@@ -860,19 +860,19 @@ def update_all_market_plugins():
         def _update_one(name):
             plugin = market_plugins.get(name)
             if not plugin:
-                return {'name': name, 'success': False, 'error': '插件不在插件广场中'}
+                return {'name': name, 'success': False, 'error': 'The plugin is not in the marketplace'}
             if not plugin.get('installed'):
-                return {'name': name, 'success': False, 'error': '插件尚未安装'}
+                return {'name': name, 'success': False, 'error': 'The plugin is not installed yet'}
             repo_url = plugin.get('repo', '')
             if not repo_url:
-                return {'name': name, 'success': False, 'error': '插件未配置 repo'}
+                return {'name': name, 'success': False, 'error': 'The plugin has no repo'}
             if not _reserve_install_task(
                 name,
                 status='updating',
                 progress=10,
                 operation='update',
             ):
-                return {'name': name, 'success': False, 'error': '插件正在安装或更新中'}
+                return {'name': name, 'success': False, 'error': 'The plugin is being installed or updated'}
             try:
                 result = update_plugin_safe(
                     _get_market_plugin_dir(name),
@@ -905,9 +905,9 @@ def update_all_market_plugins():
         return jsonify({
             'success': len(failed) == 0,
             'message': (
-                '全部插件更新完成'
+                'All plugins updated'
                 if not failed
-                else f'批量更新完成，其中 {len(failed)}/{len(results)} 个失败'
+                else f'Update all finished: {len(failed)}/{len(results)} failed'
             ),
             'results': results,
         })
@@ -943,7 +943,7 @@ def check_market_plugin_updates():
 def get_install_status(plugin_name):
     """获取插件安装状态"""
     if '/' in plugin_name or '\\' in plugin_name or '..' in plugin_name:
-        return jsonify({'success': False, 'error': '无效的插件名称'}), 400
+        return jsonify({'success': False, 'error': 'Invalid plugin name'}), 400
 
     plugin_dir = _get_market_plugin_dir(plugin_name)
     is_installed = plugin_dir.exists() and any(plugin_dir.iterdir())
@@ -1040,13 +1040,13 @@ def get_tool_market():
         else:
             return jsonify({
                 'success': False,
-                'error': '获取工具列表失败'
+                'error': 'Failed to fetch the tool list'
             }), 500
     except Exception as e:
         logger.error(f'获取工具列表失败: {str(e)}')
         return jsonify({
             'success': False,
-            'error': f'网络请求失败：{str(e)}'
+            'error': f'Network request failed: {str(e)}'
         }), 500
 
 
@@ -1063,7 +1063,7 @@ def download_tool():
 
         if not tool_url:
             logger.error(f'下载工具失败：缺少 download_url')
-            return jsonify({'success': False, 'error': '缺少下载URL'}), 400
+            return jsonify({'success': False, 'error': 'Missing download URL'}), 400
 
         # 使用 file_name 作为保存文件名，如果没有则使用 tool_name
         save_filename = file_name if file_name else f'{tool_name}.js'
@@ -1093,20 +1093,20 @@ def download_tool():
         # 检查是否为 HTML 内容
         if content.startswith(b'<!DOCTYPE') or content.startswith(b'<!doctype') or content.startswith(b'<html'):
             logger.error(f'下载内容为 HTML 格式，URL: {tool_url}')
-            return jsonify({'success': False, 'error': '下载内容为 HTML 格式，请检查 URL 是否正确'}), 500
+            return jsonify({'success': False, 'error': 'The download is an HTML page. Check that the URL is correct'}), 500
 
         with open(file_path, 'wb') as f:
             f.write(content)
         
         logger.info(f'工具 {save_filename} 已成功保存到 {file_path}')
-        return jsonify({'success': True, 'message': f'工具 {save_filename} 已下载到 mcp/tools 目录'})
+        return jsonify({'success': True, 'message': f'Tool {save_filename} downloaded to the mcp/tools folder'})
 
     except urllib.error.HTTPError as e:
         logger.error(f'HTTP 错误: {e}, URL: {tool_url}')
-        return jsonify({'success': False, 'error': f'下载失败：HTTP {e.code}'}), 500
+        return jsonify({'success': False, 'error': f'Download failed: HTTP {e.code}'}), 500
     except urllib.error.URLError as e:
         logger.error(f'网络错误: {e}, URL: {tool_url}')
-        return jsonify({'success': False, 'error': f'下载失败：网络错误 - {e.reason}'}), 500
+        return jsonify({'success': False, 'error': f'Download failed: network error - {e.reason}'}), 500
     except Exception as e:
         logger.error(f'下载工具时发生未捕获异常: {str(e)}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1149,13 +1149,13 @@ def get_fc_market():
         else:
             return jsonify({
                 'success': False,
-                'error': '获取 FC 工具列表失败'
+                'error': 'Failed to fetch the FC tool list'
             }), 500
     except Exception as e:
         logger.error(f'获取 FC 工具列表失败: {str(e)}')
         return jsonify({
             'success': False,
-            'error': f'网络请求失败：{str(e)}'
+            'error': f'Network request failed: {str(e)}'
         }), 500
 
 
@@ -1172,7 +1172,7 @@ def download_fc_tool():
 
         if not tool_url:
             logger.error(f'FC工具下载失败：缺少 download_url')
-            return jsonify({'success': False, 'error': '缺少下载URL'}), 400
+            return jsonify({'success': False, 'error': 'Missing download URL'}), 400
 
         # 使用 file_name 作为保存文件名，如果没有则使用 tool_name
         save_filename = file_name if file_name else f'{tool_name}.js'
@@ -1202,20 +1202,20 @@ def download_fc_tool():
         # 检查是否为 HTML 内容
         if content.startswith(b'<!DOCTYPE') or content.startswith(b'<!doctype') or content.startswith(b'<html'):
             logger.error(f'FC工具下载内容为 HTML 格式，URL: {tool_url}')
-            return jsonify({'success': False, 'error': '下载内容为 HTML 格式，请检查 URL 是否正确'}), 500
+            return jsonify({'success': False, 'error': 'The download is an HTML page. Check that the URL is correct'}), 500
 
         with open(file_path, 'wb') as f:
             f.write(content)
         
         logger.info(f'FC工具 {save_filename} 已成功保存到 {file_path}')
-        return jsonify({'success': True, 'message': f'FC 工具 {save_filename} 已下载到 server-tools 目录'})
+        return jsonify({'success': True, 'message': f'FC Tool {save_filename} downloaded to the server-tools folder'})
 
     except urllib.error.HTTPError as e:
         logger.error(f'FC工具HTTP错误: {e}, URL: {tool_url}')
-        return jsonify({'success': False, 'error': f'下载失败：HTTP {e.code}'}), 500
+        return jsonify({'success': False, 'error': f'Download failed: HTTP {e.code}'}), 500
     except urllib.error.URLError as e:
         logger.error(f'FC工具网络错误: {e}, URL: {tool_url}')
-        return jsonify({'success': False, 'error': f'下载失败：网络错误 - {e.reason}'}), 500
+        return jsonify({'success': False, 'error': f'Download failed: network error - {e.reason}'}), 500
     except Exception as e:
         logger.error(f'下载FC工具时发生未捕获异常: {str(e)}', exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500

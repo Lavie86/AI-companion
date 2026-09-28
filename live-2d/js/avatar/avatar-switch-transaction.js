@@ -47,13 +47,13 @@ class AvatarSwitchTransaction {
         const target = normalizeAvatarType(targetType);
         const windowId = context.windowId;
         if (windowId === undefined || windowId === null) {
-            return { success: false, phase: 'failed', message: '缺少切换窗口标识' };
+            return { success: false, phase: 'failed', message: 'Missing the window ID for the switch' };
         }
         if (!target) {
-            return { success: false, phase: 'failed', message: `未知形态: ${targetType}` };
+            return { success: false, phase: 'failed', message: `Unknown avatar type: ${targetType}` };
         }
         if (this._switchingWindows.has(windowId) || this._pendingReloads.has(windowId)) {
-            return { success: false, phase: 'busy', targetType: target, message: '形态切换进行中' };
+            return { success: false, phase: 'busy', targetType: target, message: 'An avatar type switch is already in progress' };
         }
 
         this._switchingWindows.add(windowId);
@@ -63,7 +63,7 @@ class AvatarSwitchTransaction {
                     success: false,
                     phase: 'failed',
                     targetType: target,
-                    message: `${target} 形态没有可用模型，未切换`
+                    message: `${target} avatar type has no models, not switched`
                 };
             }
 
@@ -75,7 +75,7 @@ class AvatarSwitchTransaction {
                     targetType: target,
                     activeType: target,
                     reloadRequired: false,
-                    message: `已是 ${target} 形态`
+                    message: `Already using the ${target} avatar type`
                 };
             }
 
@@ -87,7 +87,7 @@ class AvatarSwitchTransaction {
                     phase: 'failed',
                     targetType: target,
                     activeType: previous,
-                    message: `保存目标形态失败: ${errorMessage(error)}`
+                    message: `Failed to save the target avatar type: ${errorMessage(error)}`
                 };
             }
 
@@ -103,8 +103,8 @@ class AvatarSwitchTransaction {
                     activeType: previous,
                     restored: rollback.success,
                     message: rollback.success
-                        ? `通知渲染进程失败，已恢复 ${previous}: ${errorMessage(error)}`
-                        : `通知渲染进程失败，且配置回滚失败: ${rollback.message}`
+                        ? `Could not notify the renderer, restored ${previous}: ${errorMessage(error)}`
+                        : `Could not notify the renderer, and the config rollback failed: ${rollback.message}`
                 };
             }
 
@@ -116,7 +116,7 @@ class AvatarSwitchTransaction {
                     targetType: target,
                     activeType: normalizeAvatarType(rendererResult.activeType) || target,
                     reloadRequired: false,
-                    message: rendererResult.message || `已切换到 ${target}`
+                    message: rendererResult.message || `Switched to ${target}`
                 };
             }
 
@@ -129,7 +129,7 @@ class AvatarSwitchTransaction {
                         targetType: target,
                         expectedType: target,
                         rollbackAttempted: false,
-                        reason: rendererResult.message || '跨渲染引擎切换'
+                        reason: rendererResult.message || 'Switch across render engines'
                     });
                 } catch (error) {
                     const rollback = await this._rollbackModelType(previous, context);
@@ -141,8 +141,8 @@ class AvatarSwitchTransaction {
                         activeType: previous,
                         restored: rollback.success,
                         message: rollback.success
-                            ? `窗口重载安排失败，已恢复 ${previous}: ${errorMessage(error)}`
-                            : `窗口重载安排失败，且配置回滚失败: ${rollback.message}`
+                            ? `Could not schedule the window reload, restored ${previous}: ${errorMessage(error)}`
+                            : `Could not schedule the window reload, and the config rollback failed: ${rollback.message}`
                     };
                 }
                 return {
@@ -151,7 +151,7 @@ class AvatarSwitchTransaction {
                     targetType: target,
                     activeType: normalizeAvatarType(rendererResult.activeType) || previous,
                     reloadRequired: true,
-                    message: rendererResult.message || `已安排重载以切换到 ${target}`
+                    message: rendererResult.message || `Scheduled a reload to switch to ${target}`
                 };
             }
 
@@ -163,7 +163,7 @@ class AvatarSwitchTransaction {
                     targetType: target,
                     activeType: normalizeAvatarType(rendererResult?.activeType),
                     restored: false,
-                    message: `切换失败，且配置回滚失败: ${rollback.message}`
+                    message: `Switch failed, and the config rollback failed: ${rollback.message}`
                 };
             }
             await this.publishModelType(previous, context);
@@ -180,7 +180,7 @@ class AvatarSwitchTransaction {
                         targetType: target,
                         expectedType: previous,
                         rollbackAttempted: true,
-                        reason: rendererResult?.message || '切换失败后恢复旧形态'
+                        reason: rendererResult?.message || 'Restoring the old avatar type after a failed switch'
                     });
                 } catch (error) {
                     return {
@@ -189,7 +189,7 @@ class AvatarSwitchTransaction {
                         targetType: target,
                         activeType: rendererRestored ? previous : null,
                         restored: rendererRestored,
-                        message: `配置已恢复为 ${previous}，但窗口重载安排失败: ${errorMessage(error)}`
+                        message: `Config restored to ${previous}, but the window reload could not be scheduled: ${errorMessage(error)}`
                     };
                 }
                 return {
@@ -199,7 +199,7 @@ class AvatarSwitchTransaction {
                     activeType: rendererRestored ? previous : null,
                     restored: rendererRestored,
                     reloadRequired: true,
-                    message: rendererResult?.message || `切换失败，正在重载恢复 ${previous}`
+                    message: rendererResult?.message || `Switch failed, reloading to restore ${previous}`
                 };
             }
 
@@ -210,7 +210,7 @@ class AvatarSwitchTransaction {
                 activeType: previous,
                 restored: true,
                 reloadRequired: false,
-                message: rendererResult?.message || `切换失败，已恢复 ${previous}`
+                message: rendererResult?.message || `Switch failed, restored ${previous}`
             };
         } finally {
             this._switchingWindows.delete(windowId);
@@ -228,7 +228,7 @@ class AvatarSwitchTransaction {
                 phase: payload.success === true ? 'ready' : 'failed',
                 activeType,
                 matchedPending: false,
-                message: payload.message || (payload.success === true ? '运行时已就绪' : '运行时初始化失败')
+                message: payload.message || (payload.success === true ? 'Runtime ready' : 'Runtime failed to start')
             };
         }
 
@@ -241,13 +241,13 @@ class AvatarSwitchTransaction {
                 targetType: pending.targetType,
                 activeType,
                 matchedPending: true,
-                message: `${activeType} 形态已就绪`
+                message: `${activeType} avatar type ready`
             };
         }
 
         return this._recoverPendingReload(
             pending,
-            payload.message || `运行时就绪类型不匹配: expected=${pending.expectedType}, actual=${activeType || 'none'}`
+            payload.message || `Runtime ready with the wrong type: expected=${pending.expectedType}, actual=${activeType || 'none'}`
         );
     }
 
@@ -300,11 +300,11 @@ class AvatarSwitchTransaction {
         pending.timer = this.setTimer(() => {
             this._recoverPendingReload(
                 pending,
-                `运行时未在 ${this.readyTimeoutMs}ms 内确认 ready`
+                `Waited ${this.readyTimeoutMs}ms without the runtime reporting ready`
             ).then((result) => {
                 this.log(result.success ? 'info' : 'error', result.message);
             }).catch((error) => {
-                this.log('error', `Avatar ready 超时恢复失败: ${errorMessage(error)}`);
+                this.log('error', `Avatar ready timeout recovery failed: ${errorMessage(error)}`);
             });
         }, this.readyTimeoutMs);
         pending.timer?.unref?.();
@@ -320,7 +320,7 @@ class AvatarSwitchTransaction {
                 targetType: pending.targetType,
                 activeType: null,
                 restored: false,
-                message: `${reason}；自动恢复已尝试一次，停止继续重载`
+                message: `${reason}; automatic recovery was already tried once, no more reloads`
             };
         }
 
@@ -333,7 +333,7 @@ class AvatarSwitchTransaction {
                 targetType: pending.targetType,
                 activeType: null,
                 restored: false,
-                message: `${reason}；配置回滚失败: ${rollback.message}`
+                message: `${reason}; config rollback failed: ${rollback.message}`
             };
         }
         await this.publishModelType(pending.previousType, pending.context);
@@ -357,7 +357,7 @@ class AvatarSwitchTransaction {
                 targetType: pending.targetType,
                 activeType: null,
                 restored: false,
-                message: `${reason}；配置已回滚，但恢复重载安排失败: ${errorMessage(error)}`
+                message: `${reason}; config rolled back, but the recovery reload could not be scheduled: ${errorMessage(error)}`
             };
         }
 
@@ -368,7 +368,7 @@ class AvatarSwitchTransaction {
             activeType: null,
             restored: false,
             reloadRequired: true,
-            message: `${reason}；已回滚配置并安排恢复重载`
+            message: `${reason}; config rolled back and a recovery reload scheduled`
         };
     }
 

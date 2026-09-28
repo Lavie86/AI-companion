@@ -8,7 +8,7 @@ class ScreenshotPlugin extends Plugin {
             type: 'function',
             function: {
                 name: 'take_screenshot',
-                description: '截取当前屏幕并返回图片用于AI分析，可以查看电脑屏幕上的内容',
+                description: 'Take a screenshot of the screen and return the image, so you can see what is on the computer screen',
                 parameters: { type: 'object', properties: {}, required: [] }
             }
         }];
@@ -16,16 +16,16 @@ class ScreenshotPlugin extends Plugin {
 
     async executeTool(name, params) {
         if (name === 'take_screenshot') return await this._takeScreenshot();
-        throw new Error(`[screenshot] 不支持的工具: ${name}`);
+        throw new Error(`[screenshot] Unsupported tool: ${name}`);
     }
 
     async _takeScreenshot() {
         try {
             const base64Image = await ipcRenderer.invoke('take-screenshot');
-            if (!base64Image) throw new Error('截图返回空数据');
-            return { _isScreenshot: true, base64: base64Image, message: '截图已完成' };
+            if (!base64Image) throw new Error('The screenshot returned no data');
+            return { _isScreenshot: true, base64: base64Image, message: 'Screenshot taken' };
         } catch (error) {
-            return `截图失败: ${error.message}`;
+            return `Screenshot failed: ${error.message}`;
         }
     }
 }

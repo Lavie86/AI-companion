@@ -35,7 +35,7 @@ class AiLogPlugin extends Plugin {
     }
 
     async onStart() {
-        this.context.log('info', `AI 日志插件已启动 | 日志目录: ${this._diaryFolder}`);
+        this.context.log('info', `AI journal plugin started | journal folder: ${this._diaryFolder}`);
     }
 
     // ===== 工具注册 =====
@@ -46,18 +46,18 @@ class AiLogPlugin extends Plugin {
                 type: 'function',
                 function: {
                     name: 'write_ai_diary',
-                    description: `生成今天的AI日志，总结当天对话历史并保存为观察报告，同时写入核心记忆。【严格限制】只有以下两种情况才允许调用：1) 用户明确、直接地要求写AI日志/生成日志/记录日志时（trigger_reason="user_requested", force=true）；2) 用户在当前这句话中明确表达了睡意（说了"晚安"、"我去睡了"、"睡觉了"等），且当前在晚上${this._triggerAfterHour}点至凌晨${this._nightHourStart}点之间时（trigger_reason="user_said_goodnight", force=false）。【严禁】在用户没有说出上述关键词时自行调用此工具，即使现在是深夜也不行。不要猜测用户意图，不要主动写日志。`,
+                    description: `Write today's AI journal: sum up today's conversation, save it as an observation report and also add it to core memory. [Strict rule] You may call this only in these two cases: 1) The user clearly and directly asks you to write the AI journal (trigger_reason="user_requested", force=true); 2) In their current message the user clearly says they are going to sleep (they said "good night", "I'm going to bed", "time to sleep" or similar), and the time is between ${this._triggerAfterHour}:00 at night and ${this._nightHourStart}:00 in the early morning (trigger_reason="user_said_goodnight", force=false). [Never] call this tool on your own when the user has not said one of these phrases, not even late at night. Do not guess what the user wants and do not write the journal unprompted.`,
                     parameters: {
                         type: 'object',
                         properties: {
                             force: {
                                 type: 'boolean',
-                                description: '是否强制执行（跳过时间窗口限制）。用户明确要求写日志时传 true，晚安自动触发时传 false'
+                                description: 'Whether to force it (skips the time window check). Pass true when the user explicitly asks for the journal. For a good night trigger, pass false'
                             },
                             trigger_reason: {
                                 type: 'string',
                                 enum: ['user_requested', 'user_said_goodnight'],
-                                description: '【必填】触发原因。user_requested=用户在当前消息中明确要求写日志；user_said_goodnight=用户在当前消息中明确说了晚安/睡觉等词语。禁止在不满足条件时捏造理由。'
+                                description: '[Required] Why you are calling it. user_requested=the user asks for the journal in their current message; user_said_goodnight=the user says good night, going to sleep or similar in their current message. Never make up a reason when neither is true.'
                             }
                         },
                         required: ['trigger_reason']
@@ -68,13 +68,13 @@ class AiLogPlugin extends Plugin {
                 type: 'function',
                 function: {
                     name: 'read_recent_diary',
-                    description: '查看最近几天的AI日志内容，帮助回顾最近发生的事情',
+                    description: 'Read the AI journal of the last few days to recall what happened recently',
                     parameters: {
                         type: 'object',
                         properties: {
                             days: {
                                 type: 'number',
-                                description: '要查看最近几天的日志，默认为3天'
+                                description: 'How many days of journal to read. Default: 3'
                             }
                         },
                         required: []
@@ -85,7 +85,7 @@ class AiLogPlugin extends Plugin {
                 type: 'function',
                 function: {
                     name: 'write_monthly_summary',
-                    description: '每月1号调用此工具生成上个月的月度总结。这个工具会读取上个月的所有AI日志，生成一份肥牛视角的月度观察报告。',
+                    description: 'Call this on the 1st of each month to write last month\'s summary. It reads all of last month\'s AI journal entries and writes a monthly observation report from your point of view.',
                     parameters: {
                         type: 'object',
                         properties: {},
@@ -97,7 +97,7 @@ class AiLogPlugin extends Plugin {
     }
 
     async executeTool(name, params) {
-        this.context.log('info', `执行工具: ${name}`);
+        this.context.log('info', `Running tool: ${name}`);
 
         switch (name) {
             case 'write_ai_diary':
@@ -107,7 +107,7 @@ class AiLogPlugin extends Plugin {
             case 'write_monthly_summary':
                 return await this._writeMonthlySummary();
             default:
-                throw new Error(`不支持的工具: ${name}`);
+                throw new Error(`Unsupported tool: ${name}`);
         }
     }
 
@@ -147,7 +147,7 @@ class AiLogPlugin extends Plugin {
         const model = this._model || global.voiceChat?.MODEL;
 
         if (!apiUrl || !apiKey) {
-            throw new Error('API 配置缺失，请在 plugin_config.json 中配置或确保主 LLM 可用');
+            throw new Error('API settings are missing. Set them in plugin_config.json or make sure the main LLM is available');
         }
 
         for (let attempt = 1; attempt <= this._maxRetries; attempt++) {
@@ -170,7 +170,7 @@ class AiLogPlugin extends Plugin {
                     requestBody.reasoning_effort = this._reasoningEffort;
                 }
 
-                this.context.log('info', `调用 API 第 ${attempt} 次... | 模型: ${model} | thinking: ${thinkingMode || 'default'} | reasoning_effort: ${this._reasoningEffort || 'default'}`);
+                this.context.log('info', `Calling the API, attempt ${attempt} | model: ${model} | thinking: ${thinkingMode || 'default'} | reasoning_effort: ${this._reasoningEffort || 'default'}`);
 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -184,15 +184,15 @@ class AiLogPlugin extends Plugin {
                 const data = await response.json();
 
                 if (data.choices?.[0]?.message) {
-                    this.context.log('info', 'API 调用成功');
+                    this.context.log('info', 'API call succeeded');
                     return data.choices[0].message.content;
                 }
                 if (data.error) {
-                    throw new Error(`API 错误: ${data.error.message || JSON.stringify(data.error)}`);
+                    throw new Error(`API error: ${data.error.message || JSON.stringify(data.error)}`);
                 }
-                throw new Error('API 响应格式异常');
+                throw new Error('API response has an unexpected format');
             } catch (error) {
-                this.context.log('error', `第 ${attempt} 次尝试失败: ${error.message}`);
+                this.context.log('error', `Attempt ${attempt} failed: ${error.message}`);
                 if (attempt === this._maxRetries) throw error;
                 await new Promise(r => setTimeout(r, 1000));
             }
@@ -229,12 +229,12 @@ class AiLogPlugin extends Plugin {
 
         if (files.length === 0) return null;
 
-        this.context.log('info', `找到 ${yearMonth} 的 ${files.length} 篇 AI 日志`);
+        this.context.log('info', `Month ${yearMonth} has ${files.length} AI journal entries`);
 
         return files.map(f => {
             const content = fs.readFileSync(path.join(this._diaryFolder, f), 'utf-8');
             const date = f.replace(suffix, '');
-            return `=== ${date} 的日志 ===\n${content}`;
+            return `=== ${date} journal ===\n${content}`;
         }).join('\n\n');
     }
 
@@ -244,7 +244,7 @@ class AiLogPlugin extends Plugin {
         }
         const filePath = path.join(this._diaryFolder, filename);
         fs.writeFileSync(filePath, content, 'utf-8');
-        this.context.log('info', `文件已保存: ${filePath}`);
+        this.context.log('info', `File saved: ${filePath}`);
         return filePath;
     }
 
@@ -268,9 +268,9 @@ class AiLogPlugin extends Plugin {
                 : existing + newEntry;
 
             fs.writeFileSync(this._coreMemoryPath, final, 'utf-8');
-            this.context.log('info', `核心记忆已更新: ${entryKey}`);
+            this.context.log('info', `Core memory updated: ${entryKey}`);
         } catch (error) {
-            this.context.log('error', `更新核心记忆失败: ${error.message}`);
+            this.context.log('error', `Failed to update core memory: ${error.message}`);
         }
     }
 
@@ -319,11 +319,11 @@ class AiLogPlugin extends Plugin {
                 fs.writeFileSync(this._coreMemoryPath, pruned, 'utf-8');
                 const removed = dailyEntries.length + monthlyEntries.length - keepDaily.length - keepMonthly.length;
                 if (removed > 0) {
-                    this.context.log('info', `核心记忆已裁剪：保留最近1天日志、最近1月总结，移除 ${removed} 条旧记录`);
+                    this.context.log('info', `Core memory trimmed: kept the latest daily journal and the latest monthly summary, removed ${removed} old entries`);
                 }
             }
         } catch (error) {
-            this.context.log('error', `核心记忆裁剪失败: ${error.message}`);
+            this.context.log('error', `Failed to trim core memory: ${error.message}`);
         }
     }
 
@@ -332,13 +332,13 @@ class AiLogPlugin extends Plugin {
 
         try {
             if (!fs.existsSync(this._conversationHistoryPath)) {
-                this.context.log('warn', '记忆库文件不存在，跳过备份');
+                this.context.log('warn', 'The memory log file does not exist, skipping the backup');
                 return;
             }
 
             const content = fs.readFileSync(this._conversationHistoryPath, 'utf-8');
             if (!content.trim()) {
-                this.context.log('info', '记忆库为空，跳过备份');
+                this.context.log('info', 'The memory log is empty, skipping the backup');
                 return;
             }
 
@@ -351,12 +351,12 @@ class AiLogPlugin extends Plugin {
             const backupFilename = `记忆库-${date}-${timeStr}.txt`;
             const backupPath = path.join(this._historyBackupFolder, backupFilename);
             fs.writeFileSync(backupPath, content, 'utf-8');
-            this.context.log('info', `记忆库已备份: ${backupPath}`);
+            this.context.log('info', `Memory log backed up: ${backupPath}`);
 
             fs.writeFileSync(this._conversationHistoryPath, '', 'utf-8');
-            this.context.log('info', '记忆库已清空，准备记录新一天的内容');
+            this.context.log('info', 'Memory log cleared, ready for a new day');
         } catch (error) {
-            this.context.log('error', `记忆库备份失败: ${error.message}`);
+            this.context.log('error', `Memory log backup failed: ${error.message}`);
         }
     }
 
@@ -370,20 +370,20 @@ class AiLogPlugin extends Plugin {
     async _writeDiary(force = false, triggerReason) {
         const validReasons = ['user_requested', 'user_said_goodnight'];
         if (!triggerReason || !validReasons.includes(triggerReason)) {
-            this.context.log('warn', `无效的触发原因: ${triggerReason}，拒绝执行`);
-            return '触发原因无效或缺失，拒绝写日志。只有用户明确要求写日志或用户说了晚安/睡觉时才能调用此工具。';
+            this.context.log('warn', `Invalid trigger reason: ${triggerReason}, refusing to run`);
+            return 'The trigger reason is invalid or missing, so no journal was written. Only call this tool when the user explicitly asks for the journal or says good night or that they are going to sleep.';
         }
 
         if (triggerReason === 'user_said_goodnight' && !this._isInTriggerWindow()) {
-            this.context.log('warn', `晚安触发但不在时间窗口内（需 ${this._triggerAfterHour}:00-${this._nightHourStart}:00），拒绝执行`);
-            return `现在还不到写日志的时间哦，晚上${this._triggerAfterHour}点以后再来吧！如果你确实想现在写，可以明确告诉我"写AI日志"。`;
+            this.context.log('warn', `Good night trigger outside the time window (needs ${this._triggerAfterHour}:00-${this._nightHourStart}:00), refusing to run`);
+            return `It's not journal time yet! Come back after ${this._triggerAfterHour}:00 tonight. If you really want to write it now, tell me clearly: "write the AI journal".`;
         }
 
         if (triggerReason === 'user_requested' && !force && !this._isInTriggerWindow()) {
-            return `现在还不到写日志的时间哦，晚上${this._triggerAfterHour}点以后再来吧！如果你确实想现在写，可以明确告诉我"强制写AI日志"。`;
+            return `It's not journal time yet! Come back after ${this._triggerAfterHour}:00 tonight. If you really want to write it now, tell me clearly: "force write the AI journal".`;
         }
 
-        this.context.log('info', `开始生成 AI 日志（触发原因: ${triggerReason}）...`);
+        this.context.log('info', `Writing the AI journal (trigger reason: ${triggerReason})...`);
 
         const date = this._getProperDate();
         const filename = this._getDiaryFilename(date);
@@ -394,23 +394,23 @@ class AiLogPlugin extends Plugin {
             const existing = fs.readFileSync(diaryPath, 'utf-8').trim();
             if (existing) {
                 previousDiary = existing;
-                this.context.log('info', '检测到今天已有日志，将进入"合并模式"生成新版本');
+                this.context.log('info', 'Today already has a journal, switching to "merge mode" to write a new version');
             }
         }
 
         const history = this._readConversationHistory();
-        if (!history && !previousDiary) return '今天没有对话历史，无法生成AI日志';
+        if (!history && !previousDiary) return 'There is no conversation history for today, so no AI journal can be written';
 
         let diaryContent;
         try {
             if (previousDiary) {
                 diaryContent = await this._mergeDiary(previousDiary, history);
             } else {
-                const userContent = `【今天的对话历史】\n${history}\n\n请根据以上对话历史生成今天的AI日志。`;
+                const userContent = `[Today's conversation history]\n${history}\n\nWrite today's AI journal based on the conversation history above.`;
                 diaryContent = await this._callAPI(this._dailyPrompt, userContent);
             }
         } catch (error) {
-            return `生成AI日志失败：${error.message}（已重试${this._maxRetries}次）`;
+            return `Failed to write the AI journal: ${error.message} (retried ${this._maxRetries} times)`;
         }
 
         const savedPath = this._saveDiaryFile(filename, diaryContent);
@@ -420,8 +420,8 @@ class AiLogPlugin extends Plugin {
 
         this._backupAndClearHistory(date);
 
-        this.context.log('info', 'AI 日志生成完成');
-        return `AI日志已生成并保存：${savedPath}\n\n${diaryContent}`;
+        this.context.log('info', 'AI journal finished');
+        return `AI journal written and saved: ${savedPath}\n\n${diaryContent}`;
     }
 
     /**
@@ -433,48 +433,48 @@ class AiLogPlugin extends Plugin {
      */
     async _mergeDiary(previousDiary, history) {
         if (!history) {
-            this.context.log('info', '记忆库为空（自上次写日志后没有新对话），旧日志原样保留');
+            this.context.log('info', 'The memory log is empty (no new conversation since the last journal), keeping the old journal as is');
             return previousDiary;
         }
 
-        this.context.log('info', '【合并模式 1/2】提炼新对话的事件清单...');
-        const extractSystemPrompt = `你是一个客观、中性的对话事件提取器。
+        this.context.log('info', '[Merge mode 1/2] Extracting a list of events from the new conversation...');
+        const extractSystemPrompt = `You extract events from conversations, objectively and neutrally.
 
-请阅读用户提供的对话历史，提取出其中发生的关键事件、用户的具体行为、值得记录的对话内容。
+Read the conversation history the user gives you and pull out the key events, what the user did, and the parts of the conversation worth recording.
 
-输出要求：
-- 用列表格式，每件事一行，以 "- " 开头
-- 客观陈述事实，不要任何情绪化语言、不要任何角色扮演加工、不要任何情绪标签
-- 保留具体细节（游戏名、错误信息、用户的具体问题、对话里出现的关键词等）
-- 如果对话内容很碎、确实没什么值得记录的新事件，只输出一行：（这段对话没有值得记录的新事件）`;
+Output rules:
+- Use a list with one event per line. Start each line with "- " (dash and space)
+- State the facts objectively: no emotional language, no role-play flourishes, no emotion tags
+- Keep specific details (game names, error messages, the user's exact questions, key words from the conversation, and so on)
+- If the conversation is scattered and really has no new events worth recording, output only this one line: (No new events worth recording)`;
 
         const newEvents = await this._callAPI(
             extractSystemPrompt,
-            `请从以下对话历史中提取事件：\n\n${history}`
+            `Extract the events from this conversation history:\n\n${history}`
         );
 
         const trimmedEvents = (newEvents || '').trim();
-        if (!trimmedEvents || /没有值得记录的新事件/.test(trimmedEvents)) {
-            this.context.log('info', '新对话中没有值得记录的事件，旧日志原样保留');
+        if (!trimmedEvents || /没有值得记录的新事件|no new events worth recording/i.test(trimmedEvents)) {
+            this.context.log('info', 'The new conversation has nothing worth recording, keeping the old journal as is');
             return previousDiary;
         }
 
-        this.context.log('info', '【合并模式 2/2】将新事件合并到旧日志，生成完整版本...');
+        this.context.log('info', '[Merge mode 2/2] Merging the new events into the old journal and writing the full version...');
         const mergeSystemPrompt = `${this._dailyPrompt}\n\n<merge_mode_override>\nUpdate the same-day AI diary. Preserve factual details from the old diary, merge new events naturally, avoid duplication, and output one coherent final version.\n</merge_mode_override>`;
 
-        const mergeUserContent = `【今天已经写过的旧日志（必须完整保留其中所有事件、板块、细节）】
+        const mergeUserContent = `[Today's earlier journal (keep every event, section and detail in it)]
 ${previousDiary}
 
-【在那之后新发生的事件清单（请作为新增板块/追加段落融入）】
+[New events since then (work them in as new sections or extra paragraphs)]
 ${trimmedEvents}
 
-请输出今天的最终合并版本AI日志。再次强调：旧日志中的所有事件都不能丢，新事件必须以新增板块或追加段落的形式自然呈现。`;
+Output the final merged version of today's AI journal. Again: do not drop any event from the old journal, and add the new events naturally as new sections or extra paragraphs.`;
 
         return await this._callAPI(mergeSystemPrompt, mergeUserContent);
     }
 
     _readRecentDiary(days) {
-        if (!fs.existsSync(this._diaryFolder)) return 'AI日志文件夹不存在';
+        if (!fs.existsSync(this._diaryFolder)) return 'AI journal folder does not exist';
 
         const suffix = this._getDiarySuffix();
         const files = fs.readdirSync(this._diaryFolder)
@@ -483,9 +483,9 @@ ${trimmedEvents}
             .reverse()
             .slice(0, days);
 
-        if (files.length === 0) return '没有找到任何AI日志';
+        if (files.length === 0) return 'No AI journal entries found';
 
-        let result = `最近 ${files.length} 天的AI日志：\n\n`;
+        let result = `AI journal of the last ${files.length} days:\n\n`;
         for (const f of files) {
             const content = fs.readFileSync(path.join(this._diaryFolder, f), 'utf-8');
             const date = f.replace(suffix, '');
@@ -495,20 +495,20 @@ ${trimmedEvents}
     }
 
     async _writeMonthlySummary() {
-        this.context.log('info', '开始生成月度总结...');
+        this.context.log('info', 'Writing the monthly summary...');
 
         const lastMonth = this._getLastMonth();
         const diaries = this._readMonthlyDiaries(lastMonth);
-        if (!diaries) return `${lastMonth} 没有AI日志，无法生成月度总结`;
+        if (!diaries) return `${lastMonth} has no AI journal entries, so no monthly summary can be written`;
 
         let summaryContent;
         try {
             summaryContent = await this._callAPI(
                 this._monthlyPrompt,
-                `以下是这个月的所有AI日志，请根据这些内容生成月度总结：\n\n${diaries}`
+                `Here are all the AI journal entries of this month. Write the monthly summary based on them:\n\n${diaries}`
             );
         } catch (error) {
-            return `生成月度总结失败：${error.message}（已重试${this._maxRetries}次）`;
+            return `Failed to write the monthly summary: ${error.message} (retried ${this._maxRetries} times)`;
         }
 
         const filename = this._getMonthlyFilename(lastMonth);
@@ -517,8 +517,8 @@ ${trimmedEvents}
         this._updateCoreMemory(entryKey, summaryContent);
         this._pruneCoreMemoryLogs();
 
-        this.context.log('info', '月度总结生成完成');
-        return `${lastMonth} 月度总结已生成并保存：${savedPath}\n\n${summaryContent}`;
+        this.context.log('info', 'Monthly summary finished');
+        return `${lastMonth} monthly summary written and saved: ${savedPath}\n\n${summaryContent}`;
     }
 }
 

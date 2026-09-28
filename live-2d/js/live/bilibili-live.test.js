@@ -30,15 +30,15 @@ test('递归解析 Brotli 压缩帧', () => {
 test('解析礼物、醒目留言和上舰事件', () => {
     assert.deepEqual(normalizeBilibiliEvent({ cmd: 'SEND_GIFT', data: {
         uname: '小明', giftName: '辣条', num: 2, coin_type: 'gold', total_coin: 2000
-    }}), { type: 'gift', nickname: '小明', text: '赠送了 辣条×2（¥2）', priority: true });
+    }}), { type: 'gift', nickname: '小明', text: 'sent 辣条×2 (¥2)', priority: true });
 
     assert.deepEqual(normalizeBilibiliEvent({ cmd: 'SUPER_CHAT_MESSAGE', data: {
         price: 30, message: '加油', user_info: { uname: '小红' }
-    }}), { type: 'superchat', nickname: '小红', text: '发送了 ¥30 的醒目留言：加油', priority: true });
+    }}), { type: 'superchat', nickname: '小红', text: 'sent a ¥30 Super Chat: 加油', priority: true });
 
     assert.deepEqual(normalizeBilibiliEvent({ cmd: 'GUARD_BUY', data: {
         username: '舰长甲', gift_name: '舰长', num: 1
-    }}), { type: 'guard', nickname: '舰长甲', text: '开通了 舰长×1', priority: true });
+    }}), { type: 'guard', nickname: '舰长甲', text: 'bought 舰长×1', priority: true });
 });
 
 test('短时间内忽略同一用户的镜像重复弹幕', () => {

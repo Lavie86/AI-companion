@@ -5,13 +5,13 @@ const TOOL_DEFINITION = {
     type: 'function',
     function: {
         name: 'web_search',
-        description: '使用搜索网络引擎，并返回内容',
+        description: 'Search the web with a search engine and return the results',
         parameters: {
             type: 'object',
             properties: {
                 query: {
                     type: 'string',
-                    description: '想要搜索的内容关键词'
+                    description: 'Keywords of what to search for'
                 }
             },
             required: ['query']
@@ -33,12 +33,12 @@ class WebSearchPlugin extends Plugin {
 
     async executeTool(name, params) {
         if (name === 'web_search') return await this._webSearch(params);
-        throw new Error(`[web-search] 不支持的工具: ${name}`);
+        throw new Error(`[web-search] Unsupported tool: ${name}`);
     }
 
     async _webSearch({ query }) {
         try {
-            this.context.log('info', `[web-search] 正在搜索: ${query}`);
+            this.context.log('info', `[web-search] Searching: ${query}`);
 
             const response = await axios.post('https://api.tavily.com/search', {
                 query,
@@ -48,36 +48,36 @@ class WebSearchPlugin extends Plugin {
                 api_key: this._tavilyKey
             });
 
-            if (!response.data) return '错误：搜索没有返回任何结果';
+            if (!response.data) return 'Error: the search returned no results';
 
             let fullContent = '';
 
-            const aiAnswer = response.data.answer || '无AI摘要';
-            fullContent += `AI答案摘要：${aiAnswer}\n\n`;
+            const aiAnswer = response.data.answer || 'no AI summary';
+            fullContent += `AI answer summary: ${aiAnswer}\n\n`;
 
             const searchResults = response.data.results || [];
             if (searchResults.length > 0) {
-                fullContent += '详细搜索结果：\n';
+                fullContent += 'Detailed search results:\n';
                 searchResults.forEach((result, i) => {
-                    const title = result.title || '无标题';
-                    const content = result.content || '无内容';
-                    const url = result.url || '无URL';
-                    fullContent += `${i + 1}. 标题：${title}\n`;
-                    fullContent += `   内容：${content.substring(0, 1500)}...\n`;
-                    fullContent += `   来源：${url}\n\n`;
+                    const title = result.title || 'no title';
+                    const content = result.content || 'no content';
+                    const url = result.url || 'no URL';
+                    fullContent += `${i + 1}. Title: ${title}\n`;
+                    fullContent += `   Content: ${content.substring(0, 1500)}...\n`;
+                    fullContent += `   Source: ${url}\n\n`;
                 });
             } else {
-                fullContent += '未找到相关搜索结果。\n';
+                fullContent += 'No matching search results found.\n';
             }
 
             return fullContent;
 
         } catch (error) {
-            this.context.log('error', `[web-search] 搜索错误: ${error.message}`);
+            this.context.log('error', `[web-search] Search error: ${error.message}`);
             if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-                return '错误：网络连接失败，请检查网络连接';
+                return 'Error: the network connection failed. Check your connection';
             }
-            return `搜索过程中出现错误：${error.message}`;
+            return `Error during the search: ${error.message}`;
         }
     }
 }

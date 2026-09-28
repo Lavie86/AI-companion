@@ -224,7 +224,7 @@ class Live2DRuntime {
 
         this._setupGaze();
         this._installed = true;
-        logToTerminal('info', `[Live2DRuntime] 已安装: 嘴部=${Object.keys(this._mouthParamIndices).join('/') || '无'}, 程序化眨眼=${this._blinkEnabled ? '开' : '关(SDK原生或无参数)'}, 呼吸兜底=${this._breathEnabled ? '开' : '关(SDK原生)'}, 视线跟随=${this._gazeEnabled ? '开' : '关'}(强度${this._focusFactor})`);
+        logToTerminal('info', `[Live2DRuntime] Installed: mouth=${Object.keys(this._mouthParamIndices).join('/') || 'none'}, procedural blink=${this._blinkEnabled ? 'on' : 'off (SDK native or no parameter)'}, fallback breathing=${this._breathEnabled ? 'on' : 'off (SDK native)'}, gaze follow=${this._gazeEnabled ? 'on' : 'off'} (strength ${this._focusFactor})`);
         return true;
     }
 

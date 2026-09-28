@@ -23,7 +23,7 @@ require('./js/core/app-state.js');
 // });
 
 eventBus.on(Events.TTS_INTERRUPTED, () => {
-    logToTerminal('info', '⏸️ TTS被中断');
+    logToTerminal('info', '⏸️ TTS interrupted');
 });
 
 // 用户输入开始事件日志已注释，避免与LLM请求日志重复
@@ -42,7 +42,7 @@ try {
     config = configLoader.load();
     console.log('配置文件加载成功');
     console.log('MCP配置:', config.mcp);
-    logToTerminal('info', '配置文件加载成功');
+    logToTerminal('info', 'Config file loaded');
 
     // 检查TTS和ASR配置
     const ttsEnabled = config.tts?.enabled !== false;
@@ -50,13 +50,13 @@ try {
 
     console.log(`TTS模块: ${ttsEnabled ? '启用' : '禁用'}`);
     console.log(`ASR模块: ${asrEnabled ? '启用' : '禁用'}`);
-    logToTerminal('info', `TTS模块: ${ttsEnabled ? '启用' : '禁用'}`);
-    logToTerminal('info', `ASR模块: ${asrEnabled ? '启用' : '禁用'}`);
+    logToTerminal('info', `TTS module: ${ttsEnabled ? 'on' : 'off'}`);
+    logToTerminal('info', `ASR module: ${asrEnabled ? 'on' : 'off'}`);
 
 } catch (error) {
     console.error('配置加载失败:', error);
-    logToTerminal('error', `配置加载失败: ${error.message}`);
-    alert(`配置文件错误: ${error.message}\n请检查config.json格式是否正确。`);
+    logToTerminal('error', `Failed to load config: ${error.message}`);
+    alert(`Config file error: ${error.message}\nCheck that config.json is valid JSON.`);
     throw error;
 }
 
@@ -65,11 +65,11 @@ global.reloadConfig = function() {
     try {
         config = configLoader.load();
         console.log('配置文件已重新加载');
-        logToTerminal('info', '配置文件已重新加载');
+        logToTerminal('info', 'Config file reloaded');
         return true;
     } catch (error) {
         console.error('重新加载配置文件失败:', error);
-        logToTerminal('error', `重新加载配置文件失败: ${error.message}`);
+        logToTerminal('error', `Failed to reload the config file: ${error.message}`);
         return false;
     }
 }
@@ -100,18 +100,18 @@ function enhanceSystemPrompt() {
     if (voiceChat && voiceChat.messages && voiceChat.messages.length > 0 && voiceChat.messages[0].role === 'system') {
         const originalPrompt = voiceChat.messages[0].content;
 
-        if (!originalPrompt.includes('你可能会收到直播弹幕')) {
-            const enhancedPrompt = originalPrompt + "\n\n你可能会收到直播弹幕消息，这些消息会被标记为[接收到了直播间的弹幕]，表示这是来自直播间观众的消息，而不是主人直接对你说的话。当你看到[接收到了直播间的弹幕]标记时，你应该知道这是其他人发送的，但你仍然可以回应，就像在直播间与观众互动一样。";
+        if (!originalPrompt.includes('You may receive live stream chat messages') && !originalPrompt.includes('你可能会收到直播弹幕')) {
+            const enhancedPrompt = originalPrompt + "\n\nYou may receive live stream chat messages. They are marked with [Live chat message], which means a viewer in the live stream sent them, not your owner talking to you directly. When you see [Live chat message], you know someone else sent it, but you can still reply, just like talking with viewers in a live stream.";
             voiceChat.messages[0].content = enhancedPrompt;
             console.log('系统提示已增强，添加了直播弹幕相关说明');
-            logToTerminal('info', '系统提示已增强，添加了直播弹幕相关说明');
+            logToTerminal('info', 'Added the live chat instructions to the system prompt');
         }
     }
 }
 
 // 主初始化函数
 (async function main() {
-    avatarTransition.show('正在加载皮套');
+    avatarTransition.show('Loading avatar');
     try {
         // 创建应用初始化器
         const appInitializer = new AppInitializer(
@@ -134,9 +134,9 @@ function enhanceSystemPrompt() {
         avatarTransition.hide();
         console.error("加载模型错误:", error);
         console.error("错误详情:", error.message);
-        logToTerminal('error', `加载模型错误: ${error.message}`);
+        logToTerminal('error', `Error loading model: ${error.message}`);
         if (error.stack) {
-            logToTerminal('error', `错误堆栈: ${error.stack}`);
+            logToTerminal('error', `Stack trace: ${error.stack}`);
         }
     }
 })();

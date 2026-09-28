@@ -32,24 +32,24 @@ class HttpServer {
             const mainWindow = BrowserWindow.getAllWindows()[0];
 
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
 
             let jsCode = '';
             switch (action) {
                 case 'play_random':
                     // 直接返回 playRandomMusic 的结果 (Promise)
-                    jsCode = 'global.musicPlayer ? global.musicPlayer.playRandomMusic() : { message: "播放器未初始化", metadata: null }';
+                    jsCode = 'global.musicPlayer ? global.musicPlayer.playRandomMusic() : { message: "Player not initialized", metadata: null }';
                     break;
                 case 'stop':
-                    jsCode = 'global.musicPlayer ? global.musicPlayer.stop() : null; "音乐已停止"';
+                    jsCode = 'global.musicPlayer ? global.musicPlayer.stop() : null; "Music stopped"';
                     break;
                 case 'play_specific':
                     // 直接返回 playSpecificSong 的结果 (Promise)
-                    jsCode = `global.musicPlayer ? global.musicPlayer.playSpecificSong('${filename}') : { message: "播放器未初始化", metadata: null }`;
+                    jsCode = `global.musicPlayer ? global.musicPlayer.playSpecificSong('${filename}') : { message: "Player not initialized", metadata: null }`;
                     break;
                 default:
-                    return res.json({ success: false, message: '不支持的操作' });
+                    return res.json({ success: false, message: 'Unsupported action' });
             }
 
             mainWindow.webContents.executeJavaScript(jsCode)
@@ -75,7 +75,7 @@ class HttpServer {
             const mainWindow = BrowserWindow.getAllWindows()[0];
 
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
 
             let jsCode = '';
@@ -85,9 +85,9 @@ class HttpServer {
                 jsCode = `
                     if (global.emotionMapper && global.emotionMapper.playConfiguredEmotion) {
                         global.emotionMapper.playConfiguredEmotion('${emotion_name}');
-                        "触发情绪: ${emotion_name}";
+                        "Triggered emotion: ${emotion_name}";
                     } else {
-                        "情绪映射器未初始化";
+                        "Emotion mapper not initialized";
                     }
                 `;
             } else if (action === 'trigger_motion') {
@@ -95,9 +95,9 @@ class HttpServer {
                 jsCode = `
                     if (global.emotionMapper && global.emotionMapper.playMotion) {
                         global.emotionMapper.playMotion(${motion_index});
-                        "触发动作索引: ${motion_index}";
+                        "Triggered motion index: ${motion_index}";
                     } else {
-                        "情绪映射器未初始化";
+                        "Emotion mapper not initialized";
                     }
                 `;
             } else if (action === 'stop_all_motions') {
@@ -108,13 +108,13 @@ class HttpServer {
                         if (global.emotionMapper) {
                             global.emotionMapper.playDefaultMotion();
                         }
-                        "已停止所有动作";
+                        "Stopped all motions";
                     } else {
-                        "模型未初始化";
+                        "Model not initialized";
                     }
                 `;
             } else {
-                return res.json({ success: false, message: '不支持的操作' });
+                return res.json({ success: false, message: 'Unsupported action' });
             }
 
             mainWindow.webContents.executeJavaScript(jsCode)
@@ -130,15 +130,15 @@ class HttpServer {
             const mainWindow = BrowserWindow.getAllWindows()[0];
 
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
 
             const jsCode = `
                 if (global.expressionMapper && global.expressionMapper.triggerExpression) {
                     global.expressionMapper.triggerExpression('${expression_name}');
-                    "触发表情: ${expression_name}";
+                    "Triggered expression: ${expression_name}";
                 } else {
-                    "表情映射器未初始化";
+                    "Expression mapper not initialized";
                 }
             `;
 
@@ -153,15 +153,15 @@ class HttpServer {
             const mainWindow = BrowserWindow.getAllWindows()[0];
 
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
 
             const jsCode = `
                 if (global.expressionMapper && global.expressionMapper.bindExpressionToEmotion) {
                     const result = global.expressionMapper.bindExpressionToEmotion('${emotion_name}', '${expression_name}');
-                    result ? "绑定成功" : "表情已绑定";
+                    result ? "Bound" : "Expression already bound";
                 } else {
-                    "表情映射器未初始化";
+                    "Expression mapper not initialized";
                 }
             `;
 
@@ -175,19 +175,19 @@ class HttpServer {
             const mainWindow = BrowserWindow.getAllWindows()[0];
 
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
 
             // 重载 config.json，同时让情绪引擎重读表情/动作绑定（控制面板 / WebUI 保存后调用，无需重启桌宠）
             const jsCode = `
-                (async () => {
+               (async () => {
                     const reloaded = global.reloadConfig ? global.reloadConfig() : false;
                     const engines = new Set();
                     for (const mapper of [global.emotionMapper, global.expressionMapper]) {
                         if (mapper && typeof mapper.reloadConfig === 'function') engines.add(mapper._engine || mapper);
                     }
                     for (const engine of engines) await engine.reloadConfig();
-                    return reloaded ? "配置已重新加载" : "配置重新加载函数未找到";
+                    return reloaded ? "Config reloaded" : "Config reload function not found";
                 })()
             `;
 
@@ -233,7 +233,7 @@ class HttpServer {
             const mainWindow = BrowserWindow.getAllWindows()[0];
 
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
 
             if (model_type === 'vrm') {
@@ -241,7 +241,7 @@ class HttpServer {
                 mainWindow.webContents.executeJavaScript(
                     `require('electron').ipcRenderer.invoke('switch-vrm-model', ${JSON.stringify(model_name)})`
                 ).then(() => {
-                    res.json({ success: true, message: `VRM模型切换到 ${model_name}` });
+                    res.json({ success: true, message: `VRM model switched to ${model_name}` });
                 }).catch(error => {
                     res.json({ success: false, message: error.toString() });
                 });
@@ -250,7 +250,7 @@ class HttpServer {
                 mainWindow.webContents.executeJavaScript(
                     `require('electron').ipcRenderer.invoke('switch-live2d-model', ${JSON.stringify(model_name)})`
                 ).then(() => {
-                    res.json({ success: true, message: `模型切换到 ${model_name}` });
+                    res.json({ success: true, message: `Model switched to ${model_name}` });
                 }).catch(error => {
                     res.json({ success: false, message: error.toString() });
                 });
@@ -264,10 +264,10 @@ class HttpServer {
             const mainWindow = BrowserWindow.getAllWindows()[0];
 
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
             if (!type) {
-                return res.json({ success: false, message: '缺少 type 参数' });
+                return res.json({ success: false, message: 'Missing the type parameter' });
             }
 
             mainWindow.webContents.executeJavaScript(
@@ -275,7 +275,7 @@ class HttpServer {
             ).then(result => {
                 res.json(result && typeof result === 'object'
                     ? result
-                    : { success: !!result, message: `形态切换到 ${type}` });
+                    : { success: !!result, message: `Avatar type switched to ${type}` });
             }).catch(error => {
                 res.json({ success: false, message: error.toString() });
             });
@@ -287,10 +287,10 @@ class HttpServer {
             const mainWindow = BrowserWindow.getAllWindows()[0];
 
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
             if (!type || !model_name) {
-                return res.json({ success: false, message: '缺少 type 或 model_name 参数' });
+                return res.json({ success: false, message: 'Missing the type or model_name parameter' });
             }
 
             mainWindow.webContents.executeJavaScript(
@@ -298,7 +298,7 @@ class HttpServer {
             ).then(result => {
                 res.json(result && typeof result === 'object'
                     ? result
-                    : { success: !!result, message: `已应用模型：${model_name}` });
+                    : { success: !!result, message: `Model applied: ${model_name}` });
             }).catch(error => {
                 res.json({ success: false, message: error.toString() });
             });
@@ -307,7 +307,7 @@ class HttpServer {
         // 桌宠退出前播放淡出动画，控制端收到完成响应后再结束进程。
         this.emotionApp.post('/prepare-close', async (_req, res) => {
             const mainWindow = BrowserWindow.getAllWindows()[0];
-            if (!mainWindow) return res.json({ success: false, message: '应用窗口未找到' });
+            if (!mainWindow) return res.json({ success: false, message: 'App window not found' });
             try {
                 const result = await mainWindow.webContents.executeJavaScript(
                     `require('./js/avatar/transition-overlay.js').fadeOut().then(() => ({ success: true }))`
@@ -322,14 +322,14 @@ class HttpServer {
         this.emotionApp.post('/reset-subtitle-position', async (req, res) => {
             const mainWindow = BrowserWindow.getAllWindows()[0];
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
 
             const jsCode = `(() => {
                 const uic = global.uiController;
-                if (!uic?.resetSubtitlePosition) return { success: false, message: '字幕控制器未初始化' };
+                if (!uic?.resetSubtitlePosition) return { success: false, message: 'Subtitle controller not initialized' };
                 uic.resetSubtitlePosition();
-                return { success: true, message: '字幕位置已复位' };
+                return { success: true, message: 'Subtitle position reset' };
             })()`;
 
             try {
@@ -349,33 +349,33 @@ class HttpServer {
 
         this.emotionApp.get('/plugins', (req, res) => {
             const pm = global.pluginManager;
-            if (!pm) return res.json({ success: false, message: '插件管理器未初始化' });
+            if (!pm) return res.json({ success: false, message: 'Plugin manager not initialized' });
             res.json({ success: true, plugins: pm.getPluginList() });
         });
 
         this.emotionApp.post('/plugins/reload', (req, res) => {
             const pm = global.pluginManager;
-            if (!pm) return res.json({ success: false, message: '插件管理器未初始化' });
+            if (!pm) return res.json({ success: false, message: 'Plugin manager not initialized' });
             const { name } = req.body || {};
-            if (!name) return res.json({ success: false, message: '缺少 name 参数' });
+            if (!name) return res.json({ success: false, message: 'Missing the name parameter' });
             pm.reload(name)
-                .then(() => res.json({ success: true, message: `插件 ${name} 已重载` }))
+                .then(() => res.json({ success: true, message: `Plugin ${name} reloaded` }))
                 .catch(e => res.json({ success: false, message: e.message }));
         });
 
         this.emotionApp.post('/plugins/reload-all', (req, res) => {
             const pm = global.pluginManager;
-            if (!pm) return res.json({ success: false, message: '插件管理器未初始化' });
+            if (!pm) return res.json({ success: false, message: 'Plugin manager not initialized' });
             pm.reloadAll()
-                .then(() => res.json({ success: true, message: '所有插件已重载' }))
+                .then(() => res.json({ success: true, message: 'All plugins reloaded' }))
                 .catch(e => res.json({ success: false, message: e.message }));
         });
 
         this.emotionApp.post('/plugins/sync', (req, res) => {
             const pm = global.pluginManager;
-            if (!pm) return res.json({ success: false, message: '插件管理器未初始化' });
+            if (!pm) return res.json({ success: false, message: 'Plugin manager not initialized' });
             pm.syncEnabledPlugins()
-                .then(() => res.json({ success: true, message: '插件列表已同步' }))
+                .then(() => res.json({ success: true, message: 'Plugin list synced' }))
                 .catch(e => res.json({ success: false, message: e.message }));
         });
 
@@ -383,7 +383,7 @@ class HttpServer {
         this.emotionApp.post('/adjust-subtitle-position', async (req, res) => {
             const mainWindow = BrowserWindow.getAllWindows()[0];
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
 
             const jsCode = `(() => {
@@ -396,8 +396,8 @@ class HttpServer {
             try {
                 const ok = await mainWindow.webContents.executeJavaScript(jsCode);
                 res.json(ok
-                    ? { success: true, message: '字幕调整模式已开启' }
-                    : { success: false, message: '字幕控制器未初始化' });
+                    ? { success: true, message: 'Subtitle adjust mode on' }
+                    : { success: false, message: 'Subtitle controller not initialized' });
             } catch (error) {
                 res.json({ success: false, message: error.toString() });
             }
@@ -420,7 +420,7 @@ class HttpServer {
             const mainWindow = BrowserWindow.getAllWindows()[0];
 
             if (!mainWindow) {
-                return res.json({ success: false, message: '应用窗口未找到' });
+                return res.json({ success: false, message: 'App window not found' });
             }
 
             // 净化输入
@@ -429,10 +429,10 @@ class HttpServer {
             const hasEnabled = typeof enabled === 'boolean';
 
             const jsCode = `
-                (function() {
-                    if (!global.currentVRMAdapter) return '当前未使用VRM模型';
+               (function() {
+                    if (!global.currentVRMAdapter) return 'No VRM model in use';
                     const sender = global.currentVRMAdapter.getVMCSender();
-                    if (!sender) return 'VMC发送器未初始化';
+                    if (!sender) return 'VMC sender not initialized';
 
                     sender.setTarget('${safeHost}', ${safePort});
 
@@ -440,13 +440,13 @@ class HttpServer {
                     sender.enabled = ${!!enabled};
                     if (${!!enabled}) {
                         if (!sender.socket) sender.start();
-                        return 'VMC已启用 → ${safeHost}:${safePort}';
+                        return 'VMC on → ${safeHost}:${safePort}';
                     } else {
                         sender.stop();
-                        return 'VMC已关闭';
+                        return 'VMC off';
                     }
                     ` : `
-                    return 'VMC目标已更新 → ${safeHost}:${safePort}';
+                    return 'VMC target updated → ${safeHost}:${safePort}';
                     `}
                 })();
             `;

@@ -53,13 +53,13 @@ class PythonPluginBridge extends Plugin {
             });
 
             this._process.on('error', (err) => {
-                logToTerminal('error', `[Python:${this.metadata.name}] 启动失败: ${err.message}`);
+                logToTerminal('error', `[Python:${this.metadata.name}] failed to start: ${err.message}`);
                 reject(err);
             });
 
             this._process.on('exit', (code) => {
                 for (const [, { reject }] of this._pending) {
-                    reject(new Error('Python 进程已退出'));
+                    reject(new Error('Python process exited'));
                 }
                 this._pending.clear();
             });
@@ -116,7 +116,7 @@ class PythonPluginBridge extends Plugin {
                 msg.error ? pending.reject(new Error(msg.error)) : pending.resolve(msg);
             }
         } catch (e) {
-            logToTerminal('warn', `[Python:${this.metadata.name}] 无效响应: ${line}`);
+            logToTerminal('warn', `[Python:${this.metadata.name}] Invalid response: ${line}`);
         }
     }
 
@@ -137,7 +137,7 @@ class PythonPluginBridge extends Plugin {
             setTimeout(() => {
                 if (this._pending.has(id)) {
                     this._pending.delete(id);
-                    reject(new Error(`超时: ${event}`));
+                    reject(new Error(`Timed out: ${event}`));
                 }
             }, this._timeout);
         });
@@ -152,7 +152,7 @@ class PythonPluginBridge extends Plugin {
             } else if (method === 'callLLM') {
                 result = await this.context?.callLLM(data.prompt, data.options);
             } else {
-                throw new Error(`未知方法: ${method}`);
+                throw new Error(`Unknown method: ${method}`);
             }
             this._write({ type: 'response', reqId, result });
         } catch (e) {
@@ -242,7 +242,7 @@ class PythonPluginBridge extends Plugin {
 
     async executeTool(name, params) {
         const res = await this._call('executeTool', { name, params }).catch(() => null);
-        return res?.result ?? '工具执行失败';
+        return res?.result ?? 'Tool failed';
     }
 }
 

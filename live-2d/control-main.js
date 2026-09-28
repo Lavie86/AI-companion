@@ -81,16 +81,20 @@ function showAvatarLoadingWindow() {
 function cleanToolLog(line) {
   return line
     .replace(/^(?:\[[^\]\r\n]+\]\s*)+/, '')
-    .replace(/插件已加载[：:]\s*/u, '')
+    .replace(/(?:插件已加载|Plugin loaded)[：:]\s*/u, '')
     .trim();
 }
 
 function cleanPetLog(line) {
   if (/\[Live2DStage\]\s*初始化完成|\[Live2DSetup\]\s*共发现|\[Live2DLoader\]\s*(?:开始加载模型|transform:|模型加载完成)|\[ParamDirector\]\s*已启用|\[Live2DRuntime\]\s*已安装|\[EmotionEngine\].*配置加载完成|\[AuDriver\]\s*(?:未找到模型 AU 配置|跳过不可映射 AU|已就绪|解算)|\[AvatarFacade\]\s*形态已激活/.test(line)) return null;
+  // the same lines as the English pet logs them
+  if (/\[Live2DStage\]\s*Ready:|\[Live2DSetup\]\s*Found|\[Live2DLoader\]\s*(?:Loading model|Model loaded)|\[ParamDirector\]\s*On,|\[Live2DRuntime\]\s*Installed:|\[EmotionEngine\].*config loaded|\[AuDriver\]\s*(?:No AU config for this model|Skipping unmappable AU|Ready:|Solved)|\[AvatarFacade\]\s*Avatar type active/.test(line)) return null;
   if (/插件热加载监听已启动|\[Plugin:core_memory_injector\].*(?:不存在，跳过加载|插件已启动)|\[Plugin:dawn_dusk_line\].*已启动|\[Plugin:user_profile\].*(?:插件已启动|MemOS 不可用)|\[MotionDirector\]\s*(?:body|face)\s*失败，保留本地编舞|对话模型[：:].*提供商|配置文件加载成功|AI回复中/.test(line)) return null;
+  if (/Plugin hot-reload watcher started|\[MotionDirector\]\s*(?:body|face)\s*failed, keeping local choreography|Chat model:.*\(provider|Config file loaded|AI is replying/.test(line)) return null;
   if (/已将内容发送给AI/.test(line)) return null;
-  const modelMatch = line.match(/已加载\s*\d+\s*个\s*LLM\s*提供商[^\n]*?当前模型[：:]\s*([^）)\s]+)/i);
-  return modelMatch ? `当前使用模型：${modelMatch[1]}` : line.replace(/\[Plugin:[^\]\r\n]+\][ \t]*/g, '');
+  const modelMatch = line.match(/已加载\s*\d+\s*个\s*LLM\s*提供商[^\n]*?当前模型[：:]\s*([^）)\s]+)/i)
+    || line.match(/Loaded\s*\d+\s*LLM\s*providers[^\n]*?current model:\s*([^)\s]+)/i);
+  return modelMatch ? `Current model: ${modelMatch[1]}` : line.replace(/\[Plugin:[^\]\r\n]+\][ \t]*/g, '');
 }
 
 function pumpRuntimeLog(flush = false) {
@@ -106,13 +110,13 @@ function pumpRuntimeLog(flush = false) {
     for (const rawLine of lines) {
       const line = rawLine.trim();
       if (!line) continue;
-      if (/\[AvatarFacade\]\s*形态已激活|\[Live2DLoader\]\s*模型加载完成/.test(line)) closeAvatarLoadingWindow();
+      if (/\[AvatarFacade\]\s*(?:形态已激活|Avatar type active)|\[Live2DLoader\]\s*(?:模型加载完成|Model loaded)/.test(line)) closeAvatarLoadingWindow();
       const channel = line.includes('[TOOL]') ? 'control:tool-log' : 'control:live2d-log';
       const cleaned = channel === 'control:tool-log' ? cleanToolLog(line) : cleanPetLog(line);
       if (cleaned) runtimeLogSender.send(channel, `${cleaned}\n`);
     }
   } catch (error) {
-    if (!runtimeLogSender.isDestroyed()) runtimeLogSender.send('control:live2d-log', `读取日志文件出错：${error.message}\n`);
+    if (!runtimeLogSender.isDestroyed()) runtimeLogSender.send('control:live2d-log', `Error reading the log file: ${error.message}\n`);
   }
 }
 
@@ -135,16 +139,16 @@ function stopRuntimeLog() {
 const serviceProcesses = { tts: null, asr: null, bert: null };
 const serviceDownloads = { tts: null, asr: null, bert: null };
 const serviceDefinitions = {
-  tts: { name: 'TTS 语音合成', port: 5000, bat: '2.TTS.bat', flag: '--tts', checks: [
+  tts: { name: 'TTS (voice)', port: 5000, bat: '2.TTS.bat', flag: '--tts', checks: [
     'tts-hub/GPT-SoVITS-Bundle/runtime', 'tts-hub/GPT-SoVITS-Bundle/GPT_SoVITS'
   ] },
-  asr: { name: 'ASR 语音识别', port: 1000, bat: '1.ASR.bat', flag: '--asr', checks: [
+  asr: { name: 'ASR (speech recognition)', port: 1000, bat: '1.ASR.bat', flag: '--asr', checks: [
     'asr-hub/model/torch_hub/snakers4_silero-vad_master',
     'asr-hub/model/asr/models/iic/speech_seaco_paraformer_large_asr_nat-zh-cn-16k-common-vocab8404-pytorch/config.yaml',
     'asr-hub/model/asr/models/iic/punc_ct-transformer_cn-en-common-vocab471067-large/config.yaml',
     'asr-hub/model/asr/models/iic/punc_ct-transformer_cn-en-common-vocab471067-large/model.pt'
   ] },
-  bert: { name: 'BERT 模型服务', port: 6007, bat: '3.bert.bat', flag: '--bert', checks: [
+  bert: { name: 'BERT (model service)', port: 6007, bat: '3.bert.bat', flag: '--bert', checks: [
     'bert-hub/config.json', 'bert-hub/model.safetensors', 'bert-hub/vocab.txt'
   ] }
 };
@@ -159,7 +163,7 @@ async function ensureProjectPython(sender, service) {
   const archive = path.join(tempDir, 'my-neuro-env.tar.gz');
   const envDir = path.join(projectRoot, 'env');
   sendServiceLog(sender, service, '@@ENV_START\n');
-  sendServiceLog(sender, service, '\u672a\u68c0\u6d4b\u5230\u9879\u76ee Python \u73af\u5883\uff0c\u5f00\u59cb\u4e0b\u8f7d morelle/my-neuro-env...\n');
+  sendServiceLog(sender, service, 'The project Python environment was not found. Downloading morelle/my-neuro-env...\n');
   try {
     const response = await net.fetch(projectEnvUrl, { redirect: 'follow' });
     if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
@@ -180,7 +184,7 @@ async function ensureProjectPython(sender, service) {
     await pipeline(Readable.fromWeb(response.body), progressStream, fs.createWriteStream(archive));
     fs.mkdirSync(envDir, { recursive: true });
     sendServiceLog(sender, service, '@@ENV_EXTRACT\n');
-    sendServiceLog(sender, service, '\u9879\u76ee Python \u73af\u5883\u4e0b\u8f7d\u5b8c\u6210\uff0c\u6b63\u5728\u89e3\u538b...\n');
+    sendServiceLog(sender, service, 'Project Python environment downloaded, extracting...\n');
     await new Promise((resolve, reject) => {
       const child = spawn('tar.exe', ['-xzf', archive, '-C', envDir], { windowsHide: true });
       let errorText = '';
@@ -188,9 +192,9 @@ async function ensureProjectPython(sender, service) {
       child.once('error', reject);
       child.once('exit', code => code === 0 ? resolve() : reject(new Error(errorText.trim() || `tar.exe ${code}`)));
     });
-    if (!fs.existsSync(projectEnvPython)) throw new Error('\u89e3\u538b\u540e\u672a\u627e\u5230 env\\python.exe');
+    if (!fs.existsSync(projectEnvPython)) throw new Error('env\\python.exe was not found after extracting');
     sendServiceLog(sender, service, '@@ENV_DONE\n');
-    sendServiceLog(sender, service, '\u9879\u76ee Python \u73af\u5883\u5b89\u88c5\u5b8c\u6210\u3002\n');
+    sendServiceLog(sender, service, 'Project Python environment installed.\n');
     return projectEnvPython;
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
@@ -202,12 +206,12 @@ function serviceLaunchDefinition(id) {
   if (id !== 'asr' || !definition) return definition;
   const current = readJson(configPath, {});
   if (current.cloud?.baidu_asr?.enabled === true) {
-    return { ...definition, name: '百度流式 ASR（仅 VAD）', bat: 'VAD.bat' };
+    return { ...definition, name: 'Baidu streaming ASR (VAD only)', bat: 'VAD.bat' };
   }
   if (current.cloud?.siliconflow_asr?.enabled === true) {
-    return { ...definition, name: 'SiliconFlow ASR（本地 VAD）' };
+    return { ...definition, name: 'SiliconFlow ASR (local VAD)' };
   }
-  return { ...definition, name: '本地 ASR' };
+  return { ...definition, name: 'Local ASR' };
 }
 
 function serviceInstalled(definition) {
@@ -330,7 +334,7 @@ function saveControlConfig(config) {
     || providers.find(item => item.enabled !== false)
     || providers[0];
   if (!provider) {
-    provider = { id: 'main', name: '主模型', api_key: '', api_url: '', enabled: true, models: [] };
+    provider = { id: 'main', name: 'Main model', api_key: '', api_url: '', enabled: true, models: [] };
     providers.push(provider);
   }
   provider.api_key = String(config.llm.api_key || '');
@@ -363,7 +367,7 @@ function saveControlConfig(config) {
       let id = 'vision';
       let suffix = 2;
       while (providers.some(item => item.id === id)) id = `vision-${suffix++}`;
-      visionProvider = { id, name: '视觉模型', api_key: '', api_url: '', enabled: true, models: [] };
+      visionProvider = { id, name: 'Vision model', api_key: '', api_url: '', enabled: true, models: [] };
       providers.push(visionProvider);
     }
     visionProvider.api_key = String(visionView.api_key || '');
@@ -413,35 +417,35 @@ function listPlugins() {
   }
   const market = readJson(path.join(pluginsPath, 'plugin-house', 'plugin_hub.json'), {});
   const marketDisplayNames = {
-    'time-awareness': '时间感知',
-    'my-neuro-plugin-hitokoto': '每日一言',
-    'my-neuro-plugin-memos': 'MemOS 长期记忆',
-    'loki-shadow': '洛基之影',
-    'myneuro-plugin-skills': '技能管理',
-    'core-memory-injector': '核心记忆注入',
-    'astrbook-forum': 'AstrBook 论坛',
-    'world-eye': '世界之眼',
-    'ai-log': '思痕之册',
-    'dawn-dusk-line': '晨昏之线',
-    'mood-chat': '心情对话系统',
-    'thinking-bubble': '思考气泡',
-    'rebirth-feiniu-music': '网易云音乐',
-    'bilibili-tools': 'B站工具',
-    'multi-search': '多引擎搜索',
-    'openrouter-image': 'OpenRouter 图像生成',
-    'windows-app-launcher': 'Windows 应用启动',
-    'mcp-filesystem': 'MCP 文件系统',
-    'remote-sync': '远程同步',
-    'exp3-model-processor': 'EXP3 表情整理器',
-    'check-in': '定时问候',
-    'txt-writer': '文本写入',
-    'minimax-music': 'MiniMax 音乐生成',
-    'feiniu-board-game': '肥牛棋盘游戏',
-    'kimi-search': 'Kimi 联网搜索',
-    'agent-dream': '梦境系统',
-    'qq-connect': 'QQ 连接',
-    'timed-tasks': '定时任务',
-    'screen-narrator': '屏幕感知'
+    'time-awareness': 'Time Awareness',
+    'my-neuro-plugin-hitokoto': 'Daily Quote',
+    'my-neuro-plugin-memos': 'MemOS Long-Term Memory',
+    'loki-shadow': 'Shadow of Loki',
+    'myneuro-plugin-skills': 'Skill Manager',
+    'core-memory-injector': 'Core Memory Injector',
+    'astrbook-forum': 'AstrBook Forum',
+    'world-eye': 'Eye of the World',
+    'ai-log': 'AI Journal',
+    'dawn-dusk-line': 'Dawn and Dusk',
+    'mood-chat': 'Mood Chat',
+    'thinking-bubble': 'Thinking Bubble',
+    'rebirth-feiniu-music': 'NetEase Cloud Music',
+    'bilibili-tools': 'Bilibili Tools',
+    'multi-search': 'Multi-Engine Search',
+    'openrouter-image': 'OpenRouter Image Generation',
+    'windows-app-launcher': 'Windows App Launcher',
+    'mcp-filesystem': 'MCP File System',
+    'remote-sync': 'Remote Sync',
+    'exp3-model-processor': 'EXP3 Expression Organizer',
+    'check-in': 'Check-In',
+    'txt-writer': 'Text Writer',
+    'minimax-music': 'MiniMax Music Generation',
+    'feiniu-board-game': 'Feiniu Board Games',
+    'kimi-search': 'Kimi Web Search',
+    'agent-dream': 'Dream System',
+    'qq-connect': 'QQ Connect',
+    'timed-tasks': 'Scheduled Tasks',
+    'screen-narrator': 'Screen Awareness'
   };
   result.market = Object.entries(market).map(([id, item]) => {
     const installedPlugin = result.community.find(plugin => plugin.name === id);
@@ -459,9 +463,9 @@ const pluginMarketUrl = 'https://raw.githubusercontent.com/morettt/my-neuro/main
 
 async function refreshPluginMarket() {
   const response = await net.fetch(pluginMarketUrl, { signal: AbortSignal.timeout(15000) });
-  if (!response.ok) throw new Error(`获取插件列表失败（HTTP ${response.status}）`);
+  if (!response.ok) throw new Error(`Failed to get the plugin list (HTTP ${response.status})`);
   const market = await response.json();
-  if (!market || Array.isArray(market) || typeof market !== 'object') throw new Error('插件列表格式无效');
+  if (!market || Array.isArray(market) || typeof market !== 'object') throw new Error('The plugin list has an invalid format');
   fs.writeFileSync(path.join(pluginsPath, 'plugin-house', 'plugin_hub.json'), `${JSON.stringify(market, null, 2)}\n`, 'utf8');
   return listPlugins();
 }
@@ -473,13 +477,13 @@ function runProcess(command, args, options = {}) {
     child.stdout?.on('data', chunk => { output += chunk.toString(); });
     child.stderr?.on('data', chunk => { output += chunk.toString(); });
     child.once('error', reject);
-    child.once('exit', code => code === 0 ? resolve(output) : reject(new Error(output.trim() || `${command} 退出码 ${code}`)));
+    child.once('exit', code => code === 0 ? resolve(output) : reject(new Error(output.trim() || `${command} exited with code ${code}`)));
   });
 }
 
 async function downloadFile(url, file) {
   const response = await net.fetch(url, { signal: AbortSignal.timeout(180000) });
-  if (!response.ok) throw new Error(`下载失败（HTTP ${response.status}）`);
+  if (!response.ok) throw new Error(`Download failed (HTTP ${response.status})`);
   fs.writeFileSync(file, Buffer.from(await response.arrayBuffer()));
 }
 
@@ -499,15 +503,15 @@ async function installDependencies(pluginDir) {
   const messages = [];
   if (fs.existsSync(path.join(pluginDir, 'requirements.txt'))) {
     await runProcess('python.exe', ['-m', 'pip', 'install', '-r', path.join(pluginDir, 'requirements.txt')], { cwd: pluginDir });
-    messages.push('Python 依赖已安装');
+    messages.push('Python dependencies installed');
   }
   return messages;
 }
 
 async function installPluginArchive(id, repo) {
-  if (!/^[\w.-]+$/.test(id) || !/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(?:\.git)?\/?$/i.test(repo)) throw new Error('插件信息无效');
+  if (!/^[\w.-]+$/.test(id) || !/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(?:\.git)?\/?$/i.test(repo)) throw new Error('Invalid plugin info');
   const target = path.join(pluginsPath, 'community', id);
-  if (fs.existsSync(target)) throw new Error('插件已经安装');
+  if (fs.existsSync(target)) throw new Error('The plugin is already installed');
   const match = repo.replace(/\.git\/?$/i, '').match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)$/i);
   const temp = fs.mkdtempSync(path.join(app.getPath('temp'), 'my-neuro-plugin-'));
   const zipFile = path.join(temp, 'plugin.zip');
@@ -521,13 +525,13 @@ async function installPluginArchive(id, repo) {
     if (lastError) throw lastError;
     await expandZip(zipFile, extractDir);
     const roots = fs.readdirSync(extractDir, { withFileTypes: true }).filter(entry => entry.isDirectory());
-    if (roots.length !== 1) throw new Error('插件压缩包结构无效');
+    if (roots.length !== 1) throw new Error('The plugin archive has an invalid layout');
     const source = path.join(extractDir, roots[0].name);
-    if (!fs.existsSync(path.join(source, 'metadata.json'))) throw new Error('仓库根目录缺少 metadata.json');
+    if (!fs.existsSync(path.join(source, 'metadata.json'))) throw new Error('The repository root is missing metadata.json');
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.cpSync(source, target, { recursive: true });
     const dependencyMessages = await installDependencies(target);
-    return { ok: true, message: ['插件安装完成', ...dependencyMessages].join('，') };
+    return { ok: true, message: ['Plugin installed', ...dependencyMessages].join(', ') };
   } catch (error) {
     if (fs.existsSync(target)) fs.rmSync(target, { recursive: true, force: true });
     throw error;
@@ -545,7 +549,7 @@ function postDesktop(route, payload, timeout = 2500) {
       response.on('data', chunk => { text += chunk; });
       response.on('end', () => { try { resolve(JSON.parse(text)); } catch { resolve({ success: response.statusCode < 400, message: text }); } });
     });
-    request.on('timeout', () => request.destroy(new Error('桌宠响应超时')));
+    request.on('timeout', () => request.destroy(new Error('The pet did not respond in time')));
     request.on('error', error => resolve({ success: false, message: error.message }));
     request.end(body);
   });
@@ -609,7 +613,7 @@ function environmentInfo() {
   let hasLocalTts = false;
   try { hasLocalTts = fs.statSync(ttsHub).isDirectory() && fs.readdirSync(ttsHub, { withFileTypes: true }).some(entry => entry.isDirectory()); } catch {}
   const currentConfig = readJson(configPath, {});
-  return { edition: hasLocalTts ? 'local' : 'cloud', editionLabel: hasLocalTts ? '本地' : '云端', version: currentConfig.version || '' };
+  return { edition: hasLocalTts ? 'local' : 'cloud', editionLabel: hasLocalTts ? 'Local' : 'Cloud', version: currentConfig.version || '' };
 }
 
 function listMcpTools() {
@@ -630,7 +634,7 @@ function listMcpTools() {
   for (const [key, value] of Object.entries(mcpConfig)) {
     const name = key.endsWith('_disabled') ? key.slice(0, -9) : key;
     const isLocal = (value.args || []).some(arg => typeof arg === 'string' && arg.includes('./mcp/tools/'));
-    if (!isLocal && !localNames.has(name)) tools.push({ type: 'external', key, name, enabled: !key.endsWith('_disabled'), description: `外部工具 · ${value.command || ''}` });
+    if (!isLocal && !localNames.has(name)) tools.push({ type: 'external', key, name, enabled: !key.endsWith('_disabled'), description: `External tool · ${value.command || ''}` });
   }
   return tools.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
 }
@@ -711,19 +715,19 @@ function createControlWindow() {
 async function stopLive2dProcess() {
   if (!live2dProcess || live2dProcess.exitCode !== null) {
     live2dProcess = null;
-    return { ok: false, message: '桌宠未在运行' };
+    return { ok: false, message: 'The pet is not running' };
   }
   await postDesktop('/prepare-close', {}, 1800);
   const pid = live2dProcess.pid;
   return new Promise(resolve => {
     const killer = spawn('taskkill.exe', ['/pid', String(pid), '/t', '/f'], { windowsHide: true });
-    killer.on('error', error => resolve({ ok: false, message: `关闭失败：${error.message}` }));
+    killer.on('error', error => resolve({ ok: false, message: `Failed to close: ${error.message}` }));
     killer.on('exit', code => {
       if (code === 0) {
         live2dProcess = null;
-        resolve({ ok: true, message: '桌宠已关闭' });
+        resolve({ ok: true, message: 'Pet closed' });
       } else {
-        resolve({ ok: false, message: `关闭失败（${code}）` });
+        resolve({ ok: false, message: `Failed to close (${code})` });
       }
     });
   });
@@ -737,14 +741,14 @@ ipcMain.handle('control:window', (event, action) => {
   if (action === 'close') win.close();
 });
 
-ipcMain.handle('control:confirm-unsaved-config', async (event, title = '未保存配置') => {
+ipcMain.handle('control:confirm-unsaved-config', async (event, title = 'Unsaved config') => {
   const win = BrowserWindow.fromWebContents(event.sender);
   const result = await dialog.showMessageBox(win, {
     type: 'warning',
     title,
-    message: '当前配置有未保存的修改，继续操作可能导致配置未生效。',
-    detail: '是否保存当前配置？',
-    buttons: ['保存', '放弃', '取消'],
+    message: 'The config has unsaved changes. If you continue, they may not take effect.',
+    detail: 'Save the current config?',
+    buttons: ['Save', 'Discard', 'Cancel'],
     defaultId: 0,
     cancelId: 2,
     noLink: true
@@ -761,17 +765,17 @@ ipcMain.handle('control:reset-model-position', async () => {
   current.ui.model_scale = 0.65;
   fs.writeFileSync(configPath, `${JSON.stringify(current, null, 2)}\n`, 'utf8');
   const result = await postDesktop('/reset-model-position', {});
-  return result.success ? { ok: true, message: '皮套位置已立即复位' } : { ok: true, message: '皮套位置已保存，桌宠启动后生效' };
+  return result.success ? { ok: true, message: 'Avatar position reset' } : { ok: true, message: 'Avatar position saved. It applies when the pet starts' };
 });
 ipcMain.handle('control:adjust-subtitle-position', async () => {
   const result = await postDesktop('/adjust-subtitle-position', {});
-  return result.success ? { ok: true, message: '已进入字幕调整模式' } : { ok: false, message: '请先启动桌宠再调整字幕位置' };
+  return result.success ? { ok: true, message: 'Subtitle adjust mode is on' } : { ok: false, message: 'Start the pet first, then adjust the subtitle position' };
 });
 ipcMain.handle('control:select-voice-file', async (_event, kind) => {
   const isModel = kind === 'model';
   const result = await dialog.showOpenDialog({ properties: ['openFile'], filters: isModel
-    ? [{ name: 'PyTorch 模型', extensions: ['pth'] }]
-    : [{ name: '音频文件', extensions: ['wav'] }] });
+    ? [{ name: 'PyTorch model', extensions: ['pth'] }]
+    : [{ name: 'Audio file', extensions: ['wav'] }] });
   if (result.canceled || !result.filePaths[0]) return { ok: false, canceled: true };
   const source = result.filePaths[0];
   const targetDir = path.join(__dirname, 'Voice_Model_Factory');
@@ -786,9 +790,9 @@ ipcMain.handle('control:generate-voice-bat', (_event, options) => {
   const character = String(options?.character || '').trim();
   const text = String(options?.text || '').trim();
   const language = ['zh', 'en', 'ja'].includes(options?.language) ? options.language : 'zh';
-  if (!character || !text) return { ok: false, message: '请填写角色名称和参考文本' };
-  if (!selectedVoiceModelPath || !fs.existsSync(selectedVoiceModelPath)) return { ok: false, message: '请先选择模型文件' };
-  if (!selectedVoiceAudioPath || !fs.existsSync(selectedVoiceAudioPath)) return { ok: false, message: '请先选择参考音频' };
+  if (!character || !text) return { ok: false, message: 'Enter the character name and the reference text' };
+  if (!selectedVoiceModelPath || !fs.existsSync(selectedVoiceModelPath)) return { ok: false, message: 'Choose a model file first' };
+  if (!selectedVoiceAudioPath || !fs.existsSync(selectedVoiceAudioPath)) return { ok: false, message: 'Choose a reference audio file first' };
   const safeName = character.replace(/[<>:"/\\|?*]/g, '_');
   const escapedText = text.replace(/"/g, '""');
   const batPath = path.join(__dirname, 'Voice_Model_Factory', `${safeName}_TTS.bat`);
@@ -796,38 +800,38 @@ ipcMain.handle('control:generate-voice-bat', (_event, options) => {
     'cd /d "%~dp0..\\..\\full-hub\\tts-hub\\GPT-SoVITS-Bundle"',
     `python api.py -p 5000 -d cuda -s "${selectedVoiceModelPath}" -dr "${selectedVoiceAudioPath}" -dt "${escapedText}" -dl ${language}`, 'pause', ''].join('\r\n');
   fs.writeFileSync(batPath, content, 'utf8');
-  return { ok: true, message: `已生成：${path.basename(batPath)}` };
+  return { ok: true, message: `Created: ${path.basename(batPath)}` };
 });
 ipcMain.handle('control:service-status', () => serviceStatus());
 ipcMain.handle('control:start-service', async (event, id) => {
   const definition = serviceLaunchDefinition(id);
-  if (!definition) return { ok: false, message: '未知服务' };
-  if (!serviceInstalled(definition)) return { ok: false, message: `${definition.name} 模块尚未安装` };
-  if (await portListening(definition.port)) return { ok: false, message: `${definition.name} 已在运行` };
+  if (!definition) return { ok: false, message: 'Unknown service' };
+  if (!serviceInstalled(definition)) return { ok: false, message: `${definition.name} is not installed yet` };
+  if (await portListening(definition.port)) return { ok: false, message: `${definition.name} is already running` };
   const batPath = path.join(projectRoot, definition.bat);
-  if (!fs.existsSync(batPath)) return { ok: false, message: `找不到 ${definition.bat}` };
-  sendServiceLog(event.sender, id, `正在启动 ${definition.name}...\n`);
+  if (!fs.existsSync(batPath)) return { ok: false, message: `Cannot find ${definition.bat}` };
+  sendServiceLog(event.sender, id, `Starting ${definition.name}...\n`);
   const child = spawn('cmd.exe', ['/d', '/c', batPath], { cwd: projectRoot, windowsHide: true });
   serviceProcesses[id] = child;
   child.stdout.on('data', chunk => sendServiceLog(event.sender, id, chunk));
   child.stderr.on('data', chunk => sendServiceLog(event.sender, id, chunk));
-  child.on('error', error => sendServiceLog(event.sender, id, `启动失败：${error.message}\n`));
+  child.on('error', error => sendServiceLog(event.sender, id, `Failed to start: ${error.message}\n`));
   child.on('exit', code => {
     if (serviceProcesses[id] === child) serviceProcesses[id] = null;
-    sendServiceLog(event.sender, id, `\n${definition.name} 进程已退出（${code ?? '未知'}）\n`);
+    sendServiceLog(event.sender, id, `\n${definition.name} process exited (${code ?? 'unknown'})\n`);
     if (!event.sender.isDestroyed()) event.sender.send('control:service-state');
   });
-  return { ok: true, message: `${definition.name} 正在启动` };
+  return { ok: true, message: `${definition.name} is starting` };
 });
 ipcMain.handle('control:stop-service', async (event, id) => {
   const definition = serviceDefinitions[id];
-  if (!definition) return { ok: false, message: '未知服务' };
+  if (!definition) return { ok: false, message: 'Unknown service' };
   const pids = await listeningPids(definition.port);
   const tracked = serviceProcesses[id];
   if (tracked?.pid) pids.push(String(tracked.pid));
   const uniquePids = [...new Set(pids)];
-  if (!uniquePids.length) return { ok: false, message: `${definition.name} 未在运行` };
-  sendServiceLog(event.sender, id, `正在停止 ${definition.name}...\n`);
+  if (!uniquePids.length) return { ok: false, message: `${definition.name} is not running` };
+  sendServiceLog(event.sender, id, `Stopping ${definition.name}...\n`);
   if (id === 'bert') {
     try {
       await net.fetch('http://127.0.0.1:6007/shutdown', {
@@ -837,8 +841,8 @@ ipcMain.handle('control:stop-service', async (event, id) => {
       await new Promise(resolve => setTimeout(resolve, 500));
       if (!(await portListening(definition.port))) {
         serviceProcesses[id] = null;
-        sendServiceLog(event.sender, id, `${definition.name} 已停止\n`);
-        return { ok: true, message: `${definition.name} 已停止` };
+        sendServiceLog(event.sender, id, `${definition.name} stopped\n`);
+        return { ok: true, message: `${definition.name} stopped` };
       }
     } catch (_) {
       // 旧版 BERT 服务没有退出接口时，继续使用进程结束兜底。
@@ -861,23 +865,23 @@ ipcMain.handle('control:stop-service', async (event, id) => {
       .filter(result => result.status === 'rejected')
       .map(result => result.reason?.message)
       .filter(Boolean)
-      .join('；');
-    const message = `${definition.name} 停止失败，端口 ${definition.port} 仍被 PID ${remainingPids.join(', ')} 占用${errors ? `：${errors}` : ''}`;
+      .join('; ');
+    const message = `${definition.name} could not be stopped: port ${definition.port} is still used by PID ${remainingPids.join(', ')}${errors ? `: ${errors}` : ''}`;
     sendServiceLog(event.sender, id, `${message}\n`);
     return { ok: false, message };
   }
   serviceProcesses[id] = null;
-  sendServiceLog(event.sender, id, `${definition.name} 已停止\n`);
-  return { ok: true, message: `${definition.name} 已停止` };
+  sendServiceLog(event.sender, id, `${definition.name} stopped\n`);
+  return { ok: true, message: `${definition.name} stopped` };
 });
 ipcMain.handle('control:download-service', async (event, id) => {
   const definition = serviceDefinitions[id];
-  if (!definition) return { ok: false, message: '未知服务' };
-  if (serviceInstalled(definition)) return { ok: false, message: `${definition.name} 已安装` };
-  if (serviceDownloads[id]) return { ok: false, message: `${definition.name} 正在下载` };
+  if (!definition) return { ok: false, message: 'Unknown service' };
+  if (serviceInstalled(definition)) return { ok: false, message: `${definition.name} is already installed` };
+  if (serviceDownloads[id]) return { ok: false, message: `${definition.name} is downloading` };
   const script = path.join(hubRoot, 'Batch_Download.py');
-  if (!fs.existsSync(script)) return { ok: false, message: '找不到 Batch_Download.py' };
-  sendServiceLog(event.sender, id, `开始下载 ${definition.name} 模块...\n`);
+  if (!fs.existsSync(script)) return { ok: false, message: 'Cannot find Batch_Download.py' };
+  sendServiceLog(event.sender, id, `Downloading the ${definition.name} module...\n`);
   serviceDownloads[id] = { exitCode: null };
   if (!event.sender.isDestroyed()) event.sender.send('control:service-state');
   let pythonExecutable;
@@ -885,9 +889,9 @@ ipcMain.handle('control:download-service', async (event, id) => {
     pythonExecutable = await ensureProjectPython(event.sender, id);
   } catch (error) {
     serviceDownloads[id] = null;
-    sendServiceLog(event.sender, id, `\u9879\u76ee Python \u73af\u5883\u5b89\u88c5\u5931\u8d25\uff1a${error.message}\n`);
+    sendServiceLog(event.sender, id, `Failed to install the project Python environment: ${error.message}\n`);
     if (!event.sender.isDestroyed()) event.sender.send('control:service-state');
-    return { ok: false, message: `\u9879\u76ee Python \u73af\u5883\u5b89\u88c5\u5931\u8d25\uff1a${error.message}` };
+    return { ok: false, message: `Failed to install the project Python environment: ${error.message}` };
   }
   const child = spawn(pythonExecutable, ['-u', script, definition.flag], {
     cwd: hubRoot,
@@ -897,22 +901,22 @@ ipcMain.handle('control:download-service', async (event, id) => {
   serviceDownloads[id] = child;
   child.stdout.on('data', chunk => sendServiceLog(event.sender, id, chunk));
   child.stderr.on('data', chunk => sendServiceLog(event.sender, id, chunk));
-  child.on('error', error => sendServiceLog(event.sender, id, `下载启动失败：${error.message}\n`));
+  child.on('error', error => sendServiceLog(event.sender, id, `Failed to start the download: ${error.message}\n`));
   child.on('exit', code => {
     serviceDownloads[id] = null;
-    sendServiceLog(event.sender, id, `\n下载进程已结束（${code ?? '未知'}）\n`);
+    sendServiceLog(event.sender, id, `\nDownload process ended (${code ?? 'unknown'})\n`);
     if (!event.sender.isDestroyed()) event.sender.send('control:service-state');
   });
-  return { ok: true, message: `开始下载 ${definition.name}` };
+  return { ok: true, message: `Started downloading ${definition.name}` };
 });
 ipcMain.handle('control:open-external', (_event, url) => {
-  if (!/^https?:\/\//i.test(url)) throw new Error('不支持的链接');
+  if (!/^https?:\/\//i.test(url)) throw new Error('Unsupported link');
   return shell.openExternal(url);
 });
 ipcMain.handle('control:list-plugins', () => listPlugins());
 ipcMain.handle('control:refresh-plugin-market', () => refreshPluginMarket());
 ipcMain.handle('control:set-plugin-enabled', (_event, relPath, enabled) => {
-  if (!/^(built-in|community)\/[\w.-]+$/.test(relPath)) throw new Error('插件路径无效');
+  if (!/^(built-in|community)\/[\w.-]+$/.test(relPath)) throw new Error('Invalid plugin path');
   const file = path.join(pluginsPath, 'enabled_plugins.json');
   const current = new Set(readJson(file, { plugins: [] }).plugins || []);
   enabled ? current.add(relPath) : current.delete(relPath);
@@ -920,40 +924,40 @@ ipcMain.handle('control:set-plugin-enabled', (_event, relPath, enabled) => {
   return { ok: true };
 });
 ipcMain.handle('control:save-plugin-config', (_event, type, name, pluginConfig) => {
-  if (!/^(built-in|community)$/.test(type) || !/^[\w.-]+$/.test(name)) throw new Error('插件名称无效');
+  if (!/^(built-in|community)$/.test(type) || !/^[\w.-]+$/.test(name)) throw new Error('Invalid plugin name');
   const file = path.join(pluginsPath, type, name, 'plugin_config.json');
-  if (!fs.existsSync(path.dirname(file))) throw new Error('插件不存在');
+  if (!fs.existsSync(path.dirname(file))) throw new Error('Plugin not found');
   fs.writeFileSync(file, `${JSON.stringify(pluginConfig, null, 2)}\n`, 'utf8');
   return { ok: true };
 });
 ipcMain.handle('control:read-plugin-readme', (_event, type, name) => {
-  if (!/^(built-in|community)$/.test(type) || !/^[\w.-]+$/.test(name)) throw new Error('插件名称无效');
+  if (!/^(built-in|community)$/.test(type) || !/^[\w.-]+$/.test(name)) throw new Error('Invalid plugin name');
   const file = path.join(pluginsPath, type, name, 'README.md');
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
 });
 ipcMain.handle('control:install-plugin', async (_event, id, repo) => {
   try { return await installPluginArchive(id, repo); }
-  catch (error) { return { ok: false, message: `安装失败：${error.message}` }; }
+  catch (error) { return { ok: false, message: `Install failed: ${error.message}` }; }
 });
 ipcMain.handle('control:install-plugin-dlc', async (_event, name, url) => {
-  if (!/^[\w.-]+$/.test(name) || !/^https:\/\//i.test(url)) return { ok: false, message: 'DLC 信息无效' };
+  if (!/^[\w.-]+$/.test(name) || !/^https:\/\//i.test(url)) return { ok: false, message: 'DLC info is invalid' };
   const target = path.join(__dirname, 'plugins-dlc', name);
   const temp = fs.mkdtempSync(path.join(app.getPath('temp'), 'my-neuro-dlc-'));
   const zipFile = path.join(temp, 'dlc.zip');
   try {
     await downloadFile(url, zipFile);
     await expandZip(zipFile, target);
-    return { ok: true, message: 'DLC 安装完成' };
-  } catch (error) { return { ok: false, message: `DLC 安装失败：${error.message}` }; }
+    return { ok: true, message: 'DLC installed' };
+  } catch (error) { return { ok: false, message: `DLC install failed: ${error.message}` }; }
   finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });
 ipcMain.handle('control:launch-plugin-bat', (_event, name, bat) => {
-  if (!/^[\w.-]+$/.test(name) || typeof bat !== 'string') return { ok: false, message: '启动信息无效' };
+  if (!/^[\w.-]+$/.test(name) || typeof bat !== 'string') return { ok: false, message: 'Invalid launch info' };
   const root = path.resolve(__dirname, 'plugins-dlc', name);
   const file = path.resolve(root, bat);
-  if (!file.startsWith(`${root}${path.sep}`) || !fs.existsSync(file)) return { ok: false, message: '找不到插件启动文件' };
+  if (!file.startsWith(`${root}${path.sep}`) || !fs.existsSync(file)) return { ok: false, message: 'The plugin launch file was not found' };
   spawn('cmd.exe', ['/d', '/c', 'start', '', file], { cwd: path.dirname(file), windowsHide: true, detached: true }).unref();
-  return { ok: true, message: '插件已启动' };
+  return { ok: true, message: 'Plugin started' };
 });
 
 ipcMain.handle('control:load-config', () => loadControlConfig());
@@ -984,14 +988,14 @@ ipcMain.handle('control:get-chat-history', () => {
 ipcMain.handle('control:environment-info', () => environmentInfo());
 ipcMain.handle('control:get-prompts', async () => {
   const response = await net.fetch('http://mynewbot.com/api/get-prompts');
-  if (!response.ok) throw new Error(`提示词接口请求失败（${response.status}）`);
+  if (!response.ok) throw new Error(`Prompt API request failed (${response.status})`);
   const data = await response.json();
-  if (!data.success) throw new Error(data.message || '获取提示词列表失败');
+  if (!data.success) throw new Error(data.message || 'Failed to get the prompt list');
   return Array.isArray(data.prompts) ? data.prompts : [];
 });
 ipcMain.handle('control:fetch-llm-models', async (_event, apiUrl, apiKey) => {
   let endpoint = String(apiUrl || '').trim().replace(/\/+$/, '');
-  if (!endpoint) throw new Error('请先填写 API 地址');
+  if (!endpoint) throw new Error('Enter the API URL first');
   for (const suffix of ['/chat/completions', '/completions', '/responses', '/models']) {
     if (endpoint.toLowerCase().endsWith(suffix)) { endpoint = endpoint.slice(0, -suffix.length).replace(/\/+$/, ''); break; }
   }
@@ -1000,19 +1004,19 @@ ipcMain.handle('control:fetch-llm-models', async (_event, apiUrl, apiKey) => {
   if (String(apiKey || '').trim()) headers.Authorization = `Bearer ${String(apiKey).trim()}`;
   let response;
   try { response = await net.fetch(endpoint, { headers, signal: AbortSignal.timeout(28000) }); }
-  catch (error) { throw new Error(`连接模型接口失败：${error.message}`); }
+  catch (error) { throw new Error(`Could not connect to the model API: ${error.message}`); }
   let payload = {};
-  try { payload = await response.json(); } catch { throw new Error(`模型接口返回的不是 JSON（HTTP ${response.status}）`); }
-  if (!response.ok) throw new Error(payload?.error?.message ? `HTTP ${response.status}：${payload.error.message}` : `获取失败（HTTP ${response.status}）`);
+  try { payload = await response.json(); } catch { throw new Error(`The model API did not return JSON (HTTP ${response.status})`); }
+  if (!response.ok) throw new Error(payload?.error?.message ? `HTTP ${response.status}: ${payload.error.message}` : `Fetch failed (HTTP ${response.status})`);
   const items = Array.isArray(payload) ? payload : payload.data;
-  if (!Array.isArray(items)) throw new Error('接口返回格式不受支持：未找到模型列表');
+  if (!Array.isArray(items)) throw new Error('Unsupported API response: no model list found');
   const models = [...new Set(items.map(item => typeof item === 'object' ? (item.id || item.name) : item).filter(Boolean).map(String))].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
-  if (!models.length) throw new Error('接口返回成功，但模型列表为空');
+  if (!models.length) throw new Error('The API answered, but the model list is empty');
   return models;
 });
 ipcMain.handle('control:test-llm-model', async (_event, apiUrl, apiKey, model) => {
   let endpoint = String(apiUrl || '').trim().replace(/\/+$/, '');
-  if (!endpoint || !String(model || '').trim()) return { ok: false, message: '请先填写接口地址并选择模型' };
+  if (!endpoint || !String(model || '').trim()) return { ok: false, message: 'Enter the API URL and choose a model first' };
   for (const suffix of ['/chat/completions', '/completions', '/responses', '/models']) {
     if (endpoint.toLowerCase().endsWith(suffix)) { endpoint = endpoint.slice(0, -suffix.length).replace(/\/+$/, ''); break; }
   }
@@ -1024,7 +1028,7 @@ ipcMain.handle('control:test-llm-model', async (_event, apiUrl, apiKey, model) =
     // 🔥 默认关闭思考模式，避免测出来的延迟被思考过程拉高
     const requestBody = {
       model: String(model).trim(),
-      messages: [{ role: 'user', content: '请只回复 OK' }],
+      messages: [{ role: 'user', content: 'Reply with only OK' }],
       stream: true,
       thinking: { type: 'disabled' }
     };
@@ -1035,9 +1039,9 @@ ipcMain.handle('control:test-llm-model', async (_event, apiUrl, apiKey, model) =
     if (!response.ok) {
       let detail;
       try { detail = (await response.json())?.error?.message; } catch { /* 忽略非 JSON 错误体 */ }
-      const message = String(detail || '模型请求失败').slice(0, 240);
+      const message = String(detail || 'Model request failed').slice(0, 240);
       const key = String(apiKey || '').trim();
-      return { ok: false, message: `HTTP ${response.status}：${key ? message.split(key).join('***') : message}` };
+      return { ok: false, message: `HTTP ${response.status}: ${key ? message.split(key).join('***') : message}` };
     }
 
     // 🔥 实际对话走的是流式响应，这里测的也应是首个正文 token 的到达时间（TTFT），
@@ -1068,43 +1072,43 @@ ipcMain.handle('control:test-llm-model', async (_event, apiUrl, apiKey, model) =
       if (firstTokenMs !== null) { try { await reader.cancel(); } catch { /* 已拿到结果，忽略取消失败 */ } break; }
     }
 
-    if (firstTokenMs === null) return { ok: false, message: '接口未返回有效的文本回复' };
+    if (firstTokenMs === null) return { ok: false, message: 'The API returned no text reply' };
     return { ok: true, elapsedMs: firstTokenMs };
   } catch {
-    return { ok: false, message: signal.aborted ? '测试超时（30秒），暂未确认可用' : '连接失败，请检查接口地址和网络' };
+    return { ok: false, message: signal.aborted ? 'Test timed out (30 seconds), could not confirm it works' : 'Connection failed. Check the API URL and your network' };
   }
 });
 ipcMain.handle('control:list-mcp-tools', () => listMcpTools());
 ipcMain.handle('control:toggle-mcp-tool', (_event, type, key) => {
   if (type === 'local') {
-    if (!/^[\w.-]+\.(js|txt)$/.test(key) || key.toLowerCase() === 'index.js') throw new Error('工具文件无效');
+    if (!/^[\w.-]+\.(js|txt)$/.test(key) || key.toLowerCase() === 'index.js') throw new Error('Invalid tool file');
     const oldPath = path.join(__dirname, 'mcp', 'tools', key);
-    if (!fs.existsSync(oldPath)) throw new Error('工具文件不存在');
+    if (!fs.existsSync(oldPath)) throw new Error('Tool file not found');
     const newKey = key.endsWith('.js') ? `${key.slice(0, -3)}.txt` : `${key.slice(0, -4)}.js`;
     fs.renameSync(oldPath, path.join(__dirname, 'mcp', 'tools', newKey));
   } else if (type === 'external') {
     const file = path.join(__dirname, 'mcp', 'mcp_config.json');
     const data = readJson(file, {});
-    if (!(key in data)) throw new Error('外部工具不存在');
+    if (!(key in data)) throw new Error('External tool not found');
     const newKey = key.endsWith('_disabled') ? key.slice(0, -9) : `${key}_disabled`;
     data[newKey] = data[key]; delete data[key];
     fs.writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
-  } else throw new Error('工具类型无效');
+  } else throw new Error('Invalid tool type');
   return { ok: true };
 });
 ipcMain.handle('control:get-tool-market', async () => {
   const response = await net.fetch('http://mynewbot.com/api/get-tools');
-  if (!response.ok) throw new Error(`工具接口请求失败（${response.status}）`);
+  if (!response.ok) throw new Error(`Tool API request failed (${response.status})`);
   const data = await response.json();
-  if (!data.success) throw new Error(data.message || '获取工具列表失败');
+  if (!data.success) throw new Error(data.message || 'Failed to get the tool list');
   return Array.isArray(data.tools) ? data.tools : [];
 });
 ipcMain.handle('control:download-tool', async (_event, tool) => {
   const id = String(tool?.id || '');
   const filename = path.basename(String(tool?.file_name || ''));
-  if (!id || !filename || !/\.(js|txt)$/i.test(filename)) throw new Error('工具信息无效');
+  if (!id || !filename || !/\.(js|txt)$/i.test(filename)) throw new Error('Invalid tool info');
   const response = await net.fetch(`http://mynewbot.com/api/download-tool/${encodeURIComponent(id)}`);
-  if (!response.ok) throw new Error(`下载失败（HTTP ${response.status}）`);
+  if (!response.ok) throw new Error(`Download failed (HTTP ${response.status})`);
   fs.mkdirSync(path.join(__dirname, 'mcp', 'tools'), { recursive: true });
   fs.writeFileSync(path.join(__dirname, 'mcp', 'tools', filename), Buffer.from(await response.arrayBuffer()));
   return { ok: true, filename };
@@ -1133,7 +1137,7 @@ ipcMain.handle('control:select-live2d-model', async (_event, name) => {
   const modelName = isVrm ? name.slice(6) : name;
   const targetType = isVrm ? 'vrm' : 'live2d';
   const vrmEntry = isVrm ? scanVRMModels().find(model => model.name === modelName) : null;
-  if (isVrm ? !vrmEntry : !scanLive2DModels().some(model => model.name === modelName)) throw new Error('模型不存在');
+  if (isVrm ? !vrmEntry : !scanLive2DModels().some(model => model.name === modelName)) throw new Error('Model not found');
   const currentConfig = readJson(configPath, {});
   const activeType = currentConfig.ui?.model_type === 'vrm' ? 'vrm' : 'live2d';
   const modelResult = await postDesktop('/set-avatar-model', { type: targetType, model_name: modelName }, 20000);
@@ -1152,18 +1156,18 @@ ipcMain.handle('control:select-live2d-model', async (_event, name) => {
     currentConfig.ui.vrm_model_path = '';
   }
   fs.writeFileSync(configPath, `${JSON.stringify(currentConfig, null, 2)}\n`, 'utf8');
-  if (switchResult.success) return { ok: true, hotReloaded: true, message: `已切换到 ${name}` };
-  return { ok: true, hotReloaded: false, message: `已选择 ${name}，桌宠未运行，将在下次启动时生效` };
+  if (switchResult.success) return { ok: true, hotReloaded: true, message: `Switched to ${name}` };
+  return { ok: true, hotReloaded: false, message: `Selected ${name}. The pet is not running, so it applies the next time it starts` };
 });
 ipcMain.handle('control:load-motion-data', (_event, character) => motionData(character));
 ipcMain.handle('control:save-motion-data', async (_event, character, kind, values) => {
-  if (!character || !['actions', 'expressions'].includes(kind)) throw new Error('动作配置无效');
+  if (!character || !['actions', 'expressions'].includes(kind)) throw new Error('Invalid motion config');
   writeMotionConfig(character, kind, values);
   await notifyDesktopReload();
   return { ok: true };
 });
 ipcMain.handle('control:reset-motion-data', async (_event, character, kind) => {
-  if (!['actions', 'expressions'].includes(kind) || !isLive2DModelDir(character)) return { ok: false, message: '当前模型没有可还原的配置' };
+  if (!['actions', 'expressions'].includes(kind) || !isLive2DModelDir(character)) return { ok: false, message: 'This model has no config to restore' };
   // AI_set_live2d.py 写表情备份时用的键名是 original_config1，动作备份才是 original_config
   const backupFile = kind === 'actions' ? 'character_backups.json' : 'character_backups1.json';
   const backupKey = kind === 'actions' ? 'original_config' : 'original_config1';
@@ -1171,19 +1175,19 @@ ipcMain.handle('control:reset-motion-data', async (_event, character, kind) => {
   // 没有备份（例如手动放进来的新模型）时，直接按模型目录重新生成默认配置；有备份也过一遍合并，剔除已不存在的文件
   writeMotionConfig(character, kind, mergeMotionConfig(kind, character, original || {}).config);
   await notifyDesktopReload();
-  return { ok: true, message: original ? '已还原原始配置' : '没有找到备份，已按模型文件重新生成默认配置' };
+  return { ok: true, message: original ? 'Original config restored' : 'No backup found, so the default config was rebuilt from the model files' };
 });
 ipcMain.handle('control:trigger-motion', (_event, name) => postDesktop('/control-motion', { action: 'trigger_emotion', emotion_name: name }));
 ipcMain.handle('control:trigger-expression', (_event, name) => postDesktop('/control-expression', { action: 'trigger_expression', expression_name: name }));
 ipcMain.handle('control:apply-vmc', async (_event, host, port) => {
   const current = readJson(configPath, {}); current.vmc ||= {}; current.vmc.host = host || '127.0.0.1'; current.vmc.port = Number(port) || 39539;
   fs.writeFileSync(configPath, `${JSON.stringify(current, null, 2)}\n`, 'utf8');
-  if (!live2dProcess || live2dProcess.exitCode !== null) return { success: true, message: 'VMC 地址已保存，桌宠启动后生效' };
+  if (!live2dProcess || live2dProcess.exitCode !== null) return { success: true, message: 'VMC address saved. It applies when the pet starts' };
   return postDesktop('/control-vmc', { host: current.vmc.host, port: current.vmc.port });
 });
 
 ipcMain.handle('control:start-live2d', event => {
-  if (live2dProcess && live2dProcess.exitCode === null) return { ok: false, message: '桌宠已在运行' };
+  if (live2dProcess && live2dProcess.exitCode === null) return { ok: false, message: 'The pet is already running' };
   startRuntimeLog(event.sender);
   showAvatarLoadingWindow();
   live2dProcess = spawn('cmd.exe', ['/d', '/c', 'go.bat'], {
@@ -1196,12 +1200,12 @@ ipcMain.handle('control:start-live2d', event => {
     closeAvatarLoadingWindow();
     stopRuntimeLog();
     if (!event.sender.isDestroyed()) {
-      event.sender.send('control:tool-log', `桌宠进程已退出（${code ?? '未知'}）\n`);
+      event.sender.send('control:tool-log', `Pet process exited (${code ?? 'unknown'})\n`);
       event.sender.send('control:live2d-state', false);
     }
     live2dProcess = null;
   });
-  return { ok: true, message: '正在启动桌宠' };
+  return { ok: true, message: 'Starting the pet' };
 });
 
 ipcMain.handle('control:stop-live2d', async () => {

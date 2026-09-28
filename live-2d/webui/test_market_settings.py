@@ -41,7 +41,7 @@ class MarketSettingsTests(unittest.TestCase):
 
         ok, message = validate(normalize({"github_mirror": "https://mirror.example/some/path"}))
         self.assertFalse(ok)
-        self.assertIn("不能带路径", message)
+        self.assertIn("with no path", message)
 
         ok, message = validate(normalize({"pip_index_url": "https://pypi.example/simple index"}))
         self.assertFalse(ok)
@@ -53,7 +53,7 @@ class MarketSettingsTests(unittest.TestCase):
 
         ok, message = validate(normalize({"hub_url": "https://hub.example/plugin hub.json"}))
         self.assertFalse(ok)
-        self.assertIn("插件源", message)
+        self.assertIn("plugin index URL", message)
 
         ok, _message = validate(normalize({
             "github_mirror_mode": "fixed",

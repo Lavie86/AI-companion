@@ -1,5 +1,10 @@
 const { Plugin } = require('../../../js/core/plugin-base.js');
 
+// The summary message starts with this marker. The Chinese one is from before the
+// translation and is still recognised in saved conversations.
+const SUMMARY_MARKERS = ['[Conversation summary]', '[历史对话总结]'];
+const SUMMARY_PREFIX = /^\[(?:Conversation summary|历史对话总结)\] /;
+
 class ContextCompressorPlugin extends Plugin {
 
     async onInit() {
@@ -17,7 +22,7 @@ class ContextCompressorPlugin extends Plugin {
         if (voiceChat.messages.length < threshold) return;
 
         this._compress(voiceChat, cfg).catch(e => {
-            this.context.log('warn', `上下文压缩失败: ${e.message}`);
+            this.context.log('warn', `Context compression failed: ${e.message}`);
         });
     }
 
@@ -25,33 +30,34 @@ class ContextCompressorPlugin extends Plugin {
         this._compressing = true;
         try {
             const keepRecent = cfg.keep_recent || 4;
-            const prompt = cfg.prompt || '请将以下历史对话总结为简洁的要点，保留关键信息和上下文。';
+            const prompt = cfg.prompt || 'Summarize the conversation below as short key points. Keep the important information and context.';
             const messages = voiceChat.messages;
             const total = messages.length;
 
             const systemMsgs = messages.filter(m => m.role === 'system');
             const nonSystem = messages.filter(m => m.role !== 'system');
 
-            const initialSystem = systemMsgs.filter(m => !m.content.includes('[历史对话总结]'));
-            const prevSummaryMsg = systemMsgs.find(m => m.content.includes('[历史对话总结]'));
+            const isSummary = m => SUMMARY_MARKERS.some(marker => m.content.includes(marker));
+            const initialSystem = systemMsgs.filter(m => !isSummary(m));
+            const prevSummaryMsg = systemMsgs.find(isSummary);
 
             const recent = nonSystem.slice(-keepRecent * 2);
             const old = nonSystem.slice(0, -keepRecent * 2);
             if (old.length === 0) return;
 
             const convText = old.map(m =>
-                m.role === 'user' ? `用户: ${this._text(m.content)}`
+                m.role === 'user' ? `User: ${this._text(m.content)}`
                 : m.role === 'assistant' ? `AI: ${this._text(m.content)}`
                 : ''
             ).filter(Boolean).join('\n');
 
             const prevSummary = prevSummaryMsg
-                ? prevSummaryMsg.content.replace('[历史对话总结] ', '')
+                ? prevSummaryMsg.content.replace(SUMMARY_PREFIX, '')
                 : null;
 
             const compressPrompt = prevSummary
-                ? `${prompt}\n\n【之前的历史总结】：\n${prevSummary}\n\n【本次新增对话】：\n${convText}\n\n请合并生成完整总结：`
-                : `${prompt}\n\n对话内容：\n${convText}\n\n总结：`;
+                ? `${prompt}\n\n[Previous summary]:\n${prevSummary}\n\n[New conversation]:\n${convText}\n\nMerge them into one complete summary:`
+                : `${prompt}\n\nConversation:\n${convText}\n\nSummary:`;
 
             const summary = await this.context.callLLM(compressPrompt, { max_tokens: 500, stream: false });
             if (!summary?.trim()) return;
@@ -59,11 +65,11 @@ class ContextCompressorPlugin extends Plugin {
             voiceChat.messages.length = 0;
             voiceChat.messages.push(
                 ...initialSystem,
-                { role: 'system', content: `[历史对话总结] ${summary.trim()}` },
+                { role: 'system', content: `${SUMMARY_MARKERS[0]} ${summary.trim()}` },
                 ...recent
             );
 
-            this.context.log('info', `上下文压缩完成: ${total}条 → ${voiceChat.messages.length}条`);
+            this.context.log('info', `Context compressed: ${total} messages → ${voiceChat.messages.length} messages`);
         } finally {
             this._compressing = false;
         }

@@ -188,7 +188,7 @@ def normalize_ptt_key(value):
     original = '' if value is None else str(value)
     raw = original if original == ' ' else original.strip().lower()
     if not raw:
-        raise ValueError('PTT 按键不能为空')
+        raise ValueError('PTT key cannot be empty')
 
     if (
         len(raw) == 4
@@ -205,7 +205,7 @@ def normalize_ptt_key(value):
 
     normalized = PTT_KEY_ALIASES.get(raw, raw)
     if normalized not in PTT_SUPPORTED_KEYS:
-        raise ValueError(f'暂不支持这个 PTT 按键：{original}')
+        raise ValueError(f'This PTT key is not supported: {original}')
     return normalized
 
 
@@ -220,7 +220,7 @@ def _read_config_file(config_path):
     with open(config_path, 'r', encoding='utf-8') as file:
         data = json.load(file)
     if not isinstance(data, dict):
-        raise ValueError('config.json 顶层必须是 JSON 对象')
+        raise ValueError('config.json top level must be a JSON object')
     return data
 
 
@@ -335,13 +335,13 @@ def save_config(config):
 
     if isinstance(config, ConfigDocument) and config._load_error:
         logger.error(
-            f'拒绝覆盖无法读取的 config.json：{config._load_error}'
+            f'Refusing to overwrite the unreadable config.json: {config._load_error}'
         )
         return False
 
     try:
         if not isinstance(config, dict):
-            raise ValueError('待保存配置必须是 JSON 对象')
+            raise ValueError('The config to save must be a JSON object')
 
         with _CONFIG_LOCK:
             _ensure_local_config()
@@ -356,7 +356,7 @@ def save_config(config):
                 content = copy.deepcopy(config)
 
             if not isinstance(content, dict):
-                raise ValueError('待保存配置必须是 JSON 对象')
+                raise ValueError('The config to save must be a JSON object')
 
             CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
             with tempfile.NamedTemporaryFile(
@@ -543,7 +543,7 @@ def build_legacy_providers(config):
     if has_llm:
         main_provider = {
             'id': 'main',
-            'name': '主模型',
+            'name': 'Main model',
             'api_key': llm_config.get('api_key', ''),
             'api_url': llm_config.get('api_url', ''),
             'enabled': True,
@@ -570,7 +570,7 @@ def build_legacy_providers(config):
     if has_vision:
         providers.append({
             'id': 'vision',
-            'name': '视觉模型',
+            'name': 'Vision model',
             'api_key': vision_config.get('api_key', ''),
             'api_url': vision_config.get('api_url', ''),
             'enabled': True,
@@ -819,7 +819,7 @@ def get_enabled_model_choices(providers, include_empty=False):
     """生成模型下拉选项，value 为 'provider_id|model_id' 复合值"""
     choices = []
     if include_empty:
-        choices.append({'value': '', 'provider_id': '', 'model_id': '', 'label': '（不使用）'})
+        choices.append({'value': '', 'provider_id': '', 'model_id': '', 'label': '(none)'})
     for provider, model in iter_enabled_models(providers):
         provider_id = provider.get('id', '')
         model_id = model.get('model_id', '')
@@ -900,7 +900,7 @@ def handle_llm_config():
                 # 新前端：直接提交完整 providers
                 providers = normalize_providers_data(data['providers'])
                 if not providers and current_providers:
-                    return jsonify({'error': '不能用空通讯录覆盖已有提供商数据'}), 400
+                    return jsonify({'error': 'Cannot overwrite existing provider data with an empty provider list'}), 400
             elif any(k in data for k in (
                 'api_key', 'api_url', 'model', 'temperature', 'temperature_enabled',
                 'reasoning_enabled', 'reasoning_effort'
@@ -949,10 +949,10 @@ def handle_llm_config():
             apply_selections_and_scrub(config, providers)
 
             if not save_provider_store(providers):
-                return jsonify({'error': '保存提供商数据失败'}), 500
+                return jsonify({'error': 'Failed to save provider data'}), 500
             if save_config(config):
                 return jsonify({'success': True})
-            return jsonify({'error': '保存失败'}), 500
+            return jsonify({'error': 'Save failed'}), 500
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -965,7 +965,7 @@ def fetch_llm_provider_models():
         api_url = str(data.get('api_url') or '').strip().rstrip('/')
         api_key = str(data.get('api_key') or '').strip()
         if not api_url or not api_key:
-            return jsonify({'success': False, 'error': '请先填写 API URL 和 API Key'}), 400
+            return jsonify({'success': False, 'error': 'Please fill in the API URL and API Key'}), 400
 
         req = urllib.request.Request(
             f'{api_url}/models',
@@ -980,9 +980,9 @@ def fetch_llm_provider_models():
         )
         return jsonify({'success': True, 'models': model_ids})
     except urllib.error.HTTPError as e:
-        return jsonify({'success': False, 'error': f'获取模型列表失败：HTTP {e.code}'}), 502
+        return jsonify({'success': False, 'error': f'Failed to fetch the model list: HTTP {e.code}'}), 502
     except urllib.error.URLError as e:
-        return jsonify({'success': False, 'error': f'获取模型列表失败：{getattr(e, "reason", e)}'}), 502
+        return jsonify({'success': False, 'error': f'Failed to fetch the model list: {getattr(e, "reason", e)}'}), 502
     except Exception as e:
         logger.error(f'获取 provider 模型列表失败：{str(e)}')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -997,7 +997,7 @@ def test_llm_provider_model():
         api_key = str(data.get('api_key') or '').strip()
         model_id = str(data.get('model_id') or '').strip()
         if not api_url or not api_key or not model_id:
-            return jsonify({'success': False, 'error': '请先填写 API URL、API Key 和模型 ID'}), 400
+            return jsonify({'success': False, 'error': 'Please fill in the API URL, API Key and model ID'}), 400
 
         payload = json.dumps({
             'model': model_id,
@@ -1020,8 +1020,8 @@ def test_llm_provider_model():
 
         return jsonify({
             'success': True,
-            'summary': '测活成功',
-            'detail': f'{model_id} 已正常响应',
+            'summary': 'Test passed',
+            'detail': f'{model_id} responded normally',
             'model_id': model_id
         })
     except urllib.error.HTTPError as e:
@@ -1032,13 +1032,13 @@ def test_llm_provider_model():
                 detail = f'HTTP {e.code}: {body}'
         except Exception:
             pass
-        return jsonify({'success': False, 'summary': '测活失败', 'error': detail, 'detail': detail}), 502
+        return jsonify({'success': False, 'summary': 'Test failed', 'error': detail, 'detail': detail}), 502
     except urllib.error.URLError as e:
         reason = str(getattr(e, 'reason', e))
-        return jsonify({'success': False, 'summary': '测活失败', 'error': reason, 'detail': reason}), 502
+        return jsonify({'success': False, 'summary': 'Test failed', 'error': reason, 'detail': reason}), 502
     except Exception as e:
         logger.error(f'provider 模型测活失败：{str(e)}')
-        return jsonify({'success': False, 'summary': '测活失败', 'error': str(e), 'detail': str(e)}), 500
+        return jsonify({'success': False, 'summary': 'Test failed', 'error': str(e), 'detail': str(e)}), 500
 
 
 # ============ 人格设置 ============
@@ -1055,7 +1055,7 @@ def handle_persona_settings():
         llm_config['system_prompt'] = data.get('system_prompt', '')
         if save_config(config):
             return jsonify({'success': True})
-        return jsonify({'error': '保存失败'}), 500
+        return jsonify({'error': 'Save failed'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1070,7 +1070,7 @@ def handle_chat_settings():
         ui_config = config.get('ui', {})
         context_config = config.get('context', {})
         return jsonify({
-            'intro_text': ui_config.get('intro_text', '你好啊'),
+            'intro_text': ui_config.get('intro_text', 'Hey. You finally showed up.'),
             'max_messages': context_config.get('max_messages', 30),
             'enable_limit': context_config.get('enable_limit', True),
             'persistent_history': context_config.get('persistent_history', False),
@@ -1090,7 +1090,7 @@ def handle_chat_settings():
             config['context']['history_file'] = data.get('history_file', '')
             if save_config(config):
                 return jsonify({'success': True})
-            return jsonify({'error': '保存失败'}), 500
+            return jsonify({'error': 'Save failed'}), 500
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -1171,7 +1171,7 @@ def handle_voice_settings():
                 config['api_gateway']['api_key'] = data['api_gateway'].get('api_key', '')
             if save_config(config):
                 return jsonify({'success': True})
-            return jsonify({'error': '保存失败'}), 500
+            return jsonify({'error': 'Save failed'}), 500
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -1204,7 +1204,7 @@ def handle_bilibili_settings():
             })
             if save_config(config):
                 return jsonify({'success': True})
-            return jsonify({'error': '保存失败'}), 500
+            return jsonify({'error': 'Save failed'}), 500
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -1227,7 +1227,7 @@ def handle_ui_settings():
             'motion_style': normalize_choreo_motion_style((config.get('motion_director') or {}).get('style', '')),
             'motion_director_enabled': motion_mode != 'legacy',
             'motion_director_uses_dialogue': motion_director_uses_dialogue(config),
-            'subtitle_user': subtitle_config.get('user', '用户'),
+            'subtitle_user': subtitle_config.get('user', 'You'),
             'subtitle_ai': subtitle_config.get('ai', 'AI'),
             'subtitle_enabled': subtitle_config.get('enabled', False)
         })
@@ -1253,7 +1253,7 @@ def handle_ui_settings():
                     config['motion_director']['style'] = style
                 else:
                     config['motion_director'].pop('style', None)
-            config['subtitle_labels']['user'] = data.get('subtitle_user', '用户')
+            config['subtitle_labels']['user'] = data.get('subtitle_user', 'You')
             config['subtitle_labels']['ai'] = data.get('subtitle_ai', 'AI')
             config['subtitle_labels']['enabled'] = data.get('subtitle_enabled', False)
             if save_config(config):
@@ -1263,7 +1263,7 @@ def handle_ui_settings():
                     'motion_director_enabled': config['motion_director']['enabled'],
                     'motion_director_uses_dialogue': motion_director_uses_dialogue(config),
                 })
-            return jsonify({'error': '保存失败'}), 500
+            return jsonify({'error': 'Save failed'}), 500
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -1295,17 +1295,17 @@ def handle_webui_flavor():
     try:
         data = request.get_json(force=True) or {}
     except Exception:
-        return jsonify({'error': '请求体需为 JSON'}), 400
+        return jsonify({'error': 'The request body must be JSON'}), 400
     flavor = str(data.get('flavor') or '').strip().lower()
     if flavor not in ('new', 'old'):
-        return jsonify({'error': "flavor 必须是 'new' 或 'old'"}), 400
+        return jsonify({'error': "flavor must be 'new' or 'old'"}), 400
     config = load_config()
     if 'ui' not in config or not isinstance(config['ui'], dict):
         config['ui'] = {}
     config['ui']['webui_flavor'] = flavor
     if save_config(config):
         return jsonify({'success': True, 'flavor': flavor})
-    return jsonify({'error': '保存失败'}), 500
+    return jsonify({'error': 'Save failed'}), 500
 
 
 # ============ 主动对话设置 ============
@@ -1341,7 +1341,7 @@ def handle_auto_chat_settings():
             config['ai_diary']['enabled'] = data.get('ai_diary_enabled', False)
             if save_config(config):
                 return jsonify({'success': True})
-            return jsonify({'error': '保存失败'}), 500
+            return jsonify({'error': 'Save failed'}), 500
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -1463,7 +1463,7 @@ def handle_advanced_settings():
             if providers_changed:
                 apply_selections_and_scrub(config, providers)
                 if not save_provider_store(providers):
-                    return jsonify({'error': '保存提供商数据失败'}), 500
+                    return jsonify({'error': 'Failed to save provider data'}), 500
 
             if save_config(config):
                 return jsonify({
@@ -1471,7 +1471,7 @@ def handle_advanced_settings():
                     'ptt_key': get_configured_ptt_key(config['asr']),
                     'runtime_reloaded': notify_runtime_config_reload(),
                 })
-            return jsonify({'error': '保存失败'}), 500
+            return jsonify({'error': 'Save failed'}), 500
         except ValueError as e:
             return jsonify({'error': str(e)}), 400
         except Exception as e:
@@ -1497,7 +1497,7 @@ def handle_dialog_settings():
         dialog_model_ref = f'{dialog_provider_id}|{dialog_model_id}' if dialog_provider_id and dialog_model_id else ''
 
         return jsonify({
-            'intro_text': ui_config.get('intro_text', '你好啊'),
+            'intro_text': ui_config.get('intro_text', 'Hey. You finally showed up.'),
             'max_messages': context_config.get('max_messages', 30),
             'enable_limit': context_config.get('enable_limit', True),
             'persistent_history': context_config.get('persistent_history', False),
@@ -1524,7 +1524,7 @@ def handle_dialog_settings():
             if 'llm' not in config:
                 config['llm'] = {}
 
-            config['ui']['intro_text'] = data.get('intro_text', '你好啊')
+            config['ui']['intro_text'] = data.get('intro_text', 'Hey. You finally showed up.')
             config['context']['max_messages'] = data.get('max_messages', 30)
             config['context']['enable_limit'] = data.get('enable_limit', True)
             config['context']['persistent_history'] = data.get('persistent_history', False)
@@ -1552,7 +1552,7 @@ def handle_dialog_settings():
                     'ptt_key': get_configured_ptt_key(config['asr']),
                     'runtime_reloaded': notify_runtime_config_reload(),
                 })
-            return jsonify({'error': '保存失败'}), 500
+            return jsonify({'error': 'Save failed'}), 500
         except ValueError as e:
             return jsonify({'error': str(e)}), 400
         except Exception as e:
@@ -1583,7 +1583,7 @@ def handle_tools_settings():
             config['mcp']['enabled'] = data.get('mcp_enabled', True)
             if save_config(config):
                 return jsonify({'success': True})
-            return jsonify({'error': '保存失败'}), 500
+            return jsonify({'error': 'Save failed'}), 500
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -1609,7 +1609,7 @@ def handle_mood_chat_settings():
             config['mood_chat']['prompt'] = data.get('prompt', '')
             if save_config(config):
                 return jsonify({'success': True})
-            return jsonify({'error': '保存失败'}), 500
+            return jsonify({'error': 'Save failed'}), 500
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -1633,7 +1633,7 @@ def handle_current_model():
         model_name = data.get('model', '')
 
         if not model_name:
-            return jsonify({'success': False, 'error': '未提供模型名称'})
+            return jsonify({'success': False, 'error': 'No model name given'})
 
         # 优先通知运行中的桌宠热切换（会同时持久化到 config.ui.live2d_model）
         try:
@@ -1658,7 +1658,7 @@ def handle_current_model():
         if save_config(config):
             logger.info(f'已保存模型选择：{model_name}')
             return jsonify({'success': True, 'model': model_name})
-        return jsonify({'success': False, 'error': '保存配置失败'}), 500
+        return jsonify({'success': False, 'error': 'Failed to save config'}), 500
     except Exception as e:
         logger.error(f'设置模型失败：{str(e)}')
         return jsonify({'success': False, 'error': str(e)}), 500

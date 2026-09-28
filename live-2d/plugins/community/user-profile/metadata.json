@@ -1,9 +1,9 @@
 {
   "name": "user-profile",
-  "displayName": "用户画像",
+  "displayName": "User Profile",
   "version": "1.0.0",
   "author": "community",
-  "description": "从长期记忆和对话中保守沉淀用户画像，支持首次诊断、候选池、跨天证据晋升和自动注入",
+  "description": "Carefully builds a profile of you from long-term memory and chats, with first-run diagnosis, a candidate pool, promotion by evidence across days, and automatic injection.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

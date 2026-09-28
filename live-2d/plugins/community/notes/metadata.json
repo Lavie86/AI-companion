@@ -1,9 +1,9 @@
 {
   "name": "notes",
-  "displayName": "备忘录",
+  "displayName": "Notes",
   "version": "1.0.0",
   "author": "official",
-  "description": "让 AI 帮你记备忘，支持保存、查看、删除，数据持久化到本地文件",
+  "description": "Lets the AI take notes for you: save, view and delete. Data is saved to a local file.",
   "lang": "python",
   "main": "index.py"
 }

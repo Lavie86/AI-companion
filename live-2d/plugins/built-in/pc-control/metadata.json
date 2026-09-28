@@ -1,9 +1,9 @@
 {
   "name": "pc-control",
-  "displayName": "PC 屏幕控制",
+  "displayName": "PC Screen Control",
   "version": "1.0.0",
   "author": "official",
-  "description": "基于视觉识别点击屏幕指定元素，提供 pc_screen_click 工具",
+  "description": "Clicks a described screen element using vision. Provides the pc_screen_click tool.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"

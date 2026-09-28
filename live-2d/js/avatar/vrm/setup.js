@@ -29,7 +29,7 @@ function resolveExpressionMap(modelPath) {
         if (fs.existsSync(sidecar)) {
             const data = JSON.parse(fs.readFileSync(sidecar, 'utf8'));
             if (data && typeof data === 'object') {
-                logToTerminal('info', `[VRMSetup] 使用表情映射 sidecar: ${sidecar}`);
+                logToTerminal('info', `[VRMSetup] Using the expression mapping sidecar: ${sidecar}`);
                 return { ...DEFAULT_EXPRESSION_MAP, ...data };
             }
         }
@@ -49,7 +49,7 @@ function resolveVRMPath(config) {
         if (modelPath) console.warn(`[VRMSetup] 配置的 VRM 路径 "${modelPath}" 无效，回退到: ${all[0].modelPath}`);
         return all[0].modelPath;
     }
-    throw new Error('3D 目录下没有找到任何 .vrm 模型');
+    throw new Error('3D folder has no .vrm models');
 }
 
 class VRMSetup {
@@ -110,7 +110,7 @@ class VRMSetup {
 
         // 8. 渲染循环
         _manager.startLoop();
-        logToTerminal('info', `[VRMSetup] VRM 形态就绪: ${modelPath}`);
+        logToTerminal('info', `[VRMSetup] VRM avatar type ready: ${modelPath}`);
 
         // app 代理（兼容周边对 global.pixiApp 的弱引用；仅提供必要字段）
         const appProxy = {
@@ -128,7 +128,7 @@ class VRMSetup {
     static async suspend() {
         try { _controller?.destroy?.(); } catch (_) {}
         try { await _manager?.suspend?.(); } catch (_) {}
-        logToTerminal('info', '[VRMSetup] 已挂起');
+        logToTerminal('info', '[VRMSetup] Suspended');
     }
 }
 

@@ -346,7 +346,7 @@ function loadExpressionProfile(modelDir, logger = console) {
     if (!modelDir) return { profile: seed, path: null, seeded: false };
     const filePath = path.join(modelDir, PROFILE_FILE_NAME);
     if (!fs.existsSync(filePath)) {
-        logger?.info?.(`[AuDriver] 未找到模型 AU 配置，使用内置默认值: ${filePath}`);
+        logger?.info?.(`[AuDriver] No AU config for this model, using the built-in defaults: ${filePath}`);
         return { profile: seed, path: filePath, seeded: false };
     }
 
@@ -358,7 +358,7 @@ function loadExpressionProfile(modelDir, logger = console) {
             seeded: false
         };
     } catch (error) {
-        logger?.warn?.(`[AuDriver] 读取模型 AU 配置失败，使用内置默认值: ${error.message}`);
+        logger?.warn?.(`[AuDriver] Failed to read the AU config of the model, using the built-in defaults: ${error.message}`);
         return { profile: seed, path: filePath, seeded: false };
     }
 }

@@ -34,15 +34,15 @@ def display_progress_bar(percent, message="", mb_downloaded=None, mb_total=None,
     if mb_downloaded is not None and mb_total is not None:
         extra_info = f" ({mb_downloaded:.2f}MB/{mb_total:.2f}MB)"
     elif current is not None and total is not None:
-        extra_info = f" ({current}/{total}个文件)"
-    sys.stdout.write(f"\r{message}: |{bar}| {percent}% 完成{extra_info}")
+        extra_info = f" ({current}/{total} files)"
+    sys.stdout.write(f"\r{message}: |{bar}| {percent}% done{extra_info}")
     sys.stdout.flush()
 
 
 def download_file(url, file_name=None):
     if file_name is None:
         file_name = url.split('/')[-1]
-    print(f"正在下载: {file_name}...")
+    print(f"Downloading: {file_name}...")
     session = requests.Session()
     retry_strategy = Retry(
         total=3,
@@ -58,7 +58,7 @@ def download_file(url, file_name=None):
     try:
         response = session.get(url, stream=True, headers=headers, timeout=30)
     except requests.exceptions.SSLError:
-        print("SSL验证失败，使用不安全模式重新尝试...")
+        print("SSL verification failed, retrying in insecure mode...")
         response = session.get(url, stream=True, headers=headers, timeout=30, verify=False)
     # 镜像返回 404/5xx 时必须抛错，否则错误页会被当成压缩包保存，多源切换也不会触发
     response.raise_for_status()
@@ -72,13 +72,13 @@ def download_file(url, file_name=None):
                 percent = int(downloaded_size * 100 / total_size) if total_size > 0 else 0
                 mb_downloaded = downloaded_size / (1024 * 1024)
                 mb_total = total_size / (1024 * 1024)
-                display_progress_bar(percent, "下载进度", mb_downloaded=mb_downloaded, mb_total=mb_total)
-    print("\n下载完成!")
+                display_progress_bar(percent, "Download progress", mb_downloaded=mb_downloaded, mb_total=mb_total)
+    print("\nDownload finished!")
     return file_name
 
 
 def extract_zip(zip_file, target_folder):
-    print(f"正在解压 {zip_file} 到 {target_folder}...")
+    print(f"Extracting {zip_file} to {target_folder}...")
     if not os.path.exists(target_folder):
         os.makedirs(target_folder)
     try:
@@ -103,25 +103,25 @@ def extract_zip(zip_file, target_folder):
                             os.makedirs(os.path.dirname(target_path), exist_ok=True)
                         shutil.move(file, target_path)
                 percent = int((index + 1) * 100 / total_files)
-                display_progress_bar(percent, "解压进度", current=index + 1, total=total_files)
-        print("\n解压完成!")
+                display_progress_bar(percent, "Extract progress", current=index + 1, total=total_files)
+        print("\nExtraction finished!")
         return True
     except zipfile.BadZipFile:
-        print("错误: 下载的文件不是有效的ZIP格式")
+        print("Error: the downloaded file is not a valid ZIP file")
         return False
     except Exception as e:
-        print(f"解压过程中出错: {e}")
+        print(f"Error while extracting: {e}")
         return False
 
 
 def extract_7z(archive_file, target_folder):
-    print(f"正在解压 {archive_file} 到 {target_folder}...")
+    print(f"Extracting {archive_file} to {target_folder}...")
     if not os.path.exists(target_folder):
         os.makedirs(target_folder)
     try:
         local_7z = os.path.join(current_dir, "7z", "7z.exe")
         if not os.path.exists(local_7z):
-            print("正在自动下载7z工具...")
+            print("Downloading the 7z tool...")
             sevenz_dir = os.path.join(current_dir, "7z")
             if not os.path.exists(sevenz_dir):
                 os.makedirs(sevenz_dir)
@@ -130,22 +130,22 @@ def extract_7z(archive_file, target_folder):
                 response = requests.get(seven_zip_url, timeout=30)
                 with open(local_7z, 'wb') as f:
                     f.write(response.content)
-                print("7z工具下载完成!")
+                print("7z tool downloaded!")
             except Exception as e:
-                print(f"下载7z失败: {e}")
+                print(f"Failed to download 7z: {e}")
                 return False
-        print('正在解压TTS模型包，这可能需要几分钟时间.......')
+        print('Extracting the TTS model package. This can take a few minutes.......')
         # Capture bytes: 7z output may use a Windows code page even with PYTHONUTF8=1.
         cmd = [local_7z, "x", archive_file, f"-o{target_folder}", "-y"]
         result = subprocess.run(cmd, capture_output=True)
         if result.returncode == 0:
-            print("\n解压完成!")
+            print("\nExtraction finished!")
             return True
         else:
-            print("\n解压失败: " + result.stderr.decode("utf-8", errors="replace"))
+            print("\nExtraction failed: " + result.stderr.decode("utf-8", errors="replace"))
             return False
     except Exception as e:
-        print(f"解压过程中出错: {e}")
+        print(f"Error while extracting: {e}")
         return False
 
 
@@ -155,7 +155,7 @@ def _clear_modelscope_lock(model_id):
     if not os.path.exists(lock_path):
         return
 
-    print(f"检测到残留锁文件: {lock_path}", flush=True)
+    print(f"Found a leftover lock file: {lock_path}", flush=True)
 
     # 找到占用锁文件的进程并强制终止
     try:
@@ -164,32 +164,32 @@ def _clear_modelscope_lock(model_id):
             try:
                 for f in proc.open_files():
                     if os.path.normcase(f.path) == os.path.normcase(lock_path):
-                        print(f"终止占用锁的进程: PID={proc.pid} ({proc.name()})", flush=True)
+                        print(f"Stopping the process that holds the lock: PID={proc.pid} ({proc.name()})", flush=True)
                         proc.kill()
                         proc.wait(timeout=5)
                         break
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
                 pass
     except ImportError:
-        print("psutil 未安装，跳过进程检测", flush=True)
+        print("psutil is not installed, skipping the process check", flush=True)
 
     # 重试删除
     for attempt in range(5):
         try:
             os.remove(lock_path)
-            print(f"已清除锁文件", flush=True)
+            print(f"Removed the lock file", flush=True)
             return
         except Exception:
             time.sleep(1)
-    print(f"警告: 锁文件无法删除，下载可能仍会卡住: {lock_path}", flush=True)
+    print(f"Warning: could not delete the lock file, the download may still hang: {lock_path}", flush=True)
 
 
 def download_model_direct(model_id, local_dir, revision=None):
     """直接用Python API下载modelscope模型，不依赖CLI命令"""
     from modelscope.hub.snapshot_download import snapshot_download
     _clear_modelscope_lock(model_id)
-    print(f"开始下载: {model_id}", flush=True)
-    print(f"保存到: {local_dir}", flush=True)
+    print(f"Downloading: {model_id}", flush=True)
+    print(f"Saving to: {local_dir}", flush=True)
     os.makedirs(local_dir, exist_ok=True)
     for attempt in range(MAX_RETRY):
         try:
@@ -197,13 +197,13 @@ def download_model_direct(model_id, local_dir, revision=None):
             if revision:
                 download_kwargs["revision"] = revision
             snapshot_download(model_id, **download_kwargs)
-            print(f"下载完成: {model_id}", flush=True)
+            print(f"Download finished: {model_id}", flush=True)
             return True
         except Exception as e:
-            print(f"下载失败({attempt + 1}/{MAX_RETRY}): {e}", flush=True)
+            print(f"Download failed ({attempt + 1}/{MAX_RETRY}): {e}", flush=True)
             if attempt < MAX_RETRY - 1:
                 _clear_modelscope_lock(model_id)
-                print(f"等待{RETRY_WAIT}秒后重试...", flush=True)
+                print(f"Retrying in {RETRY_WAIT} seconds...", flush=True)
                 time.sleep(RETRY_WAIT)
     return False
 
@@ -222,7 +222,7 @@ def _live2d_installed_version(target_folder):
 
 
 def download_live2d(force=False):
-    print("\n========== 下载Live 2D模型 ==========")
+    print("\n========== Download the Live2D model ==========")
     repo_root = os.path.dirname(current_dir)
     target_folder = os.path.join(repo_root, "live-2d")
 
@@ -234,26 +234,26 @@ def download_live2d(force=False):
         return True
 
     if not force and _live2d_installed_version(target_folder) == version_tag:
-        print(f"live-2d 已是 {version_tag} 版本，跳过下载（如需重新下载请加 --force-live2d）")
+        print(f"live-2d is already at version {version_tag} - skipping the download (add --force-live2d to download it again)")
         return True
 
     download_sources = [
-        ('香港镜像', f'https://hk.gh-proxy.org/https://github.com/morettt/my-neuro/releases/download/{version_tag}/live-2d.zip'),
-        ('备用镜像', f'https://gh-proxy.org/https://github.com/morettt/my-neuro/releases/download/{version_tag}/live-2d.zip'),
-        ('GitHub原版', f'https://github.com/morettt/my-neuro/releases/download/{version_tag}/live-2d.zip')
+        ('Hong Kong mirror', f'https://hk.gh-proxy.org/https://github.com/morettt/my-neuro/releases/download/{version_tag}/live-2d.zip'),
+        ('Backup mirror', f'https://gh-proxy.org/https://github.com/morettt/my-neuro/releases/download/{version_tag}/live-2d.zip'),
+        ('GitHub (direct)', f'https://github.com/morettt/my-neuro/releases/download/{version_tag}/live-2d.zip')
     ]
     zip_path = os.path.join(repo_root, 'live-2d.zip')
     downloaded_file = None
     for source_name, url in download_sources:
         try:
-            print(f"尝试使用 {source_name} 下载...")
+            print(f"Trying {source_name} for the download...")
             downloaded_file = download_file(url, zip_path)
-            print(f"[OK] {source_name} 下载成功!")
+            print(f"[OK] {source_name} download succeeded!")
             break
         except Exception as e:
-            print(f"[FAIL] {source_name} 下载失败: {e}")
+            print(f"[FAIL] {source_name} download failed: {e}")
     if not downloaded_file:
-        print("所有下载源均失败，保留现有 live-2d 文件夹")
+        print("All download sources failed, keeping the current live-2d folder")
         return False
 
     # 先解压到临时文件夹，全部成功后再替换旧文件夹（与 update.py 的更新策略一致），
@@ -273,16 +273,16 @@ def download_live2d(force=False):
             shutil.rmtree(target_folder)
         os.rename(temp_folder, target_folder)
     except Exception as e:
-        print(f"替换 live-2d 文件夹失败（若 live-2d 正在运行请先关闭后重试）: {e}")
+        print(f"Failed to replace the live-2d folder (if live-2d is running, close it and try again): {e}")
         if os.path.exists(temp_folder) and not os.path.exists(target_folder):
             os.rename(temp_folder, target_folder)
         return False
-    print(f"live-2d {version_tag} 下载完成")
+    print(f"live-2d {version_tag} downloaded")
     return True
 
 
 def download_bert():
-    print("\n========== 下载BERT模型 ==========")
+    print("\n========== Download the BERT model ==========")
     bert_hub_dir = os.path.join(current_dir, "bert-hub")
     omni_key_files = [
         os.path.join(bert_hub_dir, "config.json"),
@@ -290,18 +290,18 @@ def download_bert():
         os.path.join(bert_hub_dir, "vocab.txt"),
     ]
     if all(os.path.exists(f) for f in omni_key_files):
-        print("BERT模型已存在，跳过下载")
+        print("BERT model already exists, skipping the download")
         return True
-    print(f"开始下载BERT模型到: {bert_hub_dir}")
+    print(f"Downloading the BERT model to: {bert_hub_dir}")
     if not download_model_direct("morelle/Omni_fn_bert", bert_hub_dir):
-        print("BERT模型下载失败")
+        print("BERT model download failed")
         return False
-    print("BERT模型下载成功！")
+    print("BERT model downloaded!")
     return True
 
 
 def download_tts(gpu_type=None):
-    print("\n========== 下载TTS模型包 ==========")
+    print("\n========== Download the TTS model package ==========")
     tts_hub_dir = os.path.join(current_dir, "tts-hub")
     tts_bundle_dir = os.path.join(tts_hub_dir, "GPT-SoVITS-Bundle")
     tts_key_files = [
@@ -309,21 +309,21 @@ def download_tts(gpu_type=None):
         os.path.join(tts_bundle_dir, "GPT_SoVITS"),
     ]
     if all(os.path.exists(f) for f in tts_key_files):
-        print("TTS模型包已存在，跳过下载")
+        print("TTS model package already exists, skipping the download")
         return True
 
     if gpu_type is None:
         gpu_type = _detect_gpu_type()
 
     if gpu_type == '50':
-        print("下载50系专属TTS包...")
+        print("Downloading the TTS package for RTX 50 series cards...")
         model_name = "morelle/fake-neuro-gsv-50"
     else:
-        print("下载标准TTS包...")
+        print("Downloading the standard TTS package...")
         model_name = "morelle/fake-neuro-gsv"
 
     if not download_model_direct(model_name, tts_hub_dir):
-        print("TTS模型包下载失败")
+        print("TTS model package download failed")
         return False
 
     bundle_7z_file = os.path.join(tts_hub_dir, "GPT-SoVITS-Bundle.7z")
@@ -340,7 +340,7 @@ def download_tts(gpu_type=None):
 
 
 def download_rag():
-    print("\n========== 下载RAG模型 ==========")
+    print("\n========== Download the RAG model ==========")
     rag_hub_dir = os.path.join(current_dir, "rag-hub")
     bge_key_files = [
         os.path.join(rag_hub_dir, "config.json"),
@@ -348,31 +348,31 @@ def download_rag():
         os.path.join(rag_hub_dir, "tokenizer.json"),
     ]
     if all(os.path.exists(f) for f in bge_key_files):
-        print("RAG模型已存在，跳过下载")
+        print("RAG model already exists, skipping the download")
         return True
-    print(f"开始下载RAG模型到: {rag_hub_dir}")
+    print(f"Downloading the RAG model to: {rag_hub_dir}")
     if not download_model_direct("BAAI/bge-m3", rag_hub_dir):
-        print("RAG模型下载失败")
+        print("RAG model download failed")
         return False
-    print("RAG模型下载成功！")
+    print("RAG model downloaded!")
     return True
 
 
 def download_asr():
-    print("\n========== 下载ASR模型 ==========")
+    print("\n========== Download the ASR models ==========")
     asr_hub_dir = os.path.join(current_dir, "asr-hub")
     os.makedirs(asr_hub_dir, exist_ok=True)
     ok = True
 
     # VAD模型
-    print("\n检查VAD模型...")
+    print("\nChecking the VAD model...")
     vad_target_dir = os.path.join(asr_hub_dir, 'model', 'torch_hub')
     vad_model_path = os.path.join(vad_target_dir, "snakers4_silero-vad_master")
     if not os.path.exists(vad_model_path):
         ok = download_model_direct("morelle/my-neuro-vad", vad_target_dir) and ok
 
     # ASR主模型
-    print("\n检查ASR主模型...")
+    print("\nChecking the main ASR model...")
     asr_model_dir = os.path.join(asr_hub_dir, 'model', 'asr', 'models', 'iic',
                                  'speech_seaco_paraformer_large_asr_nat-zh-cn-16k-common-vocab8404-pytorch')
     asr_key_files = [os.path.join(asr_model_dir, "config.yaml")]
@@ -389,7 +389,7 @@ def download_asr():
         ok = download_model_direct("iic/SenseVoiceSmall", sensevoice_dir) and ok
 
     # 标点模型
-    print("\n检查标点符号模型...")
+    print("\nChecking the punctuation model...")
     punc_model_dir = os.path.join(asr_hub_dir, 'model', 'asr', 'models', 'iic',
                                   'punc_ct-transformer_cn-en-common-vocab471067-large')
     punc_key_files = [os.path.join(punc_model_dir, "config.yaml"), os.path.join(punc_model_dir, "model.pt")]
@@ -400,9 +400,9 @@ def download_asr():
             revision="v2.0.4") and ok
 
     if ok:
-        print("ASR模型下载完成！")
+        print("ASR models downloaded!")
     else:
-        print("部分ASR模型下载失败")
+        print("Some ASR models failed to download")
     return ok
 
 
@@ -421,9 +421,9 @@ def _detect_gpu_type():
         if result.returncode == 0 and result.stdout.strip():
             names = [l.strip() for l in result.stdout.splitlines()
                      if l.strip() and l.strip() != 'Name']
-            print(f"检测到显卡: {' / '.join(names)}")
+            print(f"Graphics card found: {' / '.join(names)}")
             return '50' if 'RTX 50' in result.stdout else 'non-50'
-    print("无法自动检测显卡，默认按非50系处理（50系显卡请用 --gpu 50 指定）")
+    print("Could not detect the graphics card, assuming it is not an RTX 50 series card (for a 50 series card, use --gpu 50)")
     return 'non-50'
 
 
@@ -434,15 +434,15 @@ def _detect_gpu_type():
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='下载 my-neuro 所需模型')
-    parser.add_argument('--live2d', action='store_true', help='下载Live2D模型')
-    parser.add_argument('--bert',   action='store_true', help='下载BERT模型')
-    parser.add_argument('--tts',    action='store_true', help='下载TTS模型')
-    parser.add_argument('--rag',    action='store_true', help='下载RAG模型')
-    parser.add_argument('--asr',    action='store_true', help='下载ASR模型')
-    parser.add_argument('--all',    action='store_true', help='下载全部模型')
-    parser.add_argument('--gpu',    default=None, choices=['50', 'non-50'], help='显卡类型（TTS用）')
-    parser.add_argument('--force-live2d', action='store_true', help='live-2d 已是当前版本时也强制重新下载')
+    parser = argparse.ArgumentParser(description='Download the models my-neuro needs')
+    parser.add_argument('--live2d', action='store_true', help='Download the Live2D model')
+    parser.add_argument('--bert',   action='store_true', help='Download the BERT model')
+    parser.add_argument('--tts',    action='store_true', help='Download the TTS model')
+    parser.add_argument('--rag',    action='store_true', help='Download the RAG model')
+    parser.add_argument('--asr',    action='store_true', help='Download the ASR models')
+    parser.add_argument('--all',    action='store_true', help='Download all models')
+    parser.add_argument('--gpu',    default=None, choices=['50', 'non-50'], help='Graphics card type (for TTS)')
+    parser.add_argument('--force-live2d', action='store_true', help='live-2d is downloaded again even if it is already the current version')
     args = parser.parse_args()
 
     run_all = args.all or not any([args.live2d, args.bert, args.tts, args.rag, args.asr])
@@ -455,7 +455,7 @@ if __name__ == '__main__':
             ok = bool(action())
         except Exception as exc:
             print(f"@@MODULE_FAIL:{name}", flush=True)
-            print(f"{name} 下载异常: {exc}", flush=True)
+            print(f"{name} download error: {exc}", flush=True)
             return False
         print(f"@@MODULE_{'DONE' if ok else 'FAIL'}:{name}", flush=True)
         return ok
@@ -473,7 +473,7 @@ if __name__ == '__main__':
 
     failed = [name for name, ok in results.items() if not ok]
     if failed:
-        print(f"\n以下模块下载失败: {', '.join(failed)}，请重新运行重试")
+        print(f"\nThese modules failed to download: {', '.join(failed)}. Run it again to retry")
         sys.exit(1)
 
-    print("\n所有下载操作完成！")
+    print("\nAll downloads finished!")

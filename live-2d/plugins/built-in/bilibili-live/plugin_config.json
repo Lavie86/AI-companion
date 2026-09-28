@@ -1,7 +1,7 @@
 {
   "roomId": {
-    "title": "直播间 ID",
-    "description": "B站直播间的房间号",
+    "title": "Live room ID",
+    "description": "The Bilibili live room number",
     "type": "int",
     "default": 30230160
   }

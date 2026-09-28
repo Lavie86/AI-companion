@@ -133,11 +133,11 @@ class DependencyInstallError(RuntimeError):
 def parse_github_repo_ref(repo_url):
     """解析 GitHub 仓库 URL，返回 (owner, repo, branch)；没有 /tree/<branch> 时 branch 为 None。"""
     if not repo_url:
-        raise ValueError("插件仓库地址为空")
+        raise ValueError("The plugin repository URL is empty")
 
     match = GITHUB_REPO_RE.match(str(repo_url).strip())
     if not match:
-        raise ValueError(f"无效的 GitHub 仓库地址：{repo_url}")
+        raise ValueError(f"Invalid GitHub repository URL: {repo_url}")
 
     owner, repo, branch = match.group(1), match.group(2), match.group(3)
     repo = repo.removesuffix(".git")
@@ -282,7 +282,7 @@ def _download_bytes(url, opener, timeout, max_bytes, progress=None):
         total = int(length_header) if length_header and str(length_header).isdigit() else None
         if total is not None and total > max_bytes:
             raise ArchiveTooLargeError(
-                f"插件压缩包 {total / 1024 / 1024:.1f} MB，超过上限 {max_bytes // 1024 // 1024} MB"
+                f"The plugin package is {total / 1024 / 1024:.1f} MB, over the limit of {max_bytes // 1024 // 1024} MB"
             )
 
         buffer = BytesIO()
@@ -294,7 +294,7 @@ def _download_bytes(url, opener, timeout, max_bytes, progress=None):
             downloaded += len(chunk)
             if downloaded > max_bytes:
                 raise ArchiveTooLargeError(
-                    f"插件压缩包超过上限 {max_bytes // 1024 // 1024} MB"
+                    f"The plugin package is over the limit of {max_bytes // 1024 // 1024} MB"
                 )
             buffer.write(chunk)
             if progress:
@@ -325,24 +325,24 @@ def download_archive(
         for candidate in candidates:
             url = apply_mirror(candidate, mirror)
             if not probe_url(url, opener=opener, timeout=probe_timeout):
-                errors.append(f"[{label}] {candidate} 不可达")
+                errors.append(f"[{label}] {candidate} is not reachable")
                 continue
             try:
                 data = _download_bytes(url, opener, timeout, max_bytes, progress)
             except ArchiveTooLargeError:
                 raise
             except (urllib.error.HTTPError, urllib.error.URLError, socket.timeout, OSError, ValueError) as exc:
-                errors.append(f"[{label}] {candidate} 下载失败：{exc}")
+                errors.append(f"[{label}] {candidate} Download failed: {exc}")
                 continue
             if not data:
-                errors.append(f"[{label}] {candidate} 返回空内容")
+                errors.append(f"[{label}] {candidate} returned an empty response")
                 continue
             return data, label
 
-    detail = errors[-1] if errors else "没有可用的下载地址"
+    detail = errors[-1] if errors else "No download address is available"
     raise DownloadError(
-        f"所有下载来源均失败（共尝试 {len(errors)} 次）。最后一次：{detail}。"
-        "可在「下载设置」里切换镜像后重试。"
+        f"All download sources failed (tried {len(errors)} times). Last error: {detail}. "
+        "You can switch mirrors in \"Download settings\" and try again."
     )
 
 
@@ -390,7 +390,7 @@ def fetch_remote_metadata_with_source(repo_url, timeout=METADATA_TIMEOUT, settin
     except Exception as exc:
         last_error = last_error or exc
 
-    raise RuntimeError(f"无法读取远程 metadata.json，已尝试 {tried} 个地址（{last_error}）")
+    raise RuntimeError(f"Could not read the remote metadata.json. Tried {tried} addresses ({last_error})")
 
 
 def fetch_remote_metadata(repo_url, timeout=METADATA_TIMEOUT, settings=None, opener=None):
@@ -454,7 +454,7 @@ def build_update_info(plugin, fetch_metadata=fetch_remote_metadata):
     }
 
     if not repo_url:
-        result["update_error"] = "插件未配置 repo"
+        result["update_error"] = "The plugin has no repo"
         return result
 
     try:
@@ -521,25 +521,25 @@ def resolve_entry_file(metadata):
 def validate_plugin_metadata(metadata):
     """校验 metadata.json 内容，返回归一化后的 {name, version, lang, entry}。"""
     if not isinstance(metadata, dict):
-        raise PluginValidationError("metadata.json 必须是 JSON 对象")
+        raise PluginValidationError("metadata.json must be a JSON object")
 
     name = metadata.get("name")
     if not isinstance(name, str) or not name.strip():
-        raise PluginValidationError("metadata.json 缺少 name，或 name 为空")
+        raise PluginValidationError("metadata.json has no name, or the name is empty")
     name = name.strip()
     if not PLUGIN_NAME_RE.match(name):
         raise PluginValidationError(
-            f'插件 name "{name}" 不合法：只能包含字母、数字、点、下划线、连字符，'
-            "以字母或数字开头，最长 64 个字符"
+            f'Plugin name "{name}" is not valid: it may only contain letters, digits, dots, underscores and hyphens, '
+            "must start with a letter or digit, and can be at most 64 characters"
         )
 
     version = metadata.get("version")
     if not isinstance(version, str) or not version.strip():
-        raise PluginValidationError("metadata.json 缺少 version，或 version 为空")
+        raise PluginValidationError("metadata.json has no version, or the version is empty")
 
     lang = metadata.get("lang")
     if lang is not None and lang not in ALLOWED_PLUGIN_LANGS:
-        raise PluginValidationError(f"metadata.json 的 lang 只能是 js 或 python，当前为 {lang!r}")
+        raise PluginValidationError(f"metadata.json : lang must be js or python, but it is {lang!r}")
 
     main = metadata.get("main")
     if main is not None:
@@ -550,7 +550,7 @@ def validate_plugin_metadata(metadata):
             or ".." in normalized_main.split("/")
             or re.match(r"^[A-Za-z]:", normalized_main)
         ):
-            raise PluginValidationError("metadata.json 的 main 不合法：必须是插件目录内的相对路径")
+            raise PluginValidationError("metadata.json : main is not valid, it must be a relative path inside the plugin folder")
 
     return {
         "name": name,
@@ -573,16 +573,16 @@ def _strip_archive_root(names):
 def inspect_plugin_archive_bytes(archive_bytes, max_bytes=MAX_PLUGIN_ARCHIVE_BYTES):
     """校验 zip 是否为合法肥牛插件包，返回 {metadata, info, root}。"""
     if not archive_bytes:
-        raise PluginValidationError("插件压缩包为空")
+        raise PluginValidationError("The plugin package is empty")
     if len(archive_bytes) > max_bytes:
         raise ArchiveTooLargeError(
-            f"插件压缩包 {len(archive_bytes) / 1024 / 1024:.1f} MB，超过上限 {max_bytes // 1024 // 1024} MB"
+            f"The plugin package is {len(archive_bytes) / 1024 / 1024:.1f} MB, over the limit of {max_bytes // 1024 // 1024} MB"
         )
 
     try:
         archive = zipfile.ZipFile(BytesIO(archive_bytes), "r")
     except zipfile.BadZipFile as exc:
-        raise PluginValidationError("文件不是合法的 zip 压缩包") from exc
+        raise PluginValidationError("The file is not a valid zip archive") from exc
 
     with archive:
         names = [name.replace("\\", "/") for name in archive.namelist()]
@@ -590,18 +590,18 @@ def inspect_plugin_archive_bytes(archive_bytes, max_bytes=MAX_PLUGIN_ARCHIVE_BYT
         prefix = f"{root_name}/" if should_strip else ""
         metadata_entry = f"{prefix}metadata.json"
         if metadata_entry not in names:
-            raise PluginValidationError("压缩包根目录没有 metadata.json，这不是肥牛插件包")
+            raise PluginValidationError("The archive has no metadata.json at its root, so it is not a Feiniu plugin package")
 
         raw_entry = archive.namelist()[names.index(metadata_entry)]
         try:
             metadata = json.loads(archive.read(raw_entry).decode("utf-8-sig"))
         except (UnicodeDecodeError, ValueError) as exc:
-            raise PluginValidationError(f"metadata.json 无法解析：{exc}") from exc
+            raise PluginValidationError(f"metadata.json could not be parsed: {exc}") from exc
 
         info = validate_plugin_metadata(metadata)
         entry_name = f"{prefix}{info['entry']}"
         if entry_name not in names:
-            raise PluginValidationError(f"压缩包缺少入口文件 {info['entry']}")
+            raise PluginValidationError(f"The archive is missing the entry file {info['entry']}")
 
     return {"metadata": metadata, "info": info, "root": root_name if should_strip else ""}
 
@@ -611,15 +611,15 @@ def validate_plugin_directory(plugin_dir):
     plugin_path = Path(plugin_dir)
     metadata_path = plugin_path / "metadata.json"
     if not metadata_path.is_file():
-        raise PluginValidationError("插件目录没有 metadata.json")
+        raise PluginValidationError("The plugin folder has no metadata.json")
     try:
         metadata = json.loads(metadata_path.read_text(encoding="utf-8-sig"))
     except (OSError, ValueError) as exc:
-        raise PluginValidationError(f"metadata.json 无法解析：{exc}") from exc
+        raise PluginValidationError(f"metadata.json could not be parsed: {exc}") from exc
 
     info = validate_plugin_metadata(metadata)
     if not (plugin_path / info["entry"]).is_file():
-        raise PluginValidationError(f"插件缺少入口文件 {info['entry']}")
+        raise PluginValidationError(f"The plugin is missing the entry file {info['entry']}")
     return {"metadata": metadata, "info": info}
 
 
@@ -627,7 +627,7 @@ def _safe_destination(base_dir, relative_path):
     destination = (base_dir / relative_path).resolve()
     base_resolved = base_dir.resolve()
     if os.path.commonpath([str(base_resolved), str(destination)]) != str(base_resolved):
-        raise ValueError(f"压缩包包含不安全路径：{relative_path}")
+        raise ValueError(f"The archive contains an unsafe path: {relative_path}")
     return destination
 
 
@@ -853,7 +853,7 @@ def node_install_plan(plugin_dir):
     try:
         data = json.loads(package_json.read_text(encoding="utf-8-sig"))
     except (OSError, ValueError) as exc:
-        return {"needed": False, "reason": f"package.json 无法解析：{exc}", "warning": True}
+        return {"needed": False, "reason": f"package.json could not be parsed: {exc}", "warning": True}
 
     dependencies = data.get("dependencies") if isinstance(data, dict) else None
     if not isinstance(dependencies, dict) or not dependencies:
@@ -899,13 +899,13 @@ def _run_dependency_command(cmd, *, runner, timeout, label, cwd=None, env=None):
             timeout=timeout,
         )
     except subprocess.TimeoutExpired as exc:
-        raise DependencyInstallError(f"{label} 安装超时（超过 {timeout} 秒）") from exc
+        raise DependencyInstallError(f"{label} install timed out (over {timeout} seconds)") from exc
     except OSError as exc:
-        raise DependencyInstallError(f"{label} 安装命令无法启动：{exc}") from exc
+        raise DependencyInstallError(f"{label} install command could not start: {exc}") from exc
 
     if result.returncode != 0:
-        detail = _tail_text(result.stderr) or _tail_text(result.stdout) or f"退出码 {result.returncode}"
-        raise DependencyInstallError(f"{label} 安装失败：{detail}")
+        detail = _tail_text(result.stderr) or _tail_text(result.stdout) or f"Exit code {result.returncode}"
+        raise DependencyInstallError(f"{label} install failed: {detail}")
     return result
 
 
@@ -961,7 +961,7 @@ def install_dependencies(
                     requirements_file=requirements_file,
                 )
                 if cmd:
-                    _run_dependency_command(cmd, runner=runner, timeout=timeout, label="Python 依赖（pip）")
+                    _run_dependency_command(cmd, runner=runner, timeout=timeout, label="Python dependencies (pip)")
             finally:
                 if temp_requirements is not None:
                     try:
@@ -971,13 +971,13 @@ def install_dependencies(
 
     node_plan = node_install_plan(plugin_path)
     if node_plan.get("warning"):
-        warnings.append(f"已跳过 Node 依赖安装：{node_plan['reason']}")
+        warnings.append(f"Skipped the Node dependency install: {node_plan['reason']}")
     if node_plan.get("needed"):
         cmd = npm_install_cmd(plugin_path, settings=resolved, npm_prefix=npm_prefix)
         if not cmd:
             warnings.append(
-                "未找到 npm，已跳过 Node 依赖安装；若插件仓库未自带 node_modules，该插件可能无法运行。"
-                "安装 Node.js 后重新安装插件即可补齐依赖。"
+                "npm was not found, so the Node dependency install was skipped. If the plugin repo does not include node_modules, the plugin may not run. "
+                "Install Node.js, then reinstall the plugin to get its dependencies."
             )
         else:
             notify("installing_node_deps", node_plan.get("reason"))
@@ -988,7 +988,7 @@ def install_dependencies(
                 cmd,
                 runner=runner,
                 timeout=timeout,
-                label="Node 依赖（npm）",
+                label="Node dependencies (npm)",
                 cwd=str(plugin_path),
                 env=env,
             )
@@ -1100,7 +1100,7 @@ def _unique_backup_path(plugin_dir, plugin_name):
         backup_path = backup_root / f"{safe_name}.backup-{suffix}"
         if not backup_path.exists():
             return backup_path
-    raise RuntimeError("无法创建唯一备份目录")
+    raise RuntimeError("Could not create a unique backup folder")
 
 
 def _prune_old_backups(backup_path, keep=MAX_RETAINED_UPDATE_BACKUPS):
@@ -1131,7 +1131,7 @@ def _normalize_download_result(result):
     else:
         data, source = result, ""
     if not isinstance(data, (bytes, bytearray)) or not data:
-        raise DownloadError("下载到的插件压缩包为空")
+        raise DownloadError("The downloaded plugin package is empty")
     return bytes(data), str(source or "")
 
 
@@ -1162,7 +1162,7 @@ def update_plugin_safe(
     """Stage an update, preserve plugin-owned state, and retain rollback data."""
     plugin_path = Path(plugin_dir)
     if not plugin_path.exists():
-        raise FileNotFoundError(f"插件目录不存在：{plugin_path}")
+        raise FileNotFoundError(f"Plugin folder not found: {plugin_path}")
 
     stage = on_stage or (lambda name: None)
     installer = _resolve_dependency_installer(dependency_installer, requirements_installer)
@@ -1231,7 +1231,7 @@ def install_plugin_from_archive(
     """安装新插件：下载 → 校验 → 解压到暂存目录 → 装依赖 → 原子就位。失败不留下空目录。"""
     plugin_path = Path(plugin_dir)
     if plugin_path.exists() and any(plugin_path.iterdir()):
-        raise FileExistsError(f"插件目录已存在：{plugin_path}")
+        raise FileExistsError(f"Plugin folder already exists: {plugin_path}")
 
     stage = on_stage or (lambda name: None)
     installer = _resolve_dependency_installer(dependency_installer, requirements_installer)
@@ -1245,8 +1245,8 @@ def install_plugin_from_archive(
     actual_name = inspection["info"]["name"]
     if expected_name and actual_name != expected_name:
         warnings.append(
-            f'插件包内 metadata.name 为 "{actual_name}"，与安装目录名 "{expected_name}" 不一致，'
-            "已按目录名安装；插件管理里显示的是 metadata 里的名字。"
+            f'The package\'s metadata.name is "{actual_name}", which does not match the install folder name "{expected_name}" . '
+            "It was installed under the folder name. Plugins shows the name from metadata."
         )
 
     plugin_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1287,8 +1287,8 @@ def check_framework_compatibility(version_spec, current_version="1.0.0"):
         specifier = SpecifierSet(str(version_spec).strip())
         version = Version(str(current_version).strip().lstrip("vV"))
     except (InvalidSpecifier, InvalidVersion) as exc:
-        return False, f"framework_version 格式无效：{exc}"
+        return False, f"framework_version has an invalid format: {exc}"
 
     if not specifier.contains(version, prereleases=True):
-        return False, f"当前插件框架版本 {current_version} 不满足 {version_spec}"
+        return False, f"The current plugin framework version {current_version} does not satisfy {version_spec}"
     return True, ""

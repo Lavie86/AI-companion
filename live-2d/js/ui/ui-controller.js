@@ -393,7 +393,7 @@ class UIController {
             }
 
         } catch (error) {
-            logToTerminal('error', `更新气泡框位置失败: ${error.message}`);
+            logToTerminal('error', `Failed to update the bubble position: ${error.message}`);
         }
     }
 
@@ -421,7 +421,7 @@ class UIController {
     showBubble() {
         const bubbleContainer = document.getElementById('bubble-container');
         if (!bubbleContainer) {
-            logToTerminal('error', '找不到气泡框容器！');
+            logToTerminal('error', 'Bubble container not found!');
             return;
         }
 
@@ -469,7 +469,7 @@ class UIController {
         }
 
         // 设置气泡框文本内容
-        let displayText = `🔧 调用工具:\n${toolName}`;
+        let displayText = `🔧 Calling tool:\n${toolName}`;
 
         // 如果有参数，显示参数
         if (parameters && Object.keys(parameters).length > 0) {
@@ -498,7 +498,7 @@ class UIController {
         this.updateBubblePosition();
 
         // 记录工具名称到日志
-        logToTerminal('info', `🔧 工具调用: ${toolName}${parameters ? ' 参数: ' + JSON.stringify(parameters) : ''}`);
+        logToTerminal('info', `🔧 Tool call: ${toolName}${parameters ? ' input: ' + JSON.stringify(parameters) : ''}`);
 
         // 5秒后移除这个气泡
         setTimeout(() => {
@@ -519,12 +519,12 @@ class UIController {
 
         // 样式名称映射
         const styleNames = {
-            1: '现代毛玻璃',
-            2: '可爱卡通',
-            3: '极简科技',
-            4: '渐变霓虹',
-            5: '柔和圆润',
-            6: '萌系气泡'
+            1: 'Frosted glass',
+            2: 'Cute cartoon',
+            3: 'Minimal tech',
+            4: 'Neon gradient',
+            5: 'Soft rounded',
+            6: 'Cute bubble'
         };
 
         // 设置data-style属性
@@ -538,8 +538,8 @@ class UIController {
         }
 
         // 显示提示
-        const styleName = styleNames[styleNumber] || '未知';
-        this.showSubtitle(`聊天框样式: ${styleName} (样式${styleNumber})`, 2000);
+        const styleName = styleNames[styleNumber] || 'Unknown';
+        this.showSubtitle(`Chat box style: ${styleName} (style ${styleNumber})`, 2000);
 
         console.log(`切换到聊天框样式${styleNumber}: ${styleName}`);
     }
@@ -796,7 +796,7 @@ class UIController {
         };
 
         const pttKey = normalizeKey(config.asr?.ptt_key || 'v') || 'v';
-        const recordingText = '\u5f55\u97f3\u4e2d...';
+        const recordingText = 'Recording...';
         let pttActive = false;
         let pttSource = null;
 
@@ -997,7 +997,7 @@ class UIController {
         this.isAdjustingSubtitle = true;
         this._savedText = t.textContent;
         this._savedDisplay = c.style.display;
-        t.textContent = '1.拖动或滚轮缩放调整\n2.复位皮套按钮复位';
+        t.textContent = '1. Drag to move, scroll to resize\n2. Use the reset button to restore the default';
 
         // 加载已有位置或取当前中心点
         const pos = this.config?.ui?.subtitle_position;

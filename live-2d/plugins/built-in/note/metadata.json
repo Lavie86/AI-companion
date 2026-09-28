@@ -1,9 +1,9 @@
 {
   "name": "note",
-  "displayName": "用户记忆",
+  "displayName": "User Memory",
   "version": "1.0.0",
   "author": "official",
-  "description": "记录/读取/搜索/删除用户核心记忆，提供 record_memory / read_memory / delete_memory / search_memory 工具",
+  "description": "Records, reads, searches and deletes core user memories. Provides the record_memory / read_memory / delete_memory / search_memory tools.",
   "framework_version": ">=1.0.0",
   "main": "index.js",
   "lang": "js"
