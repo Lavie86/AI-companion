@@ -247,6 +247,24 @@ describe('merge driver paths', () => {
     });
 });
 
+describe('merge driver on HTML', () => {
+    test('a translated HTML line that upstream also edited merges cleanly', () => {
+        // The English reorders the words, so only the HTML-aware check sees a pure translation.
+        const html = '<div>\n    <b>模型 (GPT) 设置</b><i>说明</i>\n</div>\n';
+        const dir = makeRepo({ 'live-2d/page.html': html });
+        setup(dir);
+        write(dir, 'live-2d/page.html', html.replace('<b>模型 (GPT) 设置</b><i>说明</i>', '<b>Settings for the GPT model</b><i>Notes</i>'));
+        commitAll(dir, 'translate');
+        gitOk(dir, ['checkout', '-q', 'upstream']);
+        write(dir, 'live-2d/page.html', html.replace('<b>模型 (GPT) 设置</b>', '<b class="x">模型 (GPT) 设置</b>'));
+        commitAll(dir, 'upstream change');
+        gitOk(dir, ['checkout', '-q', 'main']);
+        const merge = sh(dir, ['merge', '-q', '--no-edit', 'upstream']);
+        assert.equal(merge.status, 0, merge.stdout + merge.stderr);
+        assert.match(read(dir, 'live-2d/page.html'), /<b class="x">.*<\/b><i>Notes<\/i>/);
+    });
+});
+
 describe('update-from-upstream', () => {
     test('fetches, merges and reports new strings', () => {
         const dir = makeRepo({ 'live-2d/main.js': BASE_JS });

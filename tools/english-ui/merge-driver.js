@@ -17,7 +17,9 @@ const os = require('os');
 const path = require('path');
 const lib = require('./lib');
 
-const [baseFile, oursFile, theirsFile, repoPath] = process.argv.slice(2);
+const [baseFile, oursFile, theirsFile, rawPath = ''] = process.argv.slice(2);
+// An older setup quoted %P twice, which left the quotes in the argument.
+const repoPath = rawPath.replace(/^'(.*)'$/, '$1');
 const label = repoPath || oursFile;
 
 function mergeFile(base, theirs) {

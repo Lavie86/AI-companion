@@ -8,7 +8,8 @@
 
 const lib = require('./lib');
 
-const DRIVER = 'node tools/english-ui/merge-driver.js %O %A %B "%P"';
+// git shell-quotes the placeholders itself, so they must not be quoted again here.
+const DRIVER = 'node tools/english-ui/merge-driver.js %O %A %B %P';
 
 function configure() {
     const root = lib.gitOk(['rev-parse', '--show-toplevel']).trim();
