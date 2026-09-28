@@ -1,6 +1,8 @@
 // MCP HTTP 传输层
 // 职责：管理 HTTP 连接、MCP SDK 集成、工具调用
 
+const { formatMcpToolResult } = require('./mcp-result.js');
+
 class MCPHttpTransport {
     constructor(serverConfig, toolRegistry, timeout = 30000) {
         this.config = serverConfig;
@@ -102,9 +104,7 @@ class MCPHttpTransport {
 
             console.log(`✅ HTTP MCP工具 ${toolName} 调用成功`);
 
-            const content = result.content || [];
-            const textContent = content.find(c => c.type === 'text');
-            return textContent ? textContent.text : JSON.stringify(result);
+            return formatMcpToolResult(result);
 
         } catch (error) {
             console.error(`❌ HTTP MCP工具 ${toolName} 调用失败:`, error.message);

@@ -76,6 +76,26 @@ SAMPLE_RATE = 16000
 WINDOW_SIZE = 512
 VAD_THRESHOLD = 0.7
 
+# ASR model selection. This fork defaults to SenseVoice so English speech works.
+#   sensevoice    - iic/SenseVoiceSmall: English, Chinese, Japanese, Korean, Cantonese
+#   paraformer-zh - the upstream Chinese model (supports hotwords.txt)
+# Set MY_NEURO_ASR_MODEL=paraformer-zh to get the upstream behavior back.
+SUPPORTED_ASR_MODELS = ("sensevoice", "paraformer-zh")
+ASR_MODEL = os.environ.get("MY_NEURO_ASR_MODEL", "sensevoice").strip().lower()
+if ASR_MODEL not in SUPPORTED_ASR_MODELS:
+    print(f"Unknown MY_NEURO_ASR_MODEL '{ASR_MODEL}', using 'sensevoice'. Supported: {', '.join(SUPPORTED_ASR_MODELS)}")
+    ASR_MODEL = "sensevoice"
+# SenseVoice language hint: auto, en, zh, ja, ko, yue
+ASR_LANGUAGE = os.environ.get("MY_NEURO_ASR_LANGUAGE", "auto").strip().lower() or "auto"
+
+# SenseVoice prefixes its text with tags such as <|en|><|NEUTRAL|><|Speech|><|woitn|>
+SENSEVOICE_TAG_RE = re.compile(r"<\|[^|]*\|>")
+
+
+def clean_sensevoice_text(text):
+    """Remove SenseVoice language/emotion/event tags and extra spaces."""
+    return re.sub(r"\s+", " ", SENSEVOICE_TAG_RE.sub("", text or "")).strip()
+
 # VAD状态
 vad_state = {
     "is_running": False,
@@ -182,27 +202,39 @@ async def startup_event():
     os.environ['MODELSCOPE_CACHE'] = asr_model_path
     os.environ['FUNASR_HOME'] = MODEL_DIR
 
-    # 加载热词
-    load_hotwords()
+    if ASR_MODEL == "sensevoice":
+        # SenseVoice adds punctuation itself (use_itn=True), so it needs no punctuation model.
+        # It does not support hotwords.
+        print(f"Loading ASR model (SenseVoiceSmall, language={ASR_LANGUAGE})...")
+        model_state["asr_model"] = AutoModel(
+            model="iic/SenseVoiceSmall",
+            device=device,
+            disable_update=True
+        )
+        print("ASR model loaded")
+    else:
+        # 加载热词
+        load_hotwords()
 
-    # 加载ASR模型（SeACo-Paraformer，支持热词）
-    print("正在加载ASR模型（paraformer-zh，支持热词）...")
-    model_state["asr_model"] = AutoModel(
-        model="paraformer-zh",
-        device=device,
-        dtype="float32"
-    )
-    print("ASR模型加载完成")
+        # 加载ASR模型（SeACo-Paraformer，支持热词）
+        print("正在加载ASR模型（paraformer-zh，支持热词）...")
+        model_state["asr_model"] = AutoModel(
+            model="paraformer-zh",
+            device=device,
+            dtype="float32"
+        )
+        print("ASR模型加载完成")
 
-    # 加载标点符号模型
-    print("正在加载标点符号模型...")
-    model_state["punc_model"] = AutoModel(
-        model="iic/punc_ct-transformer_cn-en-common-vocab471067-large",
-        model_revision="v2.0.4",
-        device=device,
-        model_type="pytorch",
-        dtype="float32"
-    )
+        # 加载标点符号模型
+        print("正在加载标点符号模型...")
+        model_state["punc_model"] = AutoModel(
+            model="iic/punc_ct-transformer_cn-en-common-vocab471067-large",
+            model_revision="v2.0.4",
+            device=device,
+            model_type="pytorch",
+            dtype="float32"
+        )
+        print("标点符号模型加载完成")
 
     # 恢复原始环境变量
     if original_modelscope_cache:
@@ -214,7 +246,6 @@ async def startup_event():
         os.environ['FUNASR_HOME'] = original_funasr_home
     else:
         os.environ.pop('FUNASR_HOME', None)
-    print("标点符号模型加载完成")
 
     vad_state["model"] = model_state["vad_model"]
 
@@ -285,6 +316,26 @@ async def upload_audio(file: UploadFile = File(...)):
 
         # 进行ASR处理 - 直接传入音频数组
         with torch.no_grad():
+            if ASR_MODEL == "sensevoice":
+                asr_result = model_state["asr_model"].generate(
+                    input=audio_data,
+                    cache={},
+                    language=ASR_LANGUAGE,
+                    use_itn=True
+                )
+                text = clean_sensevoice_text(asr_result[0]["text"]) if asr_result else ""
+                if text:
+                    return {
+                        "status": "success",
+                        "filename": file.filename or "uploaded_audio",
+                        "text": text
+                    }
+                return {
+                    "status": "error",
+                    "filename": file.filename or "uploaded_audio",
+                    "message": "Speech recognition failed (no text)"
+                }
+
             generate_kwargs = {
                 "input": audio_data,
                 "dtype": "float32"

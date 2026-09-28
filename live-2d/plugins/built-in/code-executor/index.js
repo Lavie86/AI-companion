@@ -3,6 +3,9 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+// One pip requirement: a name, optional [extras], optional version specifiers. No shell characters.
+const PIP_REQUIREMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*(\[[A-Za-z0-9._,-]+\])?((==|!=|>=|<=|~=|>|<)[A-Za-z0-9.*+_-]+(,(==|!=|>=|<=|~=|>|<)[A-Za-z0-9.*+_-]+)*)?$/;
+
 class CodeExecutorPlugin extends Plugin {
 
     getTools() {
@@ -44,9 +47,9 @@ if __name__ == '__main__':
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             main()
-        print(json.dumps({"success": True, "stdout": out.getvalue(), "stderr": err.getvalue(), "description": "${description}"}, ensure_ascii=False))
+        print(json.dumps({"success": True, "stdout": out.getvalue(), "stderr": err.getvalue(), "description": os.environ.get("MYNEURO_CODE_DESCRIPTION", "")}, ensure_ascii=False))
     except Exception as e:
-        print(json.dumps({"success": False, "error": str(e), "traceback": traceback.format_exc(), "description": "${description}"}, ensure_ascii=False))
+        print(json.dumps({"success": False, "error": str(e), "traceback": traceback.format_exc(), "description": os.environ.get("MYNEURO_CODE_DESCRIPTION", "")}, ensure_ascii=False))
 `;
             fs.writeFileSync(tempScriptPath, wrappedCode);
 
@@ -55,7 +58,7 @@ if __name__ == '__main__':
                 ? `call conda activate my-neuro && python "${tempScriptPath}"`
                 : `source activate my-neuro && python "${tempScriptPath}"`;
 
-            exec(command, { timeout: 60000, shell: isWindows ? 'cmd.exe' : '/bin/bash', env: { ...process.env, CONDA_DLL_SEARCH_MODIFICATION_ENABLE: '1' } }, (error, stdout, stderr) => {
+            exec(command, { timeout: 60000, shell: isWindows ? 'cmd.exe' : '/bin/bash', env: { ...process.env, CONDA_DLL_SEARCH_MODIFICATION_ENABLE: '1', MYNEURO_CODE_DESCRIPTION: String(description) } }, (error, stdout, stderr) => {
                 try { fs.unlinkSync(tempScriptPath); } catch (e) {}
                 if (error) return reject(new Error(`代码执行失败: ${error.message}`));
                 try {
@@ -76,11 +79,21 @@ if __name__ == '__main__':
     async _installPackages({ packages }) {
         if (!packages?.trim()) throw new Error('包名不能为空');
 
+        // The package list goes into a shell command, so accept only plain pip requirements
+        // ("requests", "numpy>=1.26", "uvicorn[standard]") and quote each one.
+        // Before, "requests & del /q somefile" also ran the second command.
+        const requirements = packages.trim().split(/\s+/);
+        const invalid = requirements.filter(requirement => !PIP_REQUIREMENT.test(requirement));
+        if (invalid.length > 0) {
+            throw new Error(`Invalid package name: ${invalid.join(' ')}. Use names like "requests" or "numpy>=1.26".`);
+        }
+        const quoted = requirements.map(requirement => `"${requirement}"`).join(' ');
+
         return new Promise((resolve, reject) => {
             const isWindows = process.platform === 'win32';
             const command = isWindows
-                ? `call conda activate my-neuro && pip install ${packages}`
-                : `source activate my-neuro && pip install ${packages}`;
+                ? `call conda activate my-neuro && pip install ${quoted}`
+                : `source activate my-neuro && pip install ${quoted}`;
 
             exec(command, { timeout: 300000, shell: isWindows ? 'cmd.exe' : '/bin/bash', env: { ...process.env, CONDA_DLL_SEARCH_MODIFICATION_ENABLE: '1' } }, (error, stdout, stderr) => {
                 if (error) return reject(new Error(`安装包失败: ${error.message}`));

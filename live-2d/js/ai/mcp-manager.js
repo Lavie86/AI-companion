@@ -210,7 +210,9 @@ class MCPManager {
 
         // 分离 JS 和 Python 工具
         for (const [name, config] of Object.entries(this.mcpServers)) {
-            if (config.command === 'python' || config.command.includes('python')) {
+            // uv/uvx also start Python servers (for example Windows-MCP), and the first run can be slow
+            const isUvRunner = /(^|[\\/])uvx?(\.exe)?$/i.test(config.command);
+            if (config.command === 'python' || config.command.includes('python') || isUvRunner) {
                 pyServers[name] = config;
             } else {
                 jsServers[name] = config;
@@ -241,11 +243,14 @@ class MCPManager {
         try {
             let transport;
 
+            // A server entry can set its own startup_timeout (ms) in mcp_config.json
+            const timeout = Number(serverConfig.startup_timeout) > 0 ? Number(serverConfig.startup_timeout) : this.startupTimeout;
+
             // 根据配置类型选择传输方式
             if (serverConfig.type === 'streamable_http') {
-                transport = new MCPHttpTransport(serverConfig, this.toolRegistry, this.startupTimeout);
+                transport = new MCPHttpTransport(serverConfig, this.toolRegistry, timeout);
             } else {
-                transport = new MCPStdioTransport(serverConfig, this.toolRegistry, this.startupTimeout);
+                transport = new MCPStdioTransport(serverConfig, this.toolRegistry, timeout);
             }
 
             // 启动传输

@@ -510,12 +510,12 @@ class LLMHandler {
                                     'content': [
                                         {
                                             'type': 'text',
-                                            'text': '当前电脑屏幕内容:'
+                                            'text': 'Current screen:'
                                         },
                                         {
                                             'type': 'image_url',
                                             'image_url': {
-                                                'url': `data:image/jpeg;base64,${screenshotData.base64}`
+                                                'url': `data:${screenshotData.mimeType || 'image/jpeg'};base64,${screenshotData.base64}`
                                             }
                                         }
                                     ]
@@ -650,8 +650,8 @@ class LLMHandler {
                                             voiceChat.messages.push({
                                                 'role': 'user',
                                                 'content': [
-                                                    { 'type': 'text', 'text': '当前电脑屏幕内容:' },
-                                                    { 'type': 'image_url', 'image_url': { 'url': `data:image/jpeg;base64,${newScreenshotData.base64}` } }
+                                                    { 'type': 'text', 'text': 'Current screen:' },
+                                                    { 'type': 'image_url', 'image_url': { 'url': `data:${newScreenshotData.mimeType || 'image/jpeg'};base64,${newScreenshotData.base64}` } }
                                                 ]
                                             });
 

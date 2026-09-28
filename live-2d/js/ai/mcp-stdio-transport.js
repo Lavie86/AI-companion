@@ -4,6 +4,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const { logToTerminal } = require('../api-utils.js');
+const { formatMcpToolResult } = require('./mcp-result.js');
 
 class MCPStdioTransport {
     constructor(serverConfig, toolRegistry, timeout = 30000) {
@@ -20,6 +21,8 @@ class MCPStdioTransport {
 
         return new Promise((resolve, reject) => {
             const timeoutHandle = setTimeout(() => {
+                // Stop the server process too, or every slow start leaves one running
+                this.stop();
                 reject(new Error(`服务器 ${serverName} 启动超时`));
             }, this.timeout);
 
@@ -131,6 +134,13 @@ class MCPStdioTransport {
 
                         // 处理初始化响应
                         if (response.id === initRequest.id) {
+                            // The MCP spec requires this notification before other requests.
+                            // Strict servers ignore tools/list without it.
+                            childProcess.stdin.write(JSON.stringify({
+                                jsonrpc: "2.0",
+                                method: "notifications/initialized"
+                            }) + '\n');
+
                             // 初始化完成，获取工具列表
                             const toolsRequest = {
                                 jsonrpc: "2.0",
@@ -201,9 +211,7 @@ class MCPStdioTransport {
                                 if (response.error) {
                                     reject(new Error(response.error.message));
                                 } else {
-                                    const content = response.result?.content || [];
-                                    const textContent = content.find(c => c.type === 'text');
-                                    resolve(textContent ? textContent.text : JSON.stringify(response.result));
+                                    resolve(formatMcpToolResult(response.result));
                                 }
                             }
                         } catch (e) {
@@ -221,6 +229,14 @@ class MCPStdioTransport {
     stop() {
         if (this.process) {
             try {
+                // Closing stdin tells a stdio MCP server to exit.
+                try { this.process.stdin.end(); } catch (e) { /* already closed */ }
+                // On Windows the server runs under cmd.exe (shell: true), and kill() stops only
+                // cmd.exe. taskkill /T also stops uvx and the Python server it started.
+                if (process.platform === 'win32' && this.process.pid) {
+                    spawn('taskkill', ['/pid', String(this.process.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true })
+                        .on('error', () => {});
+                }
                 this.process.kill();
                 console.log(`🛑 MCP Stdio服务器 ${this.serverName} 已停止`);
             } catch (error) {

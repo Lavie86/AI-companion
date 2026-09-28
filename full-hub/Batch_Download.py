@@ -226,6 +226,13 @@ def download_live2d(force=False):
     repo_root = os.path.dirname(current_dir)
     target_folder = os.path.join(repo_root, "live-2d")
 
+    # In a git checkout (like this fork), live-2d is already there and has its own changes.
+    # Replacing it with the release zip would delete them. Update it with git instead.
+    if not force and os.path.isdir(os.path.join(repo_root, ".git")):
+        print("live-2d is part of this git checkout, so the release download is skipped.")
+        print("Update it with git (see START_HERE.md). --force-live2d replaces it anyway and deletes local changes.")
+        return True
+
     if not force and _live2d_installed_version(target_folder) == version_tag:
         print(f"live-2d 已是 {version_tag} 版本，跳过下载（如需重新下载请加 --force-live2d）")
         return True
@@ -373,6 +380,13 @@ def download_asr():
         ok = download_model_direct(
             "iic/speech_seaco_paraformer_large_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
             asr_model_dir) and ok
+
+    # SenseVoice: the default ASR model in this fork (English, Chinese, Japanese, Korean, Cantonese)
+    print("\nChecking SenseVoice model...")
+    sensevoice_dir = os.path.join(asr_hub_dir, 'model', 'asr', 'models', 'iic', 'SenseVoiceSmall')
+    sensevoice_key_files = [os.path.join(sensevoice_dir, "config.yaml"), os.path.join(sensevoice_dir, "model.pt")]
+    if not all(os.path.exists(f) for f in sensevoice_key_files):
+        ok = download_model_direct("iic/SenseVoiceSmall", sensevoice_dir) and ok
 
     # 标点模型
     print("\n检查标点符号模型...")

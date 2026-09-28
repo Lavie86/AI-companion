@@ -4,5 +4,17 @@
     "args": [
       "@playwright/mcp@latest"
     ]
+  },
+  "windows-mcp": {
+    "command": "uvx",
+    "args": [
+      "windows-mcp@0.8.6",
+      "serve"
+    ],
+    "env": {
+      "ANONYMIZED_TELEMETRY": "false",
+      "WINDOWS_MCP_EXCLUDE_TOOLS": "Registry"
+    },
+    "startup_timeout": 180000
   }
 }
