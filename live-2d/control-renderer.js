@@ -1,6 +1,6 @@
 let config = {};
 let live2dRunning = false;
-let environment = { edition: 'cloud', editionLabel: '云端', version: '' };
+let environment = { edition: 'cloud', editionLabel: 'Cloud', version: '' };
 let previewEdition = null;
 let activeServiceLog = 'tts';
 let configDirty = false;
@@ -26,17 +26,17 @@ document.querySelectorAll('input[type="password"]').forEach(input => {
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.className = 'secret-toggle';
-  toggle.setAttribute('aria-label', '显示密钥');
+  toggle.setAttribute('aria-label', 'Show key');
   toggle.setAttribute('aria-pressed', 'false');
-  toggle.title = '显示密钥';
+  toggle.title = 'Show key';
   toggle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/><path class="secret-eye-slash" d="m4 4 16 16"/></svg>';
   toggle.addEventListener('click', () => {
     const visible = input.type === 'password';
     input.type = visible ? 'text' : 'password';
     toggle.classList.toggle('revealed', visible);
-    toggle.setAttribute('aria-label', visible ? '隐藏密钥' : '显示密钥');
+    toggle.setAttribute('aria-label', visible ? 'Hide key' : 'Show key');
     toggle.setAttribute('aria-pressed', String(visible));
-    toggle.title = visible ? '隐藏密钥' : '显示密钥';
+    toggle.title = visible ? 'Hide key' : 'Show key';
     input.focus();
   });
   field.append(toggle);
@@ -71,7 +71,7 @@ function updateSaveDirtyState() {
   const dirty = configDirty || pluginConfigDirty;
   const button = $('save-config');
   button?.classList.toggle('config-dirty', dirty);
-  if (button) button.title = dirty ? '当前有未保存的修改，请先保存配置' : '';
+  if (button) button.title = dirty ? 'You have unsaved changes. Save the config first' : '';
   window.controlApi.setConfigDirty(dirty);
 }
 
@@ -83,10 +83,10 @@ function applyEdition(edition = environment.edition) {
     document.querySelector('.nav.active')?.classList.remove('active');
     document.querySelector('[data-page="home"]').classList.add('active');
   }
-  $('toggle-edition-preview').textContent = edition === 'local' ? '切回云端样式' : '预览本地样式';
+  $('toggle-edition-preview').textContent = edition === 'local' ? 'Back to the cloud style' : 'Preview the local style';
   $('tutorial-content').innerHTML = edition === 'cloud'
-    ? '<h2>云端版本教程</h2><p>云端版本教程还没有制作好，请耐心等待。</p>'
-    : '<h2>首次使用</h2><p>在“模型配置”填写 API KEY、API URL，点击“获取模型”选择模型并保存。</p><p>回到“启动”选择 Live2D 或 VRM 角色，然后点击“启动桌宠”。</p><h2>语音功能</h2><p>在“对话设置”启用 ASR、TTS，并在“终端控制室”启动对应服务。</p><h2>插件与工具</h2><p>插件在“插件”页面启用和配置；MCP 工具在“工具屋”启用。</p>';
+    ? '<h2>Cloud version tutorial</h2><p>The tutorial for the cloud version is not ready yet. Please be patient.</p>'
+    : '<h2>First use</h2><p>In “Model settings”, enter the API KEY and API URL, click “Fetch models”, choose a model and save.</p><p>Go back to “Launch”, choose a Live2D or VRM character, then click “Start pet”.</p><h2>Voice</h2><p>In “Chat settings”, turn on ASR and TTS, and start the matching services in “Terminal room”.</p><h2>Plugins and tools</h2><p>Turn on and set up plugins on the “Plugins” page. Turn on MCP tools in “Tool shed”.</p>';
 }
 
 $('toggle-edition-preview').addEventListener('click', () => {
@@ -116,11 +116,11 @@ $('adjust-subtitle-position').addEventListener('click', async () => {
 });
 $('select-voice-model').addEventListener('click', async () => {
   const result = await window.controlApi.selectVoiceFile('model');
-  if (result.ok) { $('voice-model-status').textContent = result.filename; showToast('模型文件已保存'); }
+  if (result.ok) { $('voice-model-status').textContent = result.filename; showToast('Model file saved'); }
 });
 $('select-voice-audio').addEventListener('click', async () => {
   const result = await window.controlApi.selectVoiceFile('audio');
-  if (result.ok) { $('voice-audio-status').textContent = result.filename; showToast('参考音频已保存'); }
+  if (result.ok) { $('voice-audio-status').textContent = result.filename; showToast('Reference audio saved'); }
 });
 $('generate-voice-bat').addEventListener('click', async () => {
   const result = await window.controlApi.generateVoiceBat({ character: $('voice-character-name').value, text: $('voice-reference-text').value, language: $('voice-language').value });
@@ -223,7 +223,7 @@ function enhanceSelect(id) {
     list.append(item);
   }
   const refreshText = () => {
-    text.textContent = select.options[select.selectedIndex]?.textContent || '请选择';
+    text.textContent = select.options[select.selectedIndex]?.textContent || 'Choose...';
     list.querySelectorAll('.dropdown-option').forEach(button => {
       const selected = button.dataset.value === select.value;
       button.classList.toggle('selected', selected);
@@ -253,7 +253,7 @@ document.querySelectorAll('[data-cloud-tab]').forEach(button => {
 function syncCloudProviders(updateTts = true) {
   const ttsProvider = $('cloud-tts-provider')?.value || 'aliyun';
   const ttsText = $('cloud-tts-provider')?.nextElementSibling?.querySelector('.dropdown-text');
-  if (ttsText) ttsText.textContent = $('cloud-tts-provider').options[$('cloud-tts-provider').selectedIndex]?.textContent || '请选择';
+  if (ttsText) ttsText.textContent = $('cloud-tts-provider').options[$('cloud-tts-provider').selectedIndex]?.textContent || 'Choose...';
   document.querySelectorAll('[data-tts-provider]').forEach(panel => panel.classList.toggle('active', panel.dataset.ttsProvider === ttsProvider));
   const ttsEnabled = $('cloud-tts-master-enabled')?.checked === true;
   if (updateTts) {
@@ -264,7 +264,7 @@ function syncCloudProviders(updateTts = true) {
 
   const asrProvider = $('cloud-asr-provider')?.value || 'baidu';
   const asrText = $('cloud-asr-provider')?.nextElementSibling?.querySelector('.dropdown-text');
-  if (asrText) asrText.textContent = $('cloud-asr-provider').options[$('cloud-asr-provider').selectedIndex]?.textContent || '请选择';
+  if (asrText) asrText.textContent = $('cloud-asr-provider').options[$('cloud-asr-provider').selectedIndex]?.textContent || 'Choose...';
   document.querySelectorAll('[data-asr-provider]').forEach(panel => panel.classList.toggle('active', panel.dataset.asrProvider === asrProvider));
   const asrEnabled = $('cloud-asr-master-enabled')?.checked === true;
   if ($('cloud-asr-enabled')) $('cloud-asr-enabled').checked = asrEnabled && asrProvider === 'baidu';
@@ -283,7 +283,7 @@ function setLlmModelsOpen(open) {
   });
 }
 $('toggle-llm-models').addEventListener('click', () => {
-  if (!$('llm-model-options').children.length) { showToast('请先点击获取模型'); return; }
+  if (!$('llm-model-options').children.length) { showToast('Click “Fetch models” first'); return; }
   setLlmModelsOpen(!$('llm-model-dropdown-state').checked);
 });
 $('llm-model').addEventListener('click', () => {
@@ -296,29 +296,29 @@ document.addEventListener('keydown', event => {
 $('fetch-llm-models').addEventListener('click', async () => {
   const button = $('fetch-llm-models');
   const apiUrl = $('llm-url').value.trim();
-  if (!apiUrl) { $('llm-url').focus(); showToast('请先填写 API URL'); return; }
-  button.disabled = true; button.textContent = '正在获取…';
+  if (!apiUrl) { $('llm-url').focus(); showToast('Enter the API URL'); return; }
+  button.disabled = true; button.textContent = 'Fetching…';
   try {
     const models = await window.controlApi.fetchLlmModels(apiUrl, $('llm-key').value);
     const options = $('llm-model-options');
-    options.innerHTML = models.map(name => `<li class="listitem llm-test-row"><button class="article dropdown-option" type="button" data-llm-model="${escapeHtml(name)}">${escapeHtml(name)}</button><button class="llm-test-button" type="button" data-test-model="${escapeHtml(name)}" aria-label="测试 ${escapeHtml(name)}">测试</button><span class="llm-test-result" role="status" hidden></span></li>`).join('');
+    options.innerHTML = models.map(name => `<li class="listitem llm-test-row"><button class="article dropdown-option" type="button" data-llm-model="${escapeHtml(name)}">${escapeHtml(name)}</button><button class="llm-test-button" type="button" data-test-model="${escapeHtml(name)}" aria-label="Test ${escapeHtml(name)}">Test</button><span class="llm-test-result" role="status" hidden></span></li>`).join('');
     options.querySelectorAll('[data-test-model]').forEach(testButton => testButton.addEventListener('click', async () => {
       const status = testButton.parentElement.querySelector('.llm-test-result');
       testButton.disabled = true;
-      testButton.textContent = '测试中…';
+      testButton.textContent = 'Testing…';
       status.hidden = false;
       status.className = 'llm-test-result';
-      status.textContent = '正在请求模型，最多等待30秒…';
+      status.textContent = 'Asking the model, waiting up to 30 seconds…';
       try {
         const result = await window.controlApi.testLlmModel($('llm-url').value, $('llm-key').value, testButton.dataset.testModel);
         status.classList.add(result.ok ? 'success' : 'failure');
-        status.textContent = result.ok ? `可用 · 首字延迟 ${result.elapsedMs} ms（流式 · 思考模式已关）` : `测试失败 · ${result.message}`;
+        status.textContent = result.ok ? `Works · first token after ${result.elapsedMs} ms (streaming · thinking off)` : `Test failed · ${result.message}`;
       } catch {
         status.classList.add('failure');
-        status.textContent = '测试失败，请重试';
+        status.textContent = 'Test failed, please try again';
       } finally {
         testButton.disabled = false;
-        testButton.textContent = '重测';
+        testButton.textContent = 'Retest';
       }
     }));
     setLlmModelsOpen(models.length > 0);
@@ -328,9 +328,9 @@ $('fetch-llm-models').addEventListener('click', async () => {
       setConfigDirty(true);
       setLlmModelsOpen(false);
     }));
-    showToast(`已获取 ${models.length} 个模型`);
+    showToast(`Fetched ${models.length} models`);
   } catch (error) { showToast(error.message); }
-  finally { button.disabled = false; button.textContent = '获取模型'; }
+  finally { button.disabled = false; button.textContent = 'Fetch models'; }
 });
 document.addEventListener('click', event => {
   if (!event.target.closest('.llm-model-control')) setLlmModelsOpen(false);
@@ -484,7 +484,7 @@ function renderServiceLog(output, text) {
 }
 
 function paintServiceLog() {
-  $('service-log-title').textContent = `${activeServiceLog.toUpperCase()} 日志`;
+  $('service-log-title').textContent = `${activeServiceLog.toUpperCase()} log`;
   const output = $('service-log-output');
   renderServiceLog(output, serviceLogs[activeServiceLog]);
   output.scrollTop = output.scrollHeight;
@@ -498,7 +498,7 @@ function consumeServiceDownloadProgress(service, text) {
     const line = parts[index] || '';
     if (line === '@@ENV_START') {
       serviceDownloadHasEnvironmentStage[service] = true;
-      serviceDownloadProgress[service] = { percent: 0, stage: '\u6b63\u5728\u4e0b\u8f7d\u9879\u76ee Python \u73af\u5883', detail: '' };
+      serviceDownloadProgress[service] = { percent: 0, stage: 'Downloading the project Python environment', detail: '' };
       continue;
     }
     const environmentProgress = line.match(/^@@ENV_PROGRESS:(\d+):(\d+):(\d+)$/);
@@ -508,35 +508,35 @@ function consumeServiceDownloadProgress(service, text) {
       const totalMb = Number(environmentProgress[3]) / 1024 / 1024;
       serviceDownloadProgress[service] = {
         percent: filePercent * 0.45,
-        stage: '\u6b63\u5728\u4e0b\u8f7d\u9879\u76ee Python \u73af\u5883',
+        stage: 'Downloading the project Python environment',
         detail: totalMb ? `${receivedMb.toFixed(0)}MB/${totalMb.toFixed(0)}MB` : `${receivedMb.toFixed(0)}MB`
       };
       continue;
     }
     if (line === '@@ENV_EXTRACT') {
-      serviceDownloadProgress[service] = { percent: 47, stage: '\u6b63\u5728\u89e3\u538b\u9879\u76ee Python \u73af\u5883', detail: '' };
+      serviceDownloadProgress[service] = { percent: 47, stage: 'Extracting the project Python environment', detail: '' };
       continue;
     }
     if (line === '@@ENV_DONE') {
-      serviceDownloadProgress[service] = { percent: 50, stage: '\u9879\u76ee Python \u73af\u5883\u5b89\u88c5\u5b8c\u6210', detail: '' };
+      serviceDownloadProgress[service] = { percent: 50, stage: 'Project Python environment installed', detail: '' };
       continue;
     }
     if (line === `@@MODULE_DONE:${service}`) {
-      serviceDownloadProgress[service] = { percent: 100, stage: '\u6a21\u5757\u5b89\u88c5\u5b8c\u6210', detail: '' };
+      serviceDownloadProgress[service] = { percent: 100, stage: 'Module installed', detail: '' };
       continue;
     }
     if (service === 'asr') {
-      if (line.includes('morelle/my-neuro-vad')) serviceDownloadStage.asr = { index: 0, name: 'VAD \u6a21\u578b' };
-      else if (line.includes('speech_seaco_paraformer')) serviceDownloadStage.asr = { index: 1, name: 'ASR \u4e3b\u6a21\u578b' };
-      else if (line.includes('punc_ct-transformer')) serviceDownloadStage.asr = { index: 2, name: '\u6807\u70b9\u6a21\u578b' };
+      if (line.includes('morelle/my-neuro-vad')) serviceDownloadStage.asr = { index: 0, name: 'VAD model' };
+      else if (line.includes('speech_seaco_paraformer')) serviceDownloadStage.asr = { index: 1, name: 'main ASR model' };
+      else if (line.includes('punc_ct-transformer')) serviceDownloadStage.asr = { index: 2, name: 'punctuation model' };
       if (/ASR\u6a21\u578b\u4e0b\u8f7d\u5b8c\u6210|ASR models downloaded/.test(line)) {
-        serviceDownloadProgress.asr = { percent: 100, stage: '\u5168\u90e8\u6a21\u578b\u4e0b\u8f7d\u5b8c\u6210', detail: '' };
+        serviceDownloadProgress.asr = { percent: 100, stage: 'All models downloaded', detail: '' };
       }
     }
     const percentages = [...line.matchAll(/(\d{1,3}(?:\.\d+)?)\s*%/g)];
     if (!percentages.length) continue;
     const filePercent = Math.max(0, Math.min(100, Number(percentages.at(-1)[1])));
-    const asrStage = service === 'asr' ? (serviceDownloadStage.asr || { index: 0, name: 'VAD \u6a21\u578b' }) : null;
+    const asrStage = service === 'asr' ? (serviceDownloadStage.asr || { index: 0, name: 'VAD model' }) : null;
     const basePercent = serviceDownloadHasEnvironmentStage[service] ? 50 : 0;
     const stageCount = asrStage ? 3 : 1;
     const stageIndex = asrStage?.index || 0;
@@ -547,10 +547,10 @@ function consumeServiceDownloadProgress(service, text) {
     const detailMatch = line.match(/\(([^)]+)\)/);
     serviceDownloadProgress[service] = {
       percent,
-      stage: (stageMatch?.[1] || (line.includes('解压') ? '正在解压' : '正在下载')).trim(),
+      stage: (stageMatch?.[1] || (line.includes('解压') || /\bExtract/.test(line) ? 'Extracting' : 'Downloading')).trim(),
       detail: detailMatch?.[1] || ''
     };
-    if (asrStage) serviceDownloadProgress[service].stage = `\u6b63\u5728\u4e0b\u8f7d${asrStage.name}`;
+    if (asrStage) serviceDownloadProgress[service].stage = `Downloading the ${asrStage.name}`;
   }
   return cleanText
     .replace(/^@@ENV_(?:START|EXTRACT|DONE|PROGRESS:[^\r\n]*)[\r\n]*/gm, '')
@@ -564,13 +564,13 @@ function renderActiveService() {
   const progressPercent = progress?.percent ?? 0;
   const progressDetail = progress
     ? `${progress.stage} · ${Math.round(progressPercent)}%${progress.detail ? ` · ${progress.detail}` : ''}`
-    : '正在准备下载，请稍候…';
+    : 'Getting the download ready, please wait…';
   const progressMarkup = service?.downloading
     ? `<div class="service-download-progress"><div class="service-download-meta"><span>${escapeHtml(progressDetail)}</span>${progress ? `<strong>${Math.round(progressPercent)}%</strong>` : ''}</div><div class="service-progress-track"><i class="${progress ? '' : 'indeterminate'}" style="width:${progress ? progressPercent : 32}%"></i></div></div>`
     : '';
   $('service-list').innerHTML = service
-    ? `<article class="service card ${service.downloading ? 'is-downloading' : ''}" data-service="${service.id}"><div class="service-info"><b>${service.name}</b><small class="${service.running ? 'running' : ''}">${service.downloading ? '正在下载模块' : service.starting ? '正在启动' : service.running ? '运行中' : service.installed ? '未启动' : '未安装'} · 端口 ${service.port}</small>${progressMarkup}</div><div class="service-actions">${service.installed ? `<button data-service-action="start" ${service.running ? 'disabled' : ''}>启动</button><button data-service-action="stop" ${service.running ? '' : 'disabled'}>停止</button>${service.id === 'tts' ? '<button data-service-action="voice-clone">声音克隆</button>' : ''}` : `<button data-service-action="download" ${service.downloading ? 'disabled' : ''}>${service.downloading ? '下载中…' : '下载模块'}</button>`}</div></article>`
-    : '<div class="empty"><p>暂无模块信息</p></div>';
+    ? `<article class="service card ${service.downloading ? 'is-downloading' : ''}" data-service="${service.id}"><div class="service-info"><b>${service.name}</b><small class="${service.running ? 'running' : ''}">${service.downloading ? 'Downloading the module' : service.starting ? 'Starting' : service.running ? 'Running' : service.installed ? 'Not started' : 'Not installed'} · port ${service.port}</small>${progressMarkup}</div><div class="service-actions">${service.installed ? `<button data-service-action="start" ${service.running ? 'disabled' : ''}>Start</button><button data-service-action="stop" ${service.running ? '' : 'disabled'}>Stop</button>${service.id === 'tts' ? '<button data-service-action="voice-clone">Voice clone</button>' : ''}` : `<button data-service-action="download" ${service.downloading ? 'disabled' : ''}>${service.downloading ? 'Downloading…' : 'Download module'}</button>`}</div></article>`
+    : '<div class="empty"><p>No module info yet</p></div>';
 }
 
 $('service-list').addEventListener('click', async event => {
@@ -590,11 +590,11 @@ $('service-list').addEventListener('click', async event => {
     serviceDownloadStage[id] = null;
     serviceDownloadHasEnvironmentStage[id] = false;
     serviceDownloadActive[id] = true;
-    button.textContent = '正在准备…';
+    button.textContent = 'Getting ready…';
   }
   if (action === 'stop') {
-    button.textContent = '正在停止...';
-    showToast('正在停止服务...');
+    button.textContent = 'Stopping...';
+    showToast('Stopping the service...');
   }
   try {
     const result = action === 'start'
@@ -604,7 +604,7 @@ $('service-list').addEventListener('click', async event => {
         : await window.controlApi.downloadService(id);
     showToast(result.message);
   } catch (error) {
-    showToast(`操作失败：${error.message}`);
+    showToast(`Action failed: ${error.message}`);
   } finally {
     await refreshServiceStatus();
   }
@@ -615,7 +615,7 @@ async function refreshServiceStatus() {
     serviceData = await window.controlApi.serviceStatus();
     serviceData.forEach(service => { serviceDownloadActive[service.id] = service.downloading; });
     renderActiveService();
-  } catch (error) { showToast(`服务状态读取失败：${error.message}`); }
+  } catch (error) { showToast(`Could not read the service status: ${error.message}`); }
 }
 
 document.querySelectorAll('[data-service-tab]').forEach(button => button.addEventListener('click', () => {
@@ -645,7 +645,7 @@ function historyContent(content) {
     if (item?.type === 'text') return `<p>${formatText(item.text || '')}</p>`;
     const url = item?.image_url?.url || item?.image_url;
     if (typeof url === 'string' && (url.startsWith('data:image/') || /^https?:\/\//i.test(url))) {
-      return `<img class="history-image" src="${escapeHtml(url)}" alt="对话图片">`;
+      return `<img class="history-image" src="${escapeHtml(url)}" alt="Chat image">`;
     }
     return '';
   }).join('');
@@ -655,15 +655,15 @@ function historyToolCalls(toolCalls) {
   return (Array.isArray(toolCalls) ? toolCalls : []).map(call => {
     const fn = call?.function || {};
     let args = fn.arguments || '';
-    try { args = Object.values(JSON.parse(args)).join('，'); } catch {}
-    return `<div class="history-tool">调用工具：${escapeHtml(fn.name || 'unknown')}${args ? `<span>${escapeHtml(args)}</span>` : ''}</div>`;
+    try { args = Object.values(JSON.parse(args)).join(', '); } catch {}
+    return `<div class="history-tool">Called tool: ${escapeHtml(fn.name || 'unknown')}${args ? `<span>${escapeHtml(args)}</span>` : ''}</div>`;
   }).join('');
 }
 
 function historyImages(images) {
   return (Array.isArray(images) ? images : [])
     .filter(url => typeof url === 'string' && url.startsWith('data:image/'))
-    .map(url => `<img class="history-image" src="${escapeHtml(url)}" alt="对话截图" title="点击查看大图" tabindex="0" role="button">`)
+    .map(url => `<img class="history-image" src="${escapeHtml(url)}" alt="Chat screenshot" title="Click to enlarge" tabindex="0" role="button">`)
     .join('');
 }
 
@@ -682,7 +682,7 @@ function groupHistoryRounds(messages) {
 
 function historyMessageHtml(message) {
   const role = message.role === 'user' ? 'user' : message.role === 'assistant' ? 'assistant' : 'other';
-  const roleName = role === 'user' ? '用户' : role === 'assistant' ? 'AI' : (message.role || '未知');
+  const roleName = role === 'user' ? 'User' : role === 'assistant' ? 'AI' : (message.role || 'unknown');
   return `<article class="history-entry ${role}"><header>${escapeHtml(roleName)}</header><div class="history-content">${historyContent(message.content)}${historyImages(message.history_images)}${historyToolCalls(message.tool_calls)}</div></article>`;
 }
 
@@ -691,7 +691,7 @@ function renderHistoryPage() {
   historyPage = Math.min(Math.max(1, historyPage), totalPages);
   const start = (historyPage - 1) * historyPageSize;
   const rounds = historyRounds.slice(start, start + historyPageSize);
-  $('history-list').innerHTML = rounds.flat().map(historyMessageHtml).join('') || '<div class="history-empty">暂无对话记录</div>';
+  $('history-list').innerHTML = rounds.flat().map(historyMessageHtml).join('') || '<div class="history-empty">No chat history yet</div>';
   $('history-list').scrollTop = 0;
 
   const pagination = $('history-pagination');
@@ -711,7 +711,7 @@ function renderHistoryPage() {
     buttons.push(`<button type="button" data-history-page="${page}" class="${page === historyPage ? 'active' : ''}" ${page === historyPage ? 'aria-current="page"' : ''}>${page}</button>`);
     previous = page;
   }
-  pagination.innerHTML = `<button type="button" class="history-pagination-trigger" aria-label="打开翻页菜单，第 ${historyPage} 页，共 ${totalPages} 页" title="第 ${historyPage} / ${totalPages} 页"><span>${historyPage}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 14 4-4 4 4"/></svg></button><div class="history-pagination-menu">${buttons.join('')}</div>`;
+  pagination.innerHTML = `<button type="button" class="history-pagination-trigger" aria-label="Open the page menu, page ${historyPage} of ${totalPages} " title="Page ${historyPage} / ${totalPages} "><span>${historyPage}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 14 4-4 4 4"/></svg></button><div class="history-pagination-menu">${buttons.join('')}</div>`;
 }
 
 function closeHistoryImagePreview() {
@@ -811,7 +811,7 @@ async function loadChatHistory() {
   try {
     const result = await window.controlApi.getChatHistory();
     if (!result.exists) {
-      $('history-list').innerHTML = '<div class="history-empty">对话历史文件不存在</div>';
+      $('history-list').innerHTML = '<div class="history-empty">The chat history file does not exist</div>';
       $('history-pagination').hidden = true;
       return;
     }
@@ -819,7 +819,7 @@ async function loadChatHistory() {
     historyPage = Math.max(1, Math.ceil(historyRounds.length / historyPageSize));
     renderHistoryPage();
   } catch (error) {
-    $('history-list').innerHTML = `<div class="history-empty error">读取失败：${escapeHtml(error.message)}</div>`;
+    $('history-list').innerHTML = `<div class="history-empty error">Could not read it: ${escapeHtml(error.message)}</div>`;
     $('history-pagination').hidden = true;
   }
 }
@@ -844,10 +844,10 @@ async function saveConfig() {
   delete config.conversation;
   try {
     await window.controlApi.saveConfig(config);
-    render(); setConfigDirty(false); showToast('配置保存成功');
+    render(); setConfigDirty(false); showToast('Config saved');
     return true;
   } catch (error) {
-    showToast(`保存失败：${error.message}`);
+    showToast(`Save failed: ${error.message}`);
     return false;
   }
 }
@@ -866,7 +866,7 @@ window.controlApi.onCloseRequested(async () => {
   if (closePromptOpen) return;
   closePromptOpen = true;
   try {
-    if (await confirmUnsavedConfig('关闭前保存配置')) {
+    if (await confirmUnsavedConfig('Save the config before closing')) {
       setConfigDirty(false);
       setPluginConfigDirty(false);
       await window.controlApi.windowAction('close');
@@ -879,7 +879,7 @@ window.controlApi.onCloseRequested(async () => {
 $('start-live2d').addEventListener('click', async () => {
   const button = $('start-live2d');
   const wasRunning = live2dRunning;
-  if (!wasRunning && !(await confirmUnsavedConfig('启动前保存配置'))) return;
+  if (!wasRunning && !(await confirmUnsavedConfig('Save the config before starting'))) return;
   button.disabled = true;
   if (!wasRunning) clearDesktopLogs();
   try {
@@ -890,13 +890,13 @@ $('start-live2d').addEventListener('click', async () => {
     if (result.ok) {
       // 退出事件可能比 IPC 返回更早，必须按本次操作显式赋值，不能取反。
       live2dRunning = wasRunning ? false : true;
-      button.textContent = live2dRunning ? '■ 关闭桌宠' : '▶ 启动桌宠';
+      button.textContent = live2dRunning ? '■ Close pet' : '▶ Start pet';
       button.classList.toggle('stop', live2dRunning);
     }
     button.disabled = false;
   } catch (error) {
     button.disabled = false;
-    showToast(`启动失败：${error.message}`);
+    showToast(`Failed to start: ${error.message}`);
   }
 });
 
@@ -923,7 +923,7 @@ window.controlApi.onLive2dState(running => {
   live2dRunning = running;
   const button = $('start-live2d');
   button.disabled = false;
-  button.textContent = running ? '■ 关闭桌宠' : '▶ 启动桌宠';
+  button.textContent = running ? '■ Close pet' : '▶ Start pet';
   button.classList.toggle('stop', running);
 });
 
@@ -935,12 +935,12 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '
 function pluginCard(plugin) {
   const dlcInstalled = !plugin.downloadDlc || plugin.dlcInstalled;
   return `<article class="plugin-card card" data-plugin-card="${escapeHtml(plugin.relPath)}">
-    <div class="plugin-summary"><strong>${escapeHtml(plugin.displayName)}</strong><p>${escapeHtml(plugin.description || '暂无说明')}</p><small>${escapeHtml(plugin.author || '')}</small></div>
+    <div class="plugin-summary"><strong>${escapeHtml(plugin.displayName)}</strong><p>${escapeHtml(plugin.description || 'No description')}</p><small>${escapeHtml(plugin.author || '')}</small></div>
     <div class="plugin-actions">
-      ${plugin.downloadDlc && !dlcInstalled ? `<button type="button" class="primary" data-plugin-dlc="${escapeHtml(plugin.relPath)}">安装 DLC</button>` : ''}
-      ${plugin.bat && dlcInstalled ? `<button type="button" data-plugin-launch="${escapeHtml(plugin.relPath)}">启动</button>` : ''}
-      ${plugin.hasConfig ? `<button type="button" data-plugin-config="${escapeHtml(plugin.relPath)}">配置</button>` : ''}
-      ${dlcInstalled ? `<label class="plugin-switch"><span>启用</span><input type="checkbox" data-plugin-enabled="${escapeHtml(plugin.relPath)}" ${plugin.enabled ? 'checked' : ''}><i></i></label>` : ''}
+      ${plugin.downloadDlc && !dlcInstalled ? `<button type="button" class="primary" data-plugin-dlc="${escapeHtml(plugin.relPath)}">Install DLC</button>` : ''}
+      ${plugin.bat && dlcInstalled ? `<button type="button" data-plugin-launch="${escapeHtml(plugin.relPath)}">Start</button>` : ''}
+      ${plugin.hasConfig ? `<button type="button" data-plugin-config="${escapeHtml(plugin.relPath)}">Settings</button>` : ''}
+      ${dlcInstalled ? `<label class="plugin-switch"><span>On</span><input type="checkbox" data-plugin-enabled="${escapeHtml(plugin.relPath)}" ${plugin.enabled ? 'checked' : ''}><i></i></label>` : ''}
     </div>
   </article>`;
 }
@@ -948,14 +948,14 @@ function pluginCard(plugin) {
 function marketCard(plugin) {
   const installed = pluginData.community.find(item => item.name === plugin.id);
   if (!installed) {
-    return `<article class="plugin-card card" data-market-plugin-card="${escapeHtml(plugin.id)}"><div class="plugin-summary"><strong>${escapeHtml(plugin.display_name || plugin.id)}</strong><p>${escapeHtml(plugin.desc || '暂无说明')}</p><small>${escapeHtml(plugin.author || '')}</small></div><div class="plugin-actions"><button type="button" data-plugin-repo="${escapeHtml(plugin.repo || '')}">仓库</button><button type="button" class="primary" data-plugin-install="${escapeHtml(plugin.id)}">安装</button></div></article>`;
+    return `<article class="plugin-card card" data-market-plugin-card="${escapeHtml(plugin.id)}"><div class="plugin-summary"><strong>${escapeHtml(plugin.display_name || plugin.id)}</strong><p>${escapeHtml(plugin.desc || 'No description')}</p><small>${escapeHtml(plugin.author || '')}</small></div><div class="plugin-actions"><button type="button" data-plugin-repo="${escapeHtml(plugin.repo || '')}">Repository</button><button type="button" class="primary" data-plugin-install="${escapeHtml(plugin.id)}">Install</button></div></article>`;
   }
 
   return `<article class="plugin-card card" data-plugin-card="${escapeHtml(installed.relPath)}" data-market-plugin-card="${escapeHtml(plugin.id)}">
-    <div class="plugin-summary"><strong>${escapeHtml(installed.displayName || plugin.display_name || plugin.id)}</strong><p>${escapeHtml(installed.description || plugin.desc || '暂无说明')}</p><small>${escapeHtml(installed.author || plugin.author || '')}</small></div>
+    <div class="plugin-summary"><strong>${escapeHtml(installed.displayName || plugin.display_name || plugin.id)}</strong><p>${escapeHtml(installed.description || plugin.desc || 'No description')}</p><small>${escapeHtml(installed.author || plugin.author || '')}</small></div>
     <div class="plugin-actions">
-      ${plugin.repo ? `<button type="button" data-plugin-repo="${escapeHtml(plugin.repo)}">仓库</button>` : ''}
-      <button type="button" class="plugin-installed-badge" disabled>已安装</button>
+      ${plugin.repo ? `<button type="button" data-plugin-repo="${escapeHtml(plugin.repo)}">Repository</button>` : ''}
+      <button type="button" class="plugin-installed-badge" disabled>Installed</button>
     </div>
   </article>`;
 }
@@ -975,7 +975,7 @@ function bindPluginCards() {
       await window.controlApi.setPluginEnabled(input.dataset.pluginEnabled, input.checked);
       const plugin = [...pluginData.builtIn, ...pluginData.community].find(item => item.relPath === input.dataset.pluginEnabled);
       if (plugin) plugin.enabled = input.checked;
-      showToast(input.checked ? '插件已启用' : '插件已停用');
+      showToast(input.checked ? 'Plugin turned on' : 'Plugin turned off');
       renderPlugins();
     }
     catch (error) { input.checked = !input.checked; showToast(error.message); }
@@ -987,7 +987,7 @@ function bindPluginCards() {
   document.querySelectorAll('[data-plugin-dlc]').forEach(button => button.addEventListener('click', async () => {
     const plugin = [...pluginData.builtIn, ...pluginData.community].find(item => item.relPath === button.dataset.pluginDlc);
     if (!plugin) return;
-    button.disabled = true; button.textContent = '安装中…';
+    button.disabled = true; button.textContent = 'Installing…';
     const result = await window.controlApi.installPluginDlc(plugin.name, plugin.downloadDlc);
     showToast(result.message);
     await loadPlugins();
@@ -1002,7 +1002,7 @@ function bindPluginCards() {
   document.querySelectorAll('[data-plugin-install]').forEach(button => button.addEventListener('click', async () => {
     const plugin = pluginData.market.find(item => item.id === button.dataset.pluginInstall);
     if (!plugin) return;
-    button.disabled = true; button.textContent = '安装中…';
+    button.disabled = true; button.textContent = 'Installing…';
     const result = await window.controlApi.installPlugin(plugin.id, plugin.repo);
     showToast(result.message);
     await loadPlugins();
@@ -1043,8 +1043,8 @@ function renderPlugins() {
         String(right.display_name || right.id),
         'zh-CN'
       ));
-  $('installed-plugin-list').innerHTML = installedPlugins.map(pluginCard).join('') || '<div class="empty card">暂无已安装插件</div>';
-  $('market-plugin-list').innerHTML = sortedMarketPlugins.map(marketCard).join('') || '<div class="empty card">插件广场暂无内容</div>';
+  $('installed-plugin-list').innerHTML = installedPlugins.map(pluginCard).join('') || '<div class="empty card">No plugins installed yet</div>';
+  $('market-plugin-list').innerHTML = sortedMarketPlugins.map(marketCard).join('') || '<div class="empty card">The plugin store is empty</div>';
   bindPluginCards();
 }
 
@@ -1183,15 +1183,15 @@ async function savePluginConfig() {
     if (target[leaf] && typeof target[leaf] === 'object' && 'type' in target[leaf]) target[leaf].value = value;
     else target[leaf] = value;
   });
-  if (invalidField) { showToast(`${invalidField} 必须是数字`); return false; }
+  if (invalidField) { showToast(`${invalidField} must be a number`); return false; }
   try {
     await window.controlApi.savePluginConfig(editingPlugin.type, editingPlugin.name, updated);
     editingPlugin.config = updated;
     setPluginConfigDirty(false);
-    showToast('插件配置已保存');
+    showToast('Plugin settings saved');
     return true;
   } catch (error) {
-    showToast(`插件配置保存失败：${error.message}`);
+    showToast(`Failed to save the plugin settings: ${error.message}`);
     return false;
   }
 }
@@ -1210,16 +1210,16 @@ $('refresh-plugins').addEventListener('click', async () => {
   const button = $('refresh-plugins');
   button.disabled = true;
   button.classList.add('is-loading');
-  button.title = '正在刷新插件广场';
+  button.title = 'Refreshing the plugin store';
   try {
     pluginData = await window.controlApi.refreshPluginMarket();
     renderPlugins();
-    showToast(`插件广场已更新，共 ${pluginData.market.length} 个插件`);
+    showToast(`Plugin store updated: ${pluginData.market.length} plugins`);
   } catch (error) { showToast(error.message); }
   finally {
     button.disabled = false;
     button.classList.remove('is-loading');
-    button.title = '刷新插件广场';
+    button.title = 'Refresh the plugin store';
   }
 });
 window.controlApi.onPluginsChanged(() => loadPlugins());
@@ -1228,29 +1228,29 @@ let toolMarketData = [];
 async function loadMcpTools() {
   try {
     const tools = await window.controlApi.listMcpTools();
-    $('mcp-tool-list').innerHTML = tools.map(tool => `<article class="tool-card card"><div><strong>${escapeHtml(tool.name)}</strong>${tool.description ? `<p>${escapeHtml(tool.description)}</p>` : ''}</div><button class="tool-status ${tool.enabled ? 'enabled' : ''}" data-tool-type="${tool.type}" data-tool-key="${escapeHtml(tool.key)}">${tool.enabled ? '使用中' : '未使用'}</button></article>`).join('') || '<div class="market-status">没有找到 MCP 工具</div>';
+    $('mcp-tool-list').innerHTML = tools.map(tool => `<article class="tool-card card"><div><strong>${escapeHtml(tool.name)}</strong>${tool.description ? `<p>${escapeHtml(tool.description)}</p>` : ''}</div><button class="tool-status ${tool.enabled ? 'enabled' : ''}" data-tool-type="${tool.type}" data-tool-key="${escapeHtml(tool.key)}">${tool.enabled ? 'In use' : 'Not used'}</button></article>`).join('') || '<div class="market-status">No MCP tools found</div>';
     document.querySelectorAll('[data-tool-key]').forEach(button => button.addEventListener('click', async () => {
       button.disabled = true;
-      try { await window.controlApi.toggleMcpTool(button.dataset.toolType, button.dataset.toolKey); await loadMcpTools(); showToast('工具状态已更新'); }
+      try { await window.controlApi.toggleMcpTool(button.dataset.toolType, button.dataset.toolKey); await loadMcpTools(); showToast('Tool status updated'); }
       catch (error) { button.disabled = false; showToast(error.message); }
     }));
-  } catch (error) { $('mcp-tool-list').innerHTML = `<div class="market-status">加载失败：${escapeHtml(error.message)}</div>`; }
+  } catch (error) { $('mcp-tool-list').innerHTML = `<div class="market-status">Failed to load: ${escapeHtml(error.message)}</div>`; }
 }
 
 async function loadToolMarket() {
-  const button = $('refresh-tool-market'); button.disabled = true; button.textContent = '正在获取…';
+  const button = $('refresh-tool-market'); button.disabled = true; button.textContent = 'Fetching…';
   try {
     toolMarketData = await window.controlApi.getToolMarket();
-    $('tool-market-list').innerHTML = toolMarketData.map((tool, index) => `<article class="tool-card card"><div><strong>${escapeHtml(tool.tool_name || tool.file_name || '未命名工具')}</strong><p>${escapeHtml(tool.description || '')}</p><small>${escapeHtml(tool.uploader_email || '')}</small></div><button class="primary" data-download-tool="${index}">下载</button></article>`).join('') || '<div class="market-status">工具广场暂无内容</div>';
+    $('tool-market-list').innerHTML = toolMarketData.map((tool, index) => `<article class="tool-card card"><div><strong>${escapeHtml(tool.tool_name || tool.file_name || 'Unnamed tool')}</strong><p>${escapeHtml(tool.description || '')}</p><small>${escapeHtml(tool.uploader_email || '')}</small></div><button class="primary" data-download-tool="${index}">Download</button></article>`).join('') || '<div class="market-status">The tool store is empty</div>';
     document.querySelectorAll('[data-download-tool]').forEach(download => download.addEventListener('click', async () => {
       const tool = toolMarketData[Number(download.dataset.downloadTool)];
-      download.disabled = true; download.textContent = '下载中…';
-      try { const result = await window.controlApi.downloadTool(tool); showToast(`下载成功：${result.filename}`); await loadMcpTools(); download.textContent = '已下载'; }
-      catch (error) { download.disabled = false; download.textContent = '下载'; showToast(error.message); }
+      download.disabled = true; download.textContent = 'Downloading…';
+      try { const result = await window.controlApi.downloadTool(tool); showToast(`Downloaded: ${result.filename}`); await loadMcpTools(); download.textContent = 'Downloaded'; }
+      catch (error) { download.disabled = false; download.textContent = 'Download'; showToast(error.message); }
     }));
-    showToast(`已获取 ${toolMarketData.length} 个工具`);
-  } catch (error) { $('tool-market-list').innerHTML = `<div class="market-status">刷新失败：${escapeHtml(error.message)}</div>`; showToast(error.message); }
-  finally { button.disabled = false; button.textContent = '刷新工具列表'; }
+    showToast(`Fetched ${toolMarketData.length} tools`);
+  } catch (error) { $('tool-market-list').innerHTML = `<div class="market-status">Refresh failed: ${escapeHtml(error.message)}</div>`; showToast(error.message); }
+  finally { button.disabled = false; button.textContent = 'Refresh tool list'; }
 }
 
 document.querySelectorAll('[data-tool-tab]').forEach(button => button.addEventListener('click', () => {
@@ -1263,8 +1263,8 @@ $('refresh-tool-market').addEventListener('click', loadToolMarket);
 
 function renderPrompts(prompts) {
   $('prompt-market-list').innerHTML = prompts.map((prompt, index) => `<article class="prompt-card card">
-    <div class="prompt-card-head" data-prompt-toggle="${index}"><div><strong>${escapeHtml(prompt.title || '未命名提示词')}</strong><span>${escapeHtml(prompt.summary || '')}</span>${prompt.prerequisites ? '<small>有使用条件</small>' : ''}</div><button type="button" data-apply-prompt="${index}">应用</button></div>
-    <div class="prompt-detail" data-prompt-detail="${index}" hidden>${prompt.prerequisites ? `<div class="prompt-prerequisite"><b>使用要求</b><p>${escapeHtml(prompt.prerequisites)}</p></div>` : ''}<pre>${escapeHtml(prompt.content || '')}</pre></div>
+    <div class="prompt-card-head" data-prompt-toggle="${index}"><div><strong>${escapeHtml(prompt.title || 'Unnamed prompt')}</strong><span>${escapeHtml(prompt.summary || '')}</span>${prompt.prerequisites ? '<small>Has requirements</small>' : ''}</div><button type="button" data-apply-prompt="${index}">Apply</button></div>
+    <div class="prompt-detail" data-prompt-detail="${index}" hidden>${prompt.prerequisites ? `<div class="prompt-prerequisite"><b>Requirements</b><p>${escapeHtml(prompt.prerequisites)}</p></div>` : ''}<pre>${escapeHtml(prompt.content || '')}</pre></div>
   </article>`).join('');
   document.querySelectorAll('[data-prompt-toggle]').forEach(header => header.addEventListener('click', () => {
     const detail = document.querySelector(`[data-prompt-detail="${header.dataset.promptToggle}"]`);
@@ -1276,23 +1276,23 @@ function renderPrompts(prompts) {
     $('llm-prompt').value = prompt.content || '';
     set(config, 'llm.system_prompt', prompt.content || '');
     setConfigDirty(true);
-    showToast('已更新系统提示词，请保存配置');
+    showToast('System prompt updated. Save the config to keep it');
   }));
 }
 
 async function refreshPrompts() {
   const button = $('refresh-prompts');
   button.disabled = true;
-  $('prompt-market-status').textContent = '正在获取提示词…';
+  $('prompt-market-status').textContent = 'Fetching prompts…';
   try {
     const prompts = await window.controlApi.getPrompts();
     renderPrompts(prompts);
-    $('prompt-market-status').textContent = prompts.length ? `共 ${prompts.length} 个提示词` : '接口返回的提示词列表为空';
-    showToast(`成功获取 ${prompts.length} 个提示词`);
+    $('prompt-market-status').textContent = prompts.length ? `Total: ${prompts.length} prompts` : 'The API returned an empty prompt list';
+    showToast(`Fetched ${prompts.length} prompts`);
   } catch (error) {
     $('prompt-market-list').innerHTML = '';
-    $('prompt-market-status').textContent = `刷新失败：${error.message}`;
-    showToast(`刷新失败：${error.message}`);
+    $('prompt-market-status').textContent = `Refresh failed: ${error.message}`;
+    showToast(`Refresh failed: ${error.message}`);
   } finally { button.disabled = false; }
 }
 
@@ -1306,8 +1306,8 @@ const actionPageSize = 18;
 const motionDisplayName = file => file.split(/[\\/]/).pop().replace(/\.(motion3|exp3)\.json$/i, '');
 
 function bindingCard(emotion, values, kind) {
-  const chips = (values || []).map((file, index) => `<i class="binding-chip" title="${escapeHtml(file)}"><span>${escapeHtml(motionDisplayName(file))}</span><button type="button" data-unbind-kind="${kind}" data-unbind-emotion="${emotion}" data-unbind-index="${index}" title="解除绑定" aria-label="解除绑定">×</button></i>`);
-  return `<div class="emotion-binding" data-drop-kind="${kind}" data-emotion="${emotion}"><strong>${emotion}</strong>${chips.length ? `<div class="binding-chips">${chips.join('')}</div>` : '<span>拖拽到这里绑定</span>'}</div>`;
+  const chips = (values || []).map((file, index) => `<i class="binding-chip" title="${escapeHtml(file)}"><span>${escapeHtml(motionDisplayName(file))}</span><button type="button" data-unbind-kind="${kind}" data-unbind-emotion="${emotion}" data-unbind-index="${index}" title="Unbind" aria-label="Unbind">×</button></i>`);
+  return `<div class="emotion-binding" data-drop-kind="${kind}" data-emotion="${emotion}"><strong>${emotion}</strong>${chips.length ? `<div class="binding-chips">${chips.join('')}</div>` : '<span>Drag here to bind</span>'}</div>`;
 }
 
 async function unbindMotion(kind, emotion, index) {
@@ -1320,7 +1320,7 @@ async function unbindMotion(kind, emotion, index) {
     currentMotion.actions[`动作${n}`] = [file];
   }
   await window.controlApi.saveMotionData(currentMotion.character, kind, currentMotion[kind]);
-  renderMotionPage(); showToast(`已从「${emotion}」解除绑定`);
+  renderMotionPage(); showToast(`Unbound from “${emotion}”`);
 }
 
 function motionButton(name, kind) {
@@ -1331,19 +1331,19 @@ function renderMotionPage() {
   $('expression-bindings').innerHTML = motionEmotions.map(name => bindingCard(name, currentMotion.expressions[name], 'expressions')).join('');
   $('action-bindings').innerHTML = motionEmotions.map(name => bindingCard(name, currentMotion.actions[name], 'actions')).join('');
   const expressions = Object.keys(currentMotion.expressions).filter(name => !motionEmotions.includes(name) && name !== '默认表情' && currentMotion.expressions[name]?.length);
-  $('expression-buttons').innerHTML = expressions.map(name => motionButton(name, 'expressions')).join('') || '<span class="motion-empty">未找到可用表情</span>';
+  $('expression-buttons').innerHTML = expressions.map(name => motionButton(name, 'expressions')).join('') || '<span class="motion-empty">No expressions found</span>';
   const actions = Object.keys(currentMotion.actions).filter(name => !motionEmotions.includes(name) && currentMotion.actions[name]?.length);
   const pages = Math.max(1, Math.ceil(actions.length / actionPageSize));
   actionPage = Math.min(actionPage, pages - 1);
-  $('action-buttons').innerHTML = actions.slice(actionPage * actionPageSize, (actionPage + 1) * actionPageSize).map(name => motionButton(name, 'actions')).join('') || '<span class="motion-empty">暂无未分类动作</span>';
-  $('action-pagination').innerHTML = pages > 1 ? `<button data-action-page="prev" ${actionPage === 0 ? 'disabled' : ''}>上一页</button><span>${actionPage + 1} / ${pages}</span><button data-action-page="next" ${actionPage === pages - 1 ? 'disabled' : ''}>下一页</button>` : '';
+  $('action-buttons').innerHTML = actions.slice(actionPage * actionPageSize, (actionPage + 1) * actionPageSize).map(name => motionButton(name, 'actions')).join('') || '<span class="motion-empty">No uncategorized motions</span>';
+  $('action-pagination').innerHTML = pages > 1 ? `<button data-action-page="prev" ${actionPage === 0 ? 'disabled' : ''}>Previous</button><span>${actionPage + 1} / ${pages}</span><button data-action-page="next" ${actionPage === pages - 1 ? 'disabled' : ''}>Next</button>` : '';
   document.querySelectorAll('[data-action-page]').forEach(button => button.addEventListener('click', () => { actionPage += button.dataset.actionPage === 'next' ? 1 : -1; renderMotionPage(); }));
   document.querySelectorAll('[data-unbind-kind]').forEach(button => button.addEventListener('click', () => unbindMotion(button.dataset.unbindKind, button.dataset.unbindEmotion, Number(button.dataset.unbindIndex))));
   document.querySelectorAll('[data-motion-name]').forEach(button => {
     button.addEventListener('dragstart', event => event.dataTransfer.setData('application/json', JSON.stringify({ kind: button.dataset.dragKind, name: button.dataset.motionName })));
     button.addEventListener('click', async () => {
       const result = button.dataset.dragKind === 'expressions' ? await window.controlApi.triggerExpression(button.dataset.motionName) : await window.controlApi.triggerMotion(button.dataset.motionName);
-      showToast(result.message || (result.success ? '已触发' : '触发失败'));
+      showToast(result.message || (result.success ? 'Triggered' : 'Trigger failed'));
     });
   });
   document.querySelectorAll('[data-drop-kind]').forEach(zone => {
@@ -1359,7 +1359,7 @@ function renderMotionPage() {
       currentMotion[item.kind][zone.dataset.emotion].push(...values.filter(value => !currentMotion[item.kind][zone.dataset.emotion].includes(value)));
       if (item.kind === 'actions') delete currentMotion.actions[item.name];
       await window.controlApi.saveMotionData(currentMotion.character, item.kind, currentMotion[item.kind]);
-      renderMotionPage(); showToast(`已绑定到${zone.dataset.emotion}`);
+      renderMotionPage(); showToast(`Bound to ${zone.dataset.emotion}`);
     });
   });
 }
@@ -1371,9 +1371,9 @@ async function loadMotionPage() {
 
 document.querySelectorAll('[data-motion-trigger]').forEach(button => button.addEventListener('click', async () => {
   const result = await window.controlApi.triggerMotion(button.dataset.motionTrigger);
-  showToast(result.message || (result.success ? '指令已发送' : '指令发送失败'));
+  showToast(result.message || (result.success ? 'Command sent' : 'Command failed to send'));
 }));
-$('apply-vmc').addEventListener('click', async () => { const result = await window.controlApi.applyVmc($('vmc-host').value, $('vmc-port').value); showToast(result.message || 'VMC 地址已应用'); });
+$('apply-vmc').addEventListener('click', async () => { const result = await window.controlApi.applyVmc($('vmc-host').value, $('vmc-port').value); showToast(result.message || 'VMC address applied'); });
 for (const [id, kind] of [['reset-expressions', 'expressions'], ['reset-actions', 'actions']]) {
   $(id).addEventListener('click', async () => { const result = await window.controlApi.resetMotionData(currentMotion.character, kind); showToast(result.message); if (result.ok) await loadMotionPage(); });
 }
@@ -1392,7 +1392,7 @@ for (const [id, kind] of [['reset-expressions', 'expressions'], ['reset-actions'
     const currentModel = await window.controlApi.currentLive2dModel();
     if (currentModel) {
       $('live2d-model').value = currentModel;
-      $('model-menu-text').textContent = `当前桌宠：${currentModel}`;
+      $('model-menu-text').textContent = `Current pet: ${currentModel}`;
       if (currentModel.startsWith('[VRM] ')) {
         set(config, 'ui.model_type', 'vrm');
         set(config, 'ui.vrm_model', currentModel.slice(6));
@@ -1406,7 +1406,7 @@ for (const [id, kind] of [['reset-expressions', 'expressions'], ['reset-actions'
       submenu.innerHTML = models.map(name => `<li class="listitem"><button class="article dropdown-option${name === currentModel ? ' selected' : ''}" type="button" aria-selected="${name === currentModel}" data-model="${name.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')}">${name.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</button></li>`).join('');
       submenu.querySelectorAll('[data-model]').forEach(button => button.addEventListener('click', async () => {
         $('live2d-model').value = button.dataset.model;
-        $('model-menu-text').textContent = `当前桌宠：${button.dataset.model}`;
+        $('model-menu-text').textContent = `Current pet: ${button.dataset.model}`;
         $('model-dropdown-state').checked = false;
         submenu.querySelectorAll('[data-model]').forEach(option => {
           const selected = option === button;
@@ -1425,11 +1425,11 @@ for (const [id, kind] of [['reset-expressions', 'expressions'], ['reset-actions'
         loadMotionPage();
       }));
     } else {
-      submenu.innerHTML = '<li class="listitem"><span class="article">未找到模型</span></li>';
+      submenu.innerHTML = '<li class="listitem"><span class="article">No models found</span></li>';
     }
     await loadMotionPage();
     loadingConfigUi = false;
     setConfigDirty(false);
   }
-  catch (error) { loadingConfigUi = false; showToast(`配置加载失败：${error.message}`); }
+  catch (error) { loadingConfigUi = false; showToast(`Failed to load the config: ${error.message}`); }
 })();
