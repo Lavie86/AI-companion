@@ -102,7 +102,8 @@ class DawnDuskLinePlugin extends Plugin {
         this._deferTimeout    = (cfg.deferTimeout     ?? 30) * 60 * 1000;
         this._checkInterval   = (cfg.checkInterval    ?? 30) * 1000;
 
-        this._timezone = cfg.timezone || 'Asia/Shanghai';
+        // Empty means the computer's own time zone
+        this._timezone = cfg.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai';
         this._enableHoliday = cfg.enableHolidayPerception !== false;
         this._injectPerception = cfg.injectEnvironmentPerception !== false;
         this._holidayCountry = (cfg.holidayCountry || 'CN').toUpperCase();

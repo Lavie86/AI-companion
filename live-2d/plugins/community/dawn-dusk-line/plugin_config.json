@@ -1,10 +1,10 @@
 {
   "timezone": {
     "title": "Time zone",
-    "description": "IANA time zone name (for example America/New_York). Used for timestamps, the local date for workday/holiday checks, and when hourly greetings fire",
+    "description": "IANA time zone name (for example America/New_York). Leave empty to use the computer's time zone. Used for timestamps, the local date for workday/holiday checks, and when hourly greetings fire",
     "type": "string",
-    "default": "Asia/Shanghai",
-    "value": "Asia/Shanghai"
+    "default": "",
+    "value": ""
   },
   "injectEnvironmentPerception": {
     "title": "Add environment awareness to the LLM",
