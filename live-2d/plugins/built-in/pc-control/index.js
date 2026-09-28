@@ -3,6 +3,47 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+// The script never changes. The API settings and the LLM's element description reach it
+// through environment variables. Pasting them into the source let a crafted description
+// (for example from text on the screen or a web page) run any Python code.
+const PC_CLICK_SCRIPT = `# -*- coding: utf-8 -*-
+import json, base64, io, os, sys
+try:
+    import pyautogui
+    from openai import OpenAI
+    from PIL import ImageGrab, ImageDraw
+except ImportError as e:
+    print(json.dumps({"error": str(e)}))
+    sys.exit(1)
+
+api_key = os.environ.get('MYNEURO_PC_API_KEY', '')
+api_url = os.environ.get('MYNEURO_PC_API_URL', '')
+model = os.environ.get('MYNEURO_PC_MODEL', '')
+target = os.environ.get('MYNEURO_PC_TARGET', '')
+client = OpenAI(api_key=api_key, base_url=api_url)
+
+scr = ImageGrab.grab()
+buf = io.BytesIO()
+scr.save(buf, format='JPEG')
+image_data = base64.b64encode(buf.getvalue()).decode('utf-8')
+
+messages = [
+    {'role': 'system', 'content': '你是PC屏幕视觉分析助手。根据描述在截图中定位目标元素，以JSON格式返回 {"bbox_2d": [x1, y1, x2, y2]}。不要输出其他文字。'},
+    {'role': 'user', 'content': [{'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{image_data}'}}, {'type': 'text', 'text': target}]}
+]
+
+try:
+    response = client.chat.completions.create(model=model, messages=messages, stream=True)
+    content = ''.join(c.choices[0].delta.content or '' for c in response if c.choices)
+    bbox = json.loads(content)['bbox_2d']
+    cx, cy = (bbox[0]+bbox[2])//2, (bbox[1]+bbox[3])//2
+    pyautogui.moveTo(cx, cy, duration=0.25)
+    pyautogui.doubleClick()
+    print(json.dumps({"result": f"成功点击了: {target}"}, ensure_ascii=False))
+except Exception as e:
+    print(json.dumps({"result": f"点击失败: {str(e)}"}, ensure_ascii=False))
+`;
+
 class PcControlPlugin extends Plugin {
 
     async onInit() {
@@ -38,53 +79,23 @@ class PcControlPlugin extends Plugin {
     async _pcScreenClick({ element_description }) {
         if (!element_description) throw new Error('缺少元素描述参数');
 
-        const pythonScript = `# -*- coding: utf-8 -*-
-import json, base64, io, sys
-try:
-    import pyautogui
-    from openai import OpenAI
-    from PIL import ImageGrab, ImageDraw
-except ImportError as e:
-    print(json.dumps({"error": str(e)}))
-    sys.exit(1)
-
-api_key = '${this._apiKey}'
-api_url = '${this._apiUrl}'
-model = '${this._model}'
-client = OpenAI(api_key=api_key, base_url=api_url)
-
-scr = ImageGrab.grab()
-buf = io.BytesIO()
-scr.save(buf, format='JPEG')
-image_data = base64.b64encode(buf.getvalue()).decode('utf-8')
-
-messages = [
-    {'role': 'system', 'content': '你是PC屏幕视觉分析助手。根据描述在截图中定位目标元素，以JSON格式返回 {"bbox_2d": [x1, y1, x2, y2]}。不要输出其他文字。'},
-    {'role': 'user', 'content': [{'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{image_data}'}}, {'type': 'text', 'text': '${element_description}'}]}
-]
-
-try:
-    response = client.chat.completions.create(model=model, messages=messages, stream=True)
-    content = ''.join(c.choices[0].delta.content or '' for c in response if c.choices)
-    bbox = json.loads(content)['bbox_2d']
-    cx, cy = (bbox[0]+bbox[2])//2, (bbox[1]+bbox[3])//2
-    pyautogui.moveTo(cx, cy, duration=0.25)
-    pyautogui.doubleClick()
-    print(json.dumps({"result": f"成功点击了: ${element_description}"}, ensure_ascii=False))
-except Exception as e:
-    print(json.dumps({"result": f"点击失败: {str(e)}"}, ensure_ascii=False))
-`;
-
         return new Promise((resolve, reject) => {
             const tempScriptPath = path.join(__dirname, 'temp_pc_control.py');
-            fs.writeFileSync(tempScriptPath, pythonScript);
+            fs.writeFileSync(tempScriptPath, PC_CLICK_SCRIPT);
 
             const isWindows = process.platform === 'win32';
             const command = isWindows
                 ? `call conda activate my-neuro && python "${tempScriptPath}"`
                 : `source activate my-neuro && python "${tempScriptPath}"`;
 
-            exec(command, { timeout: 30000, shell: isWindows ? 'cmd.exe' : '/bin/bash', env: { ...process.env, CONDA_DLL_SEARCH_MODIFICATION_ENABLE: '1' } }, (error, stdout) => {
+            exec(command, { timeout: 30000, shell: isWindows ? 'cmd.exe' : '/bin/bash', env: {
+                ...process.env,
+                CONDA_DLL_SEARCH_MODIFICATION_ENABLE: '1',
+                MYNEURO_PC_API_KEY: String(this._apiKey),
+                MYNEURO_PC_API_URL: String(this._apiUrl),
+                MYNEURO_PC_MODEL: String(this._model),
+                MYNEURO_PC_TARGET: String(element_description)
+            } }, (error, stdout) => {
                 try { fs.unlinkSync(tempScriptPath); } catch (e) {}
                 if (error) return reject(new Error(`执行失败: ${error.message}`));
                 try {
