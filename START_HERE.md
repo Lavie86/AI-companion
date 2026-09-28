@@ -20,6 +20,8 @@ The upstream docs are mostly in Chinese. This file covers what you need in Engli
 | Security fixes in two plugins | `pc-control` and `code-executor` pasted AI text into Python code and shell commands, so text on a web page could run code. | `live-2d/plugins/built-in/` |
 | MCP client fixes | Screenshots from MCP tools were dropped. On Windows, stopped servers kept running (after a slow start and after closing the app). The client skipped a required handshake message. | `live-2d/js/ai/mcp-*.js` |
 | The installer and updater keep your changes | Upstream's installer and `一键更新live-2d.bat` delete `live-2d` and unpack the release zip. In a git checkout they now skip that. | `full-hub/Batch_Download.py`, `update.py` |
+| The UI is in English | The WebUI, the pet window and its dialogs, the Electron control panel, the installer and the log messages were Chinese. | `live-2d/`, `installer.py`, `full-hub/Batch_Download.py` |
+| Upstream updates keep the English | A git merge driver applies our translation to upstream's changes before merging, and lists new Chinese text. | `tools/english-ui/`, `update-from-upstream.bat` |
 
 Each change is its own commit, and each commit message explains the details.
 
@@ -77,17 +79,17 @@ Each change is its own commit, and each commit message explains the details.
    ```
 
 5. **Open the control panel.** Double-click `启动 WebUI 控制面板.bat` ("start WebUI control panel") in the repository folder.
-   It opens a page at `http://localhost:<port>` in your browser. Use the language switch in the top-right corner to change the page to English.
+   It opens a page at `http://localhost:<port>` in your browser.
 
-6. **Add your LLM.** Some of these buttons are not translated yet, so the Chinese label is in brackets.
-   1. Open the **LLM Config** tab, then click **Add** (添加).
-   2. Enter a name, your **API Key** and the **API URL** (the `.../v1` address).
-   3. Click **Fetch from API** (从 API 获取) to load the models, or add a model name by hand (添加模型).
-   4. Turn on **Enabled** (启用), then click **Save Config** (top right).
-   5. Open the **Features** tab, pick your model as the chat model (对话模型), and click **Save Config** again.
-      The same tab has **Enable MCP Tools** (on in this fork) and **Text Input Box**, if you want to type instead of talk.
+6. **Add your LLM.**
+   1. Open the **LLM Config** tab, then click **+ Add**.
+   2. Enter a provider name, your **API Key** and the **API URL** (the `.../v1` address).
+   3. Click **Fetch from API** to load the models, or type a model ID and click **Add model**.
+   4. Tick **Enable**, then click **Save Config** (top right).
+   5. Open the **Features** tab, pick your model as the **Chat model**, and click **Save Config** again.
+      The same tab has **Enable MCP tools** (on in this fork) and **Text input box**, if you want to type instead of talk.
 
-7. **Start everything.** On the **Launch** tab, click **Start all** (一键启动). It starts ASR, TTS and the other services, then the pet.
+7. **Start everything.** On the **Launch** tab, click **Start all**. It starts ASR, TTS and the other services, then the pet.
    You can also start the ASR and TTS cards first and then **Live2D Pet** by hand.
 
 8. **Talk to her.** Speak into your microphone, or type in the text box.
@@ -159,22 +161,41 @@ env\python.exe -m pip install -U "funasr>=1.1.3"
 ## Updating
 
 **Do not use `一键更新live-2d.bat`.** It replaces the whole `live-2d` folder with the upstream release and deletes your changes.
-In this fork it refuses to run in a git checkout. Use git instead:
+In this fork it refuses to run in a git checkout. Use git instead.
+
+To get this fork's own changes from GitHub:
 
 ```bat
 git pull
 ```
 
-To get new upstream versions, merge them in:
+To get new upstream my-neuro versions, double-click **`update-from-upstream.bat`** in the repository folder
+(or run `node tools/english-ui/update-from-upstream.js`). It:
 
-```bat
-git remote add upstream https://github.com/morettt/my-neuro
-git fetch upstream
-git merge upstream/main
-```
+1. stops if you have uncommitted changes, so commit them first,
+2. adds the `upstream` remote the first time,
+3. sets up the English UI merge driver (once per clone),
+4. fetches and merges `upstream/main`,
+5. lists the Chinese lines that upstream added, and saves the list to `tools/english-ui/last-report.txt`.
 
-You only need `git remote add` once. If git reports conflicts, resolve them, then commit.
-After a merge, run `npm install` in `live-2d` again, and run the tests below.
+Why not a plain `git merge upstream/main`? This fork translated the UI inside the same source files that upstream
+keeps changing in Chinese. A plain merge stops on every translated line that upstream touched, and brings new
+upstream text in Chinese. The merge driver in `tools/english-ui` first translates upstream's changes with the
+translations this fork already has, and then merges:
+
+- Lines that upstream did not change keep our English.
+- Lines that upstream edited keep the English for text that was translated before, even when upstream rewrote the code around it.
+- New upstream text stays Chinese and appears in the report. Ask Claude Code to translate the lines in
+  `tools/english-ui/last-report.txt`. Leave the ones that are data, for example emotion names or text sent to the LLM.
+
+If both sides changed the same code, git still stops with a conflict, as with any merge. The file then shows
+`<<<<<<< ours`, `=======` and `>>>>>>> upstream`, and upstream's side is already translated where possible.
+Fix the file, then run `git add <file>` and `git commit --no-edit`. To undo the merge instead, run `git merge --abort`.
+
+Once the driver is set up, a `git merge upstream/main` that you run by hand uses it too. To set it up without
+merging, run `node tools/english-ui/setup.js`. See `tools/english-ui/README.md` for how it works.
+
+After a merge, run `npm install` in `live-2d` again if `package.json` changed, and run the tests below.
 
 ## Tests
 
@@ -183,6 +204,12 @@ The fork's changes have tests. The JavaScript tests use Node's built-in test run
 ```bat
 cd live-2d
 node --test js/ai/tool-approval.test.js js/ai/tool-executor.test.js js/services/tool-approval-dialog.test.js js/ai/mcp-result.test.js js/ai/mcp-stdio-transport.test.js plugins/built-in/code-executor/tests/code-executor.test.js plugins/built-in/pc-control/tests/pc-control.test.js
+```
+
+The merge driver's tests run real git merges in temporary folders. Run them from the repository folder:
+
+```bat
+node --test tools/english-ui/test/english-ui.test.js
 ```
 
 The ASR tests use pytest and replace the real model with a fake, so they run fast:
@@ -199,13 +226,20 @@ The changes were built and tested on Linux, not on a Windows PC.
 - **Tested:** the approval gate and dialog logic (29 unit tests), the MCP client against a FastMCP 4.0.5 server (the framework Windows-MCP 0.8.6 uses),
   the plugin fixes (including an attack that ran code through the old `pc-control` plugin), the ASR model switch with a fake model,
   and the installer and updater guards. The tests for the fixes fail against the upstream code.
+- **Tested for the English UI:** the WebUI's tabs and the Electron control panel were rendered in Chromium and checked for
+  leftover Chinese. The pet window's text was checked in the code, not on screen. The merge driver was tried on upstream's first commit after the fork (`025a85e`, a control
+  panel update): a plain merge stops with 6 conflicts, the driver merges it cleanly and lists 9 new Chinese lines.
 - **Not tested:** the full Electron app on Windows, the native approval dialog on screen, Windows-MCP itself (it needs Windows),
   and the real SenseVoice model weights (the build sandbox could not download them).
   If something breaks on the first run, check `live-2d/runtime.log` and the logs on the **Launch** tab.
 
 ## Known limits
 
-- Parts of the WebUI, some log messages and the docs are still in Chinese.
+- Some text is still Chinese: the prompts that the app sends to the LLM (for example for the diary, mood chat and
+  context compression), messages that plugins log themselves, the ASR and TTS service consoles, the WebUI's older
+  **Classic layout** page (it has upstream's partial English, use its language switch), the Electron installer
+  (`electron-installer/`) and the upstream docs. The Chinese prompts can make her answer in Chinese now and then.
+- The Live2D model folders are called `肥牛` and `老肥牛`. Those are folder names, so the WebUI shows them as they are.
 - The BERT "smart screenshot" classifier (`3.bert.bat`, off by default) comes from the Chinese upstream (its labels are Chinese) and probably works poorly on English. Leave it off.
 - The local ASR and BERT servers listen on all network interfaces (`0.0.0.0`), as they do upstream.
   Other devices on your network can reach them unless Windows Firewall blocks them.
