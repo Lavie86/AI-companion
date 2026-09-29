@@ -1,6 +1,7 @@
 // ui-controller.js - UI控制模块
 const { ipcRenderer } = require('electron');
 const { logToTerminal } = require('../api-utils.js');
+const { placeChatBox, screenAreaFor } = require('./chat-box-placement.js');
 
 class UIController {
     constructor(config) {
@@ -129,6 +130,8 @@ class UIController {
             textChatContainer.style.setProperty('right', '20px', 'important');
             textChatContainer.style.setProperty('bottom', '50px', 'important');
         }
+        // The position above is only a starting point: once she is on screen, the box moves next to her.
+        this._startChatBoxFollow(textChatContainer);
 
         const setMousePassthrough = (ignore, forward = true) => {
             ipcRenderer.send('set-ignore-mouse-events', {
@@ -296,6 +299,69 @@ class UIController {
         const visibleBottom = Math.max(0, Math.min(window.innerHeight, bottom));
         if (visibleRight <= visibleLeft || visibleBottom <= visibleTop) return null;
         return { left: visibleLeft, top: visibleTop, right: visibleRight, bottom: visibleBottom };
+    }
+
+    // The text box stays next to her, on whatever screen she is on. If you drag the box
+    // somewhere else, it stays there until it is hidden and shown again.
+    _startChatBoxFollow(container) {
+        if (this._chatFollowTimer) return;
+        this._chatBoxPinned = false;
+        // The follow animation must not slow down dragging the box by its background
+        container.addEventListener('mousedown', (e) => {
+            if (e.target === container || e.target.id === 'chat-messages') container.style.removeProperty('transition');
+        });
+        window.addEventListener('resize', () => { this._chatScreenInfo = null; });
+        this._chatFollowTimer = setInterval(() => this.updateChatBoxPosition(), 150);
+    }
+
+    // Snap the box back next to her (used when it is shown again)
+    resetChatBoxPosition() {
+        this._chatBoxPinned = false;
+        this._chatBoxLast = null;
+        this.updateChatBoxPosition();
+    }
+
+    _getChatScreenInfo() {
+        const now = Date.now();
+        if (!this._chatScreenInfo || now - this._chatScreenInfoAt > 5000) {
+            try {
+                this._chatScreenInfo = ipcRenderer.sendSync('get-screen-info-sync');
+            } catch (_) {
+                this._chatScreenInfo = null;
+            }
+            this._chatScreenInfoAt = now;
+        }
+        return this._chatScreenInfo;
+    }
+
+    updateChatBoxPosition() {
+        const container = document.getElementById('text-chat-container');
+        if (!container || this._chatBoxPinned) return;
+        if (window.getComputedStyle(container).display === 'none') return;
+        const last = this._chatBoxLast;
+        if (last && (container.style.getPropertyValue('left') !== `${last.left}px` ||
+            container.style.getPropertyValue('top') !== `${last.top}px`)) {
+            this._chatBoxPinned = true; // it was dragged away from where it was put
+            return;
+        }
+        const model = this._getModelScreenBounds();
+        if (!model) return; // she is not on screen yet: keep the starting position
+
+        const rect = container.getBoundingClientRect();
+        const box = { width: Math.round(rect.width) || 350, height: Math.round(rect.height) || 60 };
+        const area = screenAreaFor(model, this._getChatScreenInfo(), { width: window.innerWidth, height: window.innerHeight });
+        const target = placeChatBox({ model, box, area });
+
+        // Small movements (her idle animation) do not move the box; a new size always does.
+        if (last && last.height === box.height &&
+            Math.abs(last.left - target.left) < 24 && Math.abs(last.top - target.top) < 24) return;
+        this._chatBoxLast = { left: target.left, top: target.top, height: box.height };
+
+        if (last) container.style.setProperty('transition', 'left 0.15s ease, top 0.15s ease');
+        container.style.setProperty('left', `${target.left}px`, 'important');
+        container.style.setProperty('top', `${target.top}px`, 'important');
+        container.style.setProperty('right', 'auto', 'important');
+        container.style.setProperty('bottom', 'auto', 'important');
     }
 
     // 更新气泡框位置，使其跟随模型
@@ -744,6 +810,7 @@ class UIController {
                 chatContainer.style.setProperty('visibility', 'visible', 'important');
                 chatContainer.style.setProperty('opacity', '1', 'important');
                 chatContainer.style.setProperty('pointer-events', 'auto', 'important');
+                this.resetChatBoxPosition();
             }
             config.ui = config.ui || {};
             config.ui.show_chat_box = !visible;

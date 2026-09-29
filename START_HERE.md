@@ -95,6 +95,8 @@ Each change is its own commit, and each commit message explains the details.
    You can also start the ASR and TTS cards first and then **Live2D Pet** by hand.
 
 8. **Talk to her.** Speak into your microphone, or type in the text box.
+   The text box sits next to her and follows her, on whichever screen she is on. Right-click her and choose
+   **💬 Text box** to show or hide it. Drag its edge to leave it somewhere else; hiding and showing it puts it back next to her.
    When she wants to click, type, open something or run code, a dialog asks you first.
 
 ## PC control and the approval dialog
@@ -205,7 +207,7 @@ The fork's changes have tests. The JavaScript tests use Node's built-in test run
 
 ```bat
 cd live-2d
-node --test js/ai/tool-approval.test.js js/ai/tool-executor.test.js js/services/tool-approval-dialog.test.js js/ai/mcp-result.test.js js/ai/mcp-stdio-transport.test.js js/ai/reasoning-request.test.js js/live/bilibili-live.test.js plugins/built-in/code-executor/tests/code-executor.test.js plugins/built-in/memos/tests/backend-embedding-sync.test.js plugins/built-in/pc-control/tests/pc-control.test.js
+node --test js/ai/tool-approval.test.js js/ai/tool-executor.test.js js/services/tool-approval-dialog.test.js js/ai/mcp-result.test.js js/ai/mcp-stdio-transport.test.js js/ai/reasoning-request.test.js js/live/bilibili-live.test.js js/ui/chat-box-placement.test.js plugins/built-in/code-executor/tests/code-executor.test.js plugins/built-in/memos/tests/backend-embedding-sync.test.js plugins/built-in/pc-control/tests/pc-control.test.js
 ```
 
 The merge driver's tests run real git merges in temporary folders. Run them from the repository folder:
@@ -231,7 +233,7 @@ The changes were built and tested on Linux, not on a Windows PC.
 - **Tested for the English UI:** the WebUI's tabs and the Electron control panel were rendered in Chromium and checked for
   leftover Chinese. The pet window's text was checked in the code, not on screen. The merge driver was tried on upstream's first commit after the fork (`025a85e`, a control
   panel update): a plain merge stops with 6 conflicts, the driver merges it cleanly and lists 9 new Chinese lines.
-- **Tested for the English prompts:** all 57 JavaScript tests pass, a scan finds no Chinese left in the text the app and
+- **Tested for the English prompts:** all JavaScript tests pass, a scan finds no Chinese left in the text the app and
   plugins send to the LLM (only data such as file names and the emotion tags), and the main plugins were run with a fake
   app context. A long conversation with a real LLM was not tested.
 - **Not tested:** the full Electron app on Windows, the native approval dialog on screen, Windows-MCP itself (it needs Windows),
