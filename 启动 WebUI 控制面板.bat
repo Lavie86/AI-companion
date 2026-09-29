@@ -20,6 +20,11 @@ if not exist "%~dp0live-2d" (
 )
 
 cd /d "%~dp0live-2d"
+rem The Python environment from the installer does not include the WebUI packages
+"%PY%" -c "import flask, requests" >nul 2>&1 || (
+    echo Installing the WebUI packages: flask and requests...
+    "%PY%" -m pip install flask requests
+)
 echo Starting WebUI...
 echo Python: %PY%
 echo.
