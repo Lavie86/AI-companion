@@ -89,7 +89,7 @@ Each change is its own commit, and each commit message explains the details.
    3. Click **Fetch from API** to load the models, or type a model ID and click **Add model**.
    4. Tick **Enable**, then click **Save Config** (top right).
    5. Open the **Features** tab, pick your model as the **Chat model**, and click **Save Config** again.
-      The same tab has **Enable MCP tools** (on in this fork) and **Text input box**, if you want to type instead of talk.
+      The same tab has **Text input box**, if you want to type instead of talk. **Enable MCP tools** (on in this fork) is on the **Basic Config** tab.
 
 7. **Start everything.** On the **Launch** tab, click **Start all**. It starts ASR, TTS and the other services, then the pet.
    You can also start the ASR and TTS cards first and then **Live2D Pet** by hand.
